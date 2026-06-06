@@ -1078,7 +1078,7 @@
 
  #desk-item {
     position: absolute;
-    bottom: -1vh;            
+    bottom: -4vh;            
     left: 22vw;          
     width: 22vw; 
     height: 34vh;
@@ -2080,7 +2080,7 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
         .notebook-day {
             font-family: 'Gaegu', 'Nanum Pen Script', 'Georgia', serif;
             color: #6b4010; font-weight: bold;
-            font-size: 3.4vh; margin-bottom: 1.6vh;
+            font-size: 4.2vh; margin-bottom: 1.6vh;
             border-bottom: 0.25vh solid rgba(107,64,16,0.5); padding-bottom: 0.7vh; width: 78%;
             text-align: center;
         }
@@ -2117,11 +2117,11 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
         .notebook-name {
             font-family: 'Gaegu', 'Nanum Pen Script', 'Georgia', serif;
             color: #2a1808; font-weight: bold;
-            font-size: 3.6vh; margin-top: 1vh; letter-spacing: 0.1vh;
+            font-size: 4.4vh; margin-top: 1vh; letter-spacing: 0.1vh;
         }
         .notebook-order {
             font-family: 'Gaegu', 'Nanum Pen Script', 'Georgia', serif;
-            color: #7a5424; font-size: 2.2vh; margin-top: 0.3vh;
+            color: #7a5424; font-size: 2.9vh; margin-top: 0.3vh;
         }
         /* 스프링 수첩: 종이가 왼쪽 제본을 축으로 완전히 뒷면까지(180°) 넘어감 */
         .notebook-page.flipping {
@@ -2284,18 +2284,21 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
     padding: 2vh 2vw;
     box-sizing: border-box;
     align-items: center;
-    /* 스크롤바 커스텀 */
-    scrollbar-width: thin;
-    scrollbar-color: #cba328 rgba(0,0,0,0.5);
+    /* 카드 단위 스냅 스크롤 */
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    /* 스크롤바 숨김 */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 #h-doc-container::-webkit-scrollbar {
-    height: 1.5vh;
+    display: none;
 }
 #h-doc-container::-webkit-scrollbar-track {
-    background: rgba(0,0,0,0.5); border-radius: 1vh;
+    background: transparent;
 }
 #h-doc-container::-webkit-scrollbar-thumb {
-    background-color: #cba328; border-radius: 1vh;
+    background: transparent;
 }
 
 /* 나열되는 개별 계약서 카드 (비율/크기 고정) */
@@ -2305,6 +2308,7 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
     max-width: 26vw;
     height: 60vh;
     background-color: #e2c9a1;
+    scroll-snap-align: center;   /* 스냅 포인트 */
     background-image: url('image_58be16.jpg');
     background-size: cover;
     border: 0.2vw solid #5a320a;
@@ -2330,7 +2334,7 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
 /* ── 튜토리얼 스킵 버튼 ── */
 #skip-tutorial-btn {
     position: fixed;
-    top: 2.5vh; right: 2vw;
+    bottom: 3vh; left: 50%; transform: translateX(-50%);
     z-index: 9600;
     background: rgba(0, 0, 0, 0.6);
     color: #aaa;
@@ -2347,7 +2351,7 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
     color: #fff;
     border-color: #fcd53f;
     background: rgba(0, 0, 0, 0.8);
-    transform: scale(1.05);
+    transform: translateX(-50%) scale(1.05);
 }
 #skip-tutorial-btn.show {
     display: block; /* 튜토리얼 중에만 보임 */
@@ -2431,7 +2435,7 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
                 <canvas id="receipt-sig-canvas"></canvas>
             </div>
             <div id="appraisal-box" style="display:none; margin-top: 1.5vw; text-align: center; background: rgba(0,0,0,0.05); padding: 1.5vw; border: 0.15vw dashed rgba(60,30,0,0.5); border-radius: 0.5vw;">
-                <button id="btn-reveal" onclick="revealItem()" style="padding: 0.8vw 2vw; font-size: 1.2vw; font-family: 'Georgia', serif; font-weight: bold; background: #3a2a08; color: #fcd53f; border: 0.15vw solid #cba328; border-radius: 0.5vw; cursor: pointer; margin-bottom: 1vw;">🔍 돋보기로 자세히 보기</button>
+                <button id="btn-reveal" onclick="revealItem()" style="padding: 0.8vw 2vw; font-size: 1.2vw; font-family: 'Georgia', serif; font-weight: bold; background: #3a2a08; color: #fcd53f; border: 0.15vw solid #cba328; border-radius: 0.5vw; cursor: pointer; margin-bottom: 1vw;">돋보기로 자세히 보기</button>
                 <div style="display: flex; gap: 1vw; justify-content: center;">
                     <button id="btn-judge-real" onclick="judgeItem(true)" style="padding: 0.8vw 1.5vw; font-size: 1.1vw; font-weight: bold; background: #4a8a3a; color: white; border: 0.15vw solid #2a5a1a; border-radius: 0.5vw; cursor: pointer;">O 진품 판정</button>
                     <button id="btn-judge-fake" onclick="judgeItem(false)" style="padding: 0.8vw 1.5vw; font-size: 1.1vw; font-weight: bold; background: #a33; color: white; border: 0.15vw solid #631010; border-radius: 0.5vw; cursor: pointer;">X 가품 판정</button>
@@ -2687,6 +2691,9 @@ function cancelSkipTutorial() {
 
 // ── 가로 스크롤 서류 보관함 열기/닫기 ──
 function openDocScrollModal() {
+    // 드래그 후 클릭 억제
+    if (window.__suppressBookClick) { window.__suppressBookClick = false; return; }
+    gameState._docSelectedDay = null;  // 날짜 선택 초기화
     // 튜토리얼 중: 서류 보관함 열기 미션(step 10) + 대사 완료 후에만 열림
     if (tutorial.active) {
         const step = tutCurrent();
@@ -2700,9 +2707,9 @@ function openDocScrollModal() {
         modal.classList.add('visible');
     }, 50);
 
-    // 튜토리얼 연동: 서류 보관함을 열었을 때 10단계(open-docbook) 진행
+    // 튜토리얼 연동: 서류 보관함을 열었을 때 10단계(open-docbook) — 탭 선택까지 기다림
     if (tutorial.active && tutCurrent() && tutCurrent().await === 'open-docbook') {
-        tutEvent('open-docbook');
+        // open-docbook은 탭 클릭 시 발생 (아래 renderDocScrollItems 탭 클릭 핸들러에서 처리)
         setTimeout(() => { if (tutorial.active) tutRender(); }, 300);
     }
 }
@@ -2719,52 +2726,148 @@ function closeDocScrollModal() {
 function renderDocScrollItems() {
     const container = document.getElementById('h-doc-container');
     container.innerHTML = '';
-    
+
     if (gameState.purchasedItems.length === 0) {
-        container.innerHTML = '<div style="color:#d8b87a; font-size: 2vw; width:100%; text-align:center;">보관된 계약서가 없습니다.</div>';
+        container.innerHTML = '<div style="color:#d8b87a;font-size:2vw;width:100%;text-align:center;padding-top:4vh">보관된 계약서가 없습니다.</div>';
         return;
     }
 
+    // 일자별 그룹화
+    const byDay = {};
     gameState.purchasedItems.forEach((entry, idx) => {
+        const d = entry.day || gameState.day || 1;
+        if (!byDay[d]) byDay[d] = [];
+        byDay[d].push({ entry, idx });
+    });
+
+    const selectedDay = gameState._docSelectedDay;
+
+    if (!selectedDay) {
+        // ── 일자 선택 탭 ──
+        const tabWrap = document.createElement('div');
+        tabWrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:1.5vw;padding:2vh 2vw;align-items:flex-start;';
+        for (let d = 1; d <= 7; d++) {
+            const items = byDay[d] || [];
+            const tab = document.createElement('div');
+            tab.style.cssText = `width:12vw;min-height:14vh;background:${items.length>0?'#3a2a08':'rgba(255,255,255,0.05)'};border:0.15vw solid ${items.length>0?'#cba328':'rgba(255,255,255,0.15)'};border-radius:0.8vw;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.8vh;cursor:${items.length>0?'pointer':'default'};transition:transform 0.2s;padding:1.5vh 1vw;`;
+            tab.innerHTML = `<div style="font-family:Gaegu,serif;font-size:1.4vw;font-weight:bold;color:${items.length>0?'#fcd53f':'#666'}">제 ${d}일차</div><div style="font-family:Gaegu,serif;font-size:1vw;color:${items.length>0?'#d8b87a':'#555'}">서류 ${items.length}건</div>`;
+            if (items.length > 0) {
+                tab.onmouseover = () => tab.style.transform = 'scale(1.05)';
+                tab.onmouseout  = () => tab.style.transform = '';
+                tab.onclick = () => {
+                    gameState._docSelectedDay = d;
+                    renderDocScrollItems();
+                    // 튜토리얼: 1일차 탭 클릭 시 open-docbook 이벤트 발생
+                    if (tutorial.active && tutCurrent() && tutCurrent().await === 'open-docbook' && d === 1) {
+                        tutEvent('open-docbook');
+                        setTimeout(() => { if (tutorial.active) tutRender(); }, 300);
+                    }
+                };
+            }
+            tabWrap.appendChild(tab);
+        }
+        container.appendChild(tabWrap);
+        return;
+    }
+
+    // ── 특정 날 서류 ──
+    const backBtn = document.createElement('div');
+    backBtn.style.cssText = 'width:100%;padding:0.8vh 1.5vw;cursor:pointer;font-family:Gaegu,serif;font-size:1.1vw;color:#fcd53f;display:flex;align-items:center;gap:0.5vw;border-bottom:0.1vw solid rgba(255,255,255,0.1);margin-bottom:1vh;';
+    backBtn.innerHTML = '← 날짜 선택으로 돌아가기';
+    backBtn.onclick = () => { gameState._docSelectedDay = null; renderDocScrollItems(); };
+    container.appendChild(backBtn);
+
+    const dayItems = byDay[selectedDay] || [];
+    if (dayItems.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'color:#d8b87a;font-size:1.5vw;width:100%;text-align:center;padding-top:2vh;';
+        empty.innerText = '이 날의 서류가 없습니다.';
+        container.appendChild(empty);
+        return;
+    }
+
+    dayItems.forEach(({ entry, idx }) => {
         const item = entry.item;
         const card = document.createElement('div');
         card.className = 'h-doc-card';
         card.id = `doc-card-${idx}`;
-        
+
         let contentHtml = `
-            <div style="font-size: 1.5vw; font-weight: bold; border-bottom: 0.15vw solid rgba(90,50,10,0.5); padding-bottom: 1vh; margin-bottom: 1.5vh; text-align: center;">계약서 #${idx+1}</div>
-            <div style="font-size: 1.2vw; margin-bottom: 1vh;"><b>품명:</b> ${item.name}</div>
-<div style="font-size: 1vw; color: #5a3a23; font-style: italic; line-height: 1.6; margin-bottom: 2vh; flex-grow: 1; word-break: keep-all; overflow-wrap: break-word; padding-left: 1vw; text-indent: -1vw;">"${item.desc}"</div>            `;
+            <div style="font-size:1.5vw;font-weight:bold;border-bottom:0.15vw solid rgba(90,50,10,0.5);padding-bottom:1vh;margin-bottom:1.5vh;text-align:center">계약서 #${idx+1}</div>
+            <div style="font-size:1.2vw;margin-bottom:1vh"><b>품명:</b> ${item.name}</div>
+            <div style="font-size:1vw;color:#5a3a23;font-style:italic;line-height:1.6;margin-bottom:2vh;flex-grow:1;word-break:keep-all">"${item.desc}"</div>`;
 
         if (entry.judged) {
-            // 감정이 완료된 상태
-            const isAuthentic = entry.judgmentResult; // 자동 감정이므로 항상 실제 진품 여부와 동일
+            const isAuthentic = entry.judgmentResult;
             const resultColor = isAuthentic ? '#2b7a1a' : '#a32020';
-            const resultText = isAuthentic ? ' 진품 (Authentic)' : ' 가품 (Fake)';
-            
-            let finalImg = (item.owner === 'pigeon' || item.owner === 'streamer') ? `${item.baseImg}.jpg` : `${item.baseImg}_${isAuthentic ? 'real' : 'fake'}.jpg`;
-
-            contentHtml += `
-                <div style="width: 100%; height: 18vh; background-image: url('${finalImg}'); background-size: contain; background-position: center; background-repeat: no-repeat; margin-bottom: 1.5vh;"></div>
-                <div style="font-size: 1.4vw; font-weight: bold; color: ${resultColor}; text-align: center; background: rgba(255,255,255,0.5); padding: 1vh; border-radius: 0.5vw; border: 0.15vw dashed ${resultColor};">
-                    감정 결과: ${resultText}
-                </div>
-            `;
+            const resultText  = isAuthentic ? '진품 (Authentic)' : '가품 (Fake)';
+            const finalImg = (item.owner === 'pigeon' || item.owner === 'streamer') ? item.baseImg+'.jpg' : item.baseImg+'_'+(isAuthentic?'real':'fake')+'.jpg';
+            contentHtml += `<div style="width:100%;height:18vh;background-image:url('${finalImg}');background-size:contain;background-position:center;background-repeat:no-repeat;margin-bottom:1.5vh"></div>
+                <div style="font-size:1.4vw;font-weight:bold;color:${resultColor};text-align:center;background:rgba(255,255,255,0.5);padding:1vh;border-radius:0.5vw;border:0.15vw dashed ${resultColor}">${resultText}</div>`;
         } else {
-            // 아직 감정되지 않은 상태
-            let hiddenImg = (item.owner === 'pigeon' || item.owner === 'streamer') ? `${item.baseImg}.jpg` : `${item.baseImg}_fake.jpg`;
-            
-            contentHtml += `
-                <div style="width: 100%; height: 18vh; background-image: url('${hiddenImg}'); background-size: contain; background-position: center; background-repeat: no-repeat; margin-bottom: 1.5vh; filter: grayscale(50%);"></div>
-                <button id="btn-appraise-${idx}" onclick="startAutoAppraise(${idx})" style="padding: 1.2vh 0; font-size: 1.3vw; font-weight: bold; background: #3a2a08; color: #fcd53f; border: 0.15vw solid #cba328; border-radius: 0.5vw; cursor: pointer; transition: 0.2s;">
-                     감정 시작
-                </button>
-            `;
+            const hiddenImg = (item.owner === 'pigeon' || item.owner === 'streamer') ? item.baseImg+'.jpg' : item.baseImg+'_fake.jpg';
+            contentHtml += `<div style="width:100%;height:18vh;background-image:url('${hiddenImg}');background-size:contain;background-position:center;background-repeat:no-repeat;margin-bottom:1.5vh;filter:grayscale(50%)"></div>
+                <button id="btn-appraise-${idx}" onclick="startAutoAppraise(${idx})" style="padding:1.2vh 0;font-size:1.3vw;font-weight:bold;background:#3a2a08;color:#fcd53f;border:0.15vw solid #cba328;border-radius:0.5vw;cursor:pointer;transition:0.2s">감정 시작</button>`;
         }
-        
+
         card.innerHTML = contentHtml;
         container.appendChild(card);
     });
+
+    // ── 스와이프로 카드 넘기기 (터치 + 마우스 드래그) ──
+    setupDocSwipe(container);
+}
+
+function setupDocSwipe(container) {
+    let startX = null, startScroll = 0, isDragging = false;
+
+    function onStart(e) {
+        startX = e.touches ? e.touches[0].clientX : e.clientX;
+        startScroll = container.scrollLeft;
+        isDragging = true;
+        container.style.scrollBehavior = 'auto';  // 드래그 중엔 즉시 반응
+    }
+    function onMove(e) {
+        if (!isDragging || startX === null) return;
+        const x = e.touches ? e.touches[0].clientX : e.clientX;
+        const dx = startX - x;
+        container.scrollLeft = startScroll + dx;
+    }
+    function onEnd(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        container.style.scrollBehavior = 'smooth';
+        // 카드 너비 + gap 단위로 스냅
+        const cardWidth = container.querySelector('.h-doc-card')
+            ? container.querySelector('.h-doc-card').offsetWidth + 48  // gap 3vw≈48px
+            : 0;
+        if (cardWidth > 0) {
+            const idx = Math.round(container.scrollLeft / cardWidth);
+            container.scrollLeft = idx * cardWidth;
+        }
+        startX = null;
+    }
+
+    // 기존 이벤트 제거 후 재등록
+    container.removeEventListener('mousedown',  container._swipeStart);
+    container.removeEventListener('mousemove',  container._swipeMove);
+    container.removeEventListener('mouseup',    container._swipeEnd);
+    container.removeEventListener('mouseleave', container._swipeEnd);
+    container.removeEventListener('touchstart', container._swipeStart);
+    container.removeEventListener('touchmove',  container._swipeMove);
+    container.removeEventListener('touchend',   container._swipeEnd);
+
+    container._swipeStart = onStart;
+    container._swipeMove  = onMove;
+    container._swipeEnd   = onEnd;
+
+    container.addEventListener('mousedown',  onStart);
+    container.addEventListener('mousemove',  onMove);
+    container.addEventListener('mouseup',    onEnd);
+    container.addEventListener('mouseleave', onEnd);
+    container.addEventListener('touchstart', onStart, { passive: true });
+    container.addEventListener('touchmove',  onMove,  { passive: true });
+    container.addEventListener('touchend',   onEnd);
 }
 
 // ── ⏳ 자동 감정 시스템 (로딩 후 결과 표시) ──
@@ -3354,7 +3457,7 @@ function exitToLobby() {
 
 const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, tearPoints: [], signCtx: null, isDrawing: false, ropeUsed: false, lastGuest: null, money: 100000000, itemPrice: 20000000, currentItem: null, lastItem: null, purchasedItems: [], day: 1, dealsPerDay: 6, totalDays: 7, needsAppraisal: false, appraisedToday: false, gameStarted: false, dailyGuestsQueue: [], originalDailyQueue: [], readyToFinalize: false,
     /* 캐릭터별 특수 상태 */
-    catAffinity: 0,           // 고양이 호감도 (0~100)
+    catAffinity: 50,           // 고양이 호감도 (기본 50, 0~100)
     catTalking: false,        // 고양이 대화 중
     pigConfessing: false,     // 돼지 고백 중
     snakeMouseBothering: false, // 뱀+쥐 방해 중
@@ -3376,7 +3479,6 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             button_diamond: { name: "다이아 버튼", info: "전 세계 극소수 최정상 크리에이터들만 손에 넣을 수 있는 초고화질 다이아 버튼." },
             button_ruby: { name: "루비 버튼", info: "플랫폼 역사에 영원히 각인될 위대한 업적을 달성한 존재에게만 헌정되는 궁극의 루비 버튼." },
             gold: { name: "공식 정련 순금괴", info: "중앙 은행 공인 정련소의 직인과 일련번호가 선명하게 찍힌 99.99% 포나인 순금 주괴." },
-            violet: { name: "영롱한 야광 마법 보석", info: "심해 및 특수 암반층 깊은 결정을 채굴하여 다듬은 미스터리 원석." },
             clock: { name: "명품 한정판 다이아 시계", info: "스위스 하이엔드 공방의 장인이 극소량으로 조립한 다이아몬드 세공 오토매틱 시계." },
             lighter: { name: "천연 상아 수제 라이터", info: "최고급 천연 상아 통원석을 예술적으로 카빙하여 황동 가스 부속을 매립한 수제 라이터." },
             wine: { name: "밀수된 와인", info: "의문의 블랙 보틀. 겉보기엔 빈티지 와인 같지만 사실 알코올이 없는 최고급 무알콜 포도주스이다." },
@@ -3388,7 +3490,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
 
         const encyclopediaOrder = [
             'camera', 'book', 'coin', 'button_silver', 'button_gold', 'button_diamond', 'button_ruby',
-            'gold', 'violet', 'clock', 'lighter', 'wine', 'flower', 'happy', 'gem', 'monocle'
+            'gold', 'clock', 'lighter', 'wine', 'flower', 'happy', 'gem', 'monocle'
         ];
 
 // ── 하루 일정 생성 (5인 예약제 + 비공개 랜덤 난입 + 중복 방지) ──
@@ -3397,9 +3499,10 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             gameState.pigeonBibleUsedToday = false;
             gameState.pigeonRejectedToday = false;
 
-            // ── 기본 후보군 (비둘기·스트리머·도마뱀은 특수 처리) ──
+            // ── 기본 후보군 (불시 손님 제외: 까마귀·스트리머·도마뱀·비둘기는 특수 처리) ──
             const normalPool = guests.filter(g =>
-                g.id !== 'streamer' && g.id !== 'lizard' && g.id !== 'pigeon'
+                g.id !== 'streamer' && g.id !== 'lizard' &&
+                g.id !== 'pigeon'   && g.id !== 'crow'
             );
 
             // 스트리머 확률 보정
@@ -3434,7 +3537,14 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             gameState.originalDailyQueue = bookedGuests;
             gameState.dailyGuestsQueue  = [...bookedGuests];
 
-            // ── 불청객(도마뱀) 등장 시스템 ──
+            // ── 불시 손님: 까마귀 (20% 확률, 거래 1건 이상 후) ──
+            const crowGuest = guests.find(g => g.id === 'crow');
+            if (crowGuest && Math.random() < 0.20) {
+                const ci = Math.floor(Math.random() * Math.max(1, gameState.dailyGuestsQueue.length - 1)) + 1;
+                gameState.dailyGuestsQueue.splice(ci, 0, { ...crowGuest });
+            }
+
+            // ── 불시 손님: 도마뱀 ──
             if (typeof gameState.surpriseProbability === 'undefined') gameState.surpriseProbability = 0.2;
             const lizardGuest = guests.find(g => g.id === 'lizard');
             if (lizardGuest && Math.random() < gameState.surpriseProbability) {
@@ -3494,7 +3604,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
         // 손님 id → 표시 이름
         const guestDisplayNames = {
             crocodile: '악어', monkey: '원숭이', miners: '광부', pigeon: '비둘기',
-            pig: '돼지', mouse: '쥐', cat: '고양이', crow: '까마귀', goat: '염소',
+            pig: '돼지', mouse: '쥐 & 뱀', cat: '고양이', crow: '까마귀', goat: '염소',
             lizard: '도마뱀', streamer: '스트리머'
         };
         let notebookPage = 0;       // 현재 보고 있는 페이지 인덱스
@@ -3519,69 +3629,60 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
         };
 
         function buildNotebookPage(idx) {
-            const guest = notebookList[idx];
-            if (!guest) return '';
-            const img = (guest.frames && guest.frames[0]) ? guest.frames[0] : '';
-            const name = guestDisplayNames[guest.id] || guest.id;
-            const isStreamer = (guest.id === 'streamer');
-
-            // ── 인게임 모드 판별 ──
             const gameCanvas = document.getElementById('game-canvas');
             const inGame = !!(gameCanvas && getComputedStyle(gameCanvas).display !== 'none');
 
             if (inGame) {
-                // ── 인게임: 오늘의 예약 손님 5명 + 방문 여부 ──
-                const orderNames = ["첫 번째", "두 번째", "세 번째", "네 번째", "다섯 번째"];
-                const orderText = isStreamer ? '예약 외 등장' : `${orderNames[idx] || (idx+1)+'번째'} 손님`;
+                // 인게임: 오늘 예약 손님 5명 (첫 페이지부터 바로)
+                const guest = gameState.originalDailyQueue[idx];
+                if (!guest) return '';
+                const img2 = (guest.frames && guest.frames[0]) ? guest.frames[0] : '';
+                const name2 = guestDisplayNames[guest.id] || guest.id;
+                const orderNames = ["첫 번째","두 번째","세 번째","네 번째","다섯 번째"];
                 const visitStatus = guest.visited
                     ? '<span style="color:#4caf50;font-weight:bold">✔ 방문 완료</span>'
                     : '<span style="color:#e57373">● 미방문</span>';
-                return `
-                    <div class="notebook-day" style="font-size:1.05vw">${gameState.day}일차 · ${orderText}</div>
-                    <div class="notebook-photo-frame">
-                        <div class="notebook-photo" style="background-image:url('${img}')"></div>
-                    </div>
-                    <div class="notebook-name">${name}</div>
+                return `<div class="notebook-day" style="font-size:1.05vw">${gameState.day}일차 · ${orderNames[idx]||idx+'번째'} 손님</div>
+                    <div class="notebook-photo-frame"><div class="notebook-photo" style="background-image:url('${img2}')"></div></div>
+                    <div class="notebook-name">${name2}</div>
                     <div class="notebook-order">${visitStatus}</div>`;
 
-            } else if (idx === 0 && notebookList._lobbyMode) {
-                // ── 로비/감정소 첫 페이지: 오늘의 손님 전체 목록 ──
-                const allGuests = gameState.originalDailyQueue;
-                const rows = allGuests.map((g, i) => {
-                    const n = guestDisplayNames[g.id] || g.id;
-                    const v = g.visited
-                        ? '<span style="color:#4caf50">✔</span>'
-                        : '<span style="color:#bbb">○</span>';
-                    return `<div style="display:flex;align-items:center;gap:0.5vw;padding:0.3vh 0;border-bottom:0.08vw solid rgba(0,0,0,0.1)">
-                        <span style="font-size:0.8vw;color:#888;min-width:1.5vw">${i+1}.</span>
-                        <span style="font-size:0.95vw;font-weight:bold;flex:1">${n}</span>
-                        <span style="font-size:0.9vw">${v}</span>
-                    </div>`;
-                }).join('');
-                return `
-                    <div class="notebook-day">📋 오늘의 손님</div>
-                    <div style="margin:0.8vh 0;font-size:0.8vw;color:#888">페이지를 넘기면 각 손님 정보를 볼 수 있습니다</div>
-                    <div style="width:100%">${rows}</div>`;
-
             } else {
-                // ── 로비/감정소 나머지 페이지: 개별 손님 설명 ──
-                const realIdx = notebookList._lobbyMode ? idx - 1 : idx;
-                const targetGuest = notebookList._lobbyMode
-                    ? gameState.originalDailyQueue[realIdx]
-                    : guest;
-                if (!targetGuest) return '';
-                const tImg = (targetGuest.frames && targetGuest.frames[0]) ? targetGuest.frames[0] : '';
-                const tName = guestDisplayNames[targetGuest.id] || targetGuest.id;
-                const tDesc = guestDescriptions[targetGuest.id] || '정체불명의 손님.';
-                const tIsStreamer = targetGuest.id === 'streamer';
-                const dayText = tIsStreamer ? '예약 외 등장' : `${gameState.day}일차 방문 예약`;
-                return `
-                    <div class="notebook-day">${dayText}</div>
-                    <div class="notebook-photo-frame">
-                        <div class="notebook-photo" style="background-image:url('${tImg}')"></div>
-                    </div>
-                    <div class="notebook-name">${tName}</div>
-                    <div class="notebook-order" style="font-size:0.85vw;color:#5a3a1a;margin-top:0.5vh;line-height:1.4">${tDesc}</div>`;
+                // 로비/감정소: 0=이번주 예약 손님 타이틀, 1~12=전체 캐릭터 설명
+                const allChars = [
+                    {id:'goat',      name:'염소'},
+                    {id:'crocodile', name:'악어'},
+                    {id:'cat',       name:'고양이'},
+                    {id:'mouse',     name:'쥐 & 뱀'},
+                    {id:'pig',       name:'돼지'},
+                    {id:'crow',      name:'까마귀'},
+                    {id:'monkey',    name:'원숭이'},
+                    {id:'miners',    name:'광부'},
+                    {id:'pigeon',    name:'비둘기'},
+                    {id:'lizard',    name:'도마뱀'},
+                    {id:'streamer',  name:'스트리머'},
+                ];
+                if (idx === 0) {
+                    return `<div class="notebook-day">이번주 예약 손님</div>
+                        <div class="notebook-order" style="font-size:1.4vw;color:#7a5a2a;margin:1.5vh 0 2vh;line-height:1.6">
+                            페이지를 넘기면 각 손님 정보를 볼 수 있습니다
+                        </div>
+                        <div class="notebook-order" style="font-size:1.4vw;line-height:2.1;color:#5a3a1a">
+                            총 11종류의 손님이 방문합니다.<br>
+                            각 손님마다 고유한 거래 방식이 있으니<br>
+                            잘 파악하고 협상해 보세요!
+                        </div>`;
+                }
+                const ci = idx - 1;
+                if (ci >= allChars.length) return '';
+                const gd = guests.find(g => g.id === allChars[ci].id);
+                if (!gd) return '';
+                const img = (gd.frames && gd.frames[0]) ? gd.frames[0] : '';
+                const desc = guestDescriptions[gd.id] || '정체불명의 손님.';
+                return `<div class="notebook-day">${allChars[ci].name}</div>
+                    <div class="notebook-photo-frame"><div class="notebook-photo" style="background-image:url('${img}')"></div></div>
+                    <div class="notebook-name">${allChars[ci].name}</div>
+                    <div class="notebook-order" style="font-size:1.05vw;color:#5a3a1a;margin-top:0.5vh;line-height:1.5">${desc}</div>`;
             }
         }
 
@@ -3597,7 +3698,6 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             if (nextBtn) nextBtn.disabled = (notebookPage >= notebookList.length - 1);
         }
 
-        // 방문 명단 아이콘 라벨을 아이콘 상태에 동기화
         function syncLedgerLabel() {
             const btn = document.getElementById('ledger-btn');
             const label = document.getElementById('ledger-btn-label');
@@ -3611,23 +3711,10 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             const modal = document.getElementById('ledger-modal');
             if (!modal) return;
             if (gameState.originalDailyQueue.length === 0) prepareNewDay();
-
             const gameCanvas = document.getElementById('game-canvas');
             const inGame = !!(gameCanvas && getComputedStyle(gameCanvas).display !== 'none');
-
-            if (inGame) {
-                // 인게임: 예약된 5명만 (스트리머 제외)
-                notebookList = gameState.originalDailyQueue.slice();
-                delete notebookList._lobbyMode;
-            } else {
-                // 로비/감정소: 첫 페이지=전체 목록, 이후 페이지=개별 설명
-                // 페이지 수 = 1(목록) + 예약 손님 수
-                const baseList = gameState.originalDailyQueue.slice();
-                // 길이를 1+손님수로 만들기 위해 dummy 포함 배열 생성
-                notebookList = [{ _overview: true }, ...baseList];
-                notebookList._lobbyMode = true;
-            }
-
+            // 인게임: 0=타이틀+5명=총6, 로비: 0=타이틀+12캐릭터=총13
+            notebookList = new Array(inGame ? gameState.originalDailyQueue.length : 12).fill(null);
             notebookPage = 0;
             renderNotebook();
             modal.classList.add('show');
@@ -3820,8 +3907,6 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             { id:'liz2', owner:'lizard', cat:'금괴', baseImg:'gold', authentic:false, name:"공식 정련 순금괴", desc:"외관만 똑같고 납 위에 노란 칠을 한 아주 가벼운 모조품 금괴." },
 
             // ── 까마귀 전용 ──
-            { id:'cro1', owner:'crow', cat:'보물', baseImg:'violet', authentic:true, name:"영롱한 야광 마법 보석", desc:"스스로 강력한 보라빛 아우라를 뿜어내는 대형 마법 보석." },
-            { id:'cro2', owner:'crow', cat:'보물', baseImg:'violet', authentic:false, name:"영롱한 야광 마법 보석", desc:"에너지를 읽고 더 이상 스스로 빛나지 못하는 대형 마법 보석." },
 
             // ── 악어 전용 ──
             { id:'crc1', owner:'crocodile', cat:'사치품', baseImg:'clock', authentic:true, name:"명품 한정판 다이아 시계", desc:"최고급 브랜드에서 소량 제작한 부의 상징인 한정판 시계." },
@@ -3845,7 +3930,6 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             // ── 광부 전용 ──
             { id:'min1', owner:'miners', cat:'보석 원석', baseImg:'gem', authentic:true,  name:"천연 보랏빛 자수정 정동", desc:"안쪽에 푸른 빛의 천연 수정이 밝게 빛나고 있는 귀중한 보석." },
             { id:'min2', owner:'miners', cat:'보석 원석', baseImg:'gem', authentic:false, name:"평범한 돌맹이",            desc:"그냥 길가에서 집어온 돌멩이. 아무런 가치가 없다." },
-
             // ── 염소 전용 ──
             { id:'goa1', owner:'goat', cat:'사치품', baseImg:'monocle', authentic:true, name:"황동 프레임 명품 모노클", desc:"귀족이나 회계사들이 한쪽 눈에 끼는 지적이고 고급스러운 외눈안경." },
             { id:'goa2', owner:'goat', cat:'사치품', baseImg:'monocle', authentic:false, name:"황동 프레임 명품 모노클", desc:"귀족이나 회계사들이 한쪽 눈에 끼는 지적이고 고급스러운 외눈안경의 레플리카 버전." }
@@ -4237,7 +4321,8 @@ function generateGuest() {
                 // 원숭이: 비둘기·광부 고유 물건 제외, 40%확률 가짜
                 const stolenCandidates = items.filter(item =>
                     item.owner !== 'common' && item.owner !== 'monkey' &&
-                    item.owner !== 'pigeon' && item.owner !== 'miners'
+                    item.owner !== 'pigeon' && item.owner !== 'miners' &&
+                    item.owner !== 'crow'
                 );
                 const originalItem = stolenCandidates[Math.floor(Math.random() * stolenCandidates.length)];
                 const isFake = Math.random() < 0.4;
@@ -4250,7 +4335,8 @@ function generateGuest() {
                     name: `[훔쳐온] ${variant.name}`,
                     desc: `(누군가의 주머니나 보물창고에서 훔쳐온 흔적이 뚜렷한 장물입니다.) ${variant.desc}`
                 };
-            } else if (guest.id === 'streamer' || guest.id === 'lizard') {
+            } else if (guest.id === 'streamer' || guest.id === 'lizard' || guest.id === 'pigeon' || guest.id === 'miners' || guest.id === 'pig') {
+                // 고유 아이템만 사용 (공용 물건 제외)
                 validItems = items.filter(item => item.owner === guest.id);
                 do {
                     itemData = validItems[Math.floor(Math.random() * validItems.length)];
@@ -4276,6 +4362,7 @@ function generateGuest() {
                 gameState.itemPrice = Math.random() < 0.5 ? 30000000 : 50000000;
             }
             else if (itemData.owner === 'common') gameState.itemPrice = 10000000;
+            else if (itemData.owner === 'crocodile') gameState.itemPrice = 10000000; // 악어 1천만
             else gameState.itemPrice = 20000000;
 
             const guestDiv = document.createElement('div');
@@ -4356,6 +4443,16 @@ function generateGuest() {
                 return;
             }
 
+            // ── 까마귀: 서류·물건 표시 없이 구매 UI만 ──
+            if (guest.id === 'crow') {
+                deskItem.classList.remove('show');
+                const doc = document.getElementById('game-document');
+                if (doc) doc.style.display = 'none';
+                showGuestDialogue('enter');
+                setTimeout(() => showCrowBuyUI(), 1500);
+                return;
+            }
+
             deskItem.classList.remove('show');
             setTimeout(() => deskItem.classList.add('show'), 200);
             const doc = document.getElementById('game-document');
@@ -4376,19 +4473,17 @@ function generateGuest() {
                 if (guest.id === 'lizard') startTimeAttack();
             } catch(e){}
 
-            // ── 까마귀: 플레이어 물건 구매 시도 ──
-            if (guest.id === 'crow') {
-                setTimeout(() => showCrowBuyUI(), 1500);
-            }
-
             // ── 고양이: 호감도 대화 시스템 ──
             if (guest.id === 'cat') {
                 setTimeout(() => showCatTalkUI(), 1500);
             }
 
-            // ── 뱀+쥐: 꽁냥 말풍선 + 방해 버튼 ──
+            // ── 뱀+쥐: 꽁냥 말풍선 + 방해 버튼 (기존 입장 대사 말풍선 생략) ──
             if (guest.id === 'mouse') {
-                setTimeout(() => showSnakeMouseUI(), 1500);
+                // 기존 speech-bubble 입장 대사 숨김
+                const sb2 = document.getElementById('speech-bubble');
+                if (sb2) { sb2.classList.remove('visible'); sb2.innerHTML = ''; }
+                setTimeout(() => showSnakeMouseUI(), 800);
             }
 
             // ── 돼지: 고백 이벤트 ──
@@ -4463,8 +4558,8 @@ function generateGuest() {
             if (!doc || !sb) return;
 
             const myItems = gameState.purchasedItems;
+            // 아직 거래한 물건이 없으면 일반 거래로 진행
             if (!myItems || myItems.length === 0) {
-                // 살 물건이 없으면 일반 거래
                 showGuestDialogue('enter');
                 return;
             }
@@ -4509,15 +4604,55 @@ function generateGuest() {
         // ── 고양이: 호감도 대화 시스템 ──
         // ────────────────────────────────────────────
         const catTalkLines = [
-            { q: '"어때, 오늘 나 예쁘지?"', good: '당연하죠~', bad: '그냥 그렇네요', gScore: 25, bScore: -30 },
-            { q: '"이 물건, 다른 곳에서는 안 팔아."', good: '독보적이네요!', bad: '좀 과장 아닌가요?', gScore: 20, bScore: -25 },
-            { q: '"나한테 잘 보이는 게 좋을 텐데~"', good: '물론이죠!', bad: '협박이세요?', gScore: 30, bScore: -40 },
+            { q: '"어때, 오늘 나 예쁘지?"',            good: '당연하죠~',      bad: '그냥 그렇네요',    gScore: 20, bScore: -25 },
+            { q: '"이 물건, 다른 곳에서는 안 팔아."',  good: '독보적이네요!',   bad: '좀 과장 아닌가요?', gScore: 15, bScore: -20 },
+            { q: '"나한테 잘 보이는 게 좋을 텐데~"',   good: '물론이죠!',       bad: '협박이세요?',       gScore: 25, bScore: -35 },
+            { q: '"내 물건 가격이 이 정도는 돼야지."', good: '합리적이에요~',   bad: '좀 비싸네요...',    gScore: 15, bScore: -25 },
+            { q: '"오늘 기분 어때? 나랑 거래하고 싶지?"', good: '물론이죠!',   bad: '글쎄요...',          gScore: 20, bScore: -30 },
         ];
+
+        function showCatGauge() {
+            let gaugeEl = document.getElementById('cat-affinity-gauge');
+            if (!gaugeEl) {
+                gaugeEl = document.createElement('div');
+                gaugeEl.id = 'cat-affinity-gauge';
+                gaugeEl.style.cssText = 'position:fixed;top:2vh;left:50%;transform:translateX(-50%);z-index:9100;text-align:center;pointer-events:none;';
+                document.body.appendChild(gaugeEl);
+            }
+            const pct = gameState.catAffinity;
+            const color = pct >= 70 ? '#ff85a2' : pct >= 40 ? '#fcd53f' : '#ff6b6b';
+            gaugeEl.innerHTML = `
+                <div style="font-family:Gaegu,serif;font-size:1vw;color:#fff;text-shadow:0 0.1vw 0.4vw #000;margin-bottom:0.3vh">
+                    고양이 호감도
+                </div>
+                <div style="width:18vw;height:1.2vh;background:rgba(0,0,0,0.4);border-radius:1vh;overflow:hidden;border:0.1vw solid rgba(255,255,255,0.3)">
+                    <div style="width:${pct}%;height:100%;background:${color};transition:width 0.4s ease;border-radius:1vh"></div>
+                </div>
+                <div style="font-family:Gaegu,serif;font-size:0.9vw;color:#fff;text-shadow:0 0.1vw 0.4vw #000;margin-top:0.2vh">${pct}/100</div>`;
+        }
+
+        function removeCatGauge() {
+            const el = document.getElementById('cat-affinity-gauge');
+            if (el) el.remove();
+        }
+
         function showCatTalkUI() {
             const sb = document.getElementById('speech-bubble');
             if (!sb) return;
-            const q = catTalkLines[Math.floor(Math.random() * catTalkLines.length)];
+            // 이미 쓴 질문 제외하고 랜덤
+            const unused = catTalkLines.filter((_, i) => !(gameState._catUsed || []).includes(i));
+            const pool = unused.length > 0 ? unused : catTalkLines;
+            const qIdx = Math.floor(Math.random() * pool.length);
+            const q = pool[qIdx];
             gameState._catQ = q;
+            if (!gameState._catUsed) gameState._catUsed = [];
+            gameState._catUsed.push(catTalkLines.indexOf(q));
+
+            showCatGauge();
+            // 서류는 숨김 (100/0 확정 전까지)
+            const doc = document.getElementById('game-document');
+            if (doc) doc.style.display = 'none';
+
             sb.innerHTML = `<div style="font-size:1.2vw;font-weight:bold;text-align:center;line-height:1.6">
                 ${q.q}<br>
                 <div style="margin-top:1vh;display:flex;gap:2vw;justify-content:center">
@@ -4528,33 +4663,37 @@ function generateGuest() {
             sb.style.pointerEvents = 'auto';
             sb.classList.add('visible');
         }
+
         function catReply(good) {
             const q = gameState._catQ;
             const delta = good ? q.gScore : q.bScore;
-            gameState.catAffinity = Math.max(0, Math.min(100, (gameState.catAffinity || 0) + delta));
+            gameState.catAffinity = Math.max(0, Math.min(100, (gameState.catAffinity || 50) + delta));
             const sb = document.getElementById('speech-bubble');
             if (sb) { sb.innerHTML = ''; sb.style.pointerEvents = 'none'; sb.classList.remove('visible'); }
 
+            showCatGauge();
+
             if (gameState.catAffinity >= 100) {
-                // 호감도 MAX: 50% 할인
+                // 호감도 MAX: 50% 할인 → 서류 표시
+                removeCatGauge();
+                gameState.catAffinity = 50; // 다음 방문을 위해 리셋
+                gameState._catUsed = [];
                 gameState.itemPrice = Math.floor(gameState.itemPrice * 0.5);
-                showFloatingText('고양이 호감도 MAX!\n가격 50% 할인!', '#a0d8ff');
+                showFloatingText('고양이 호감도 MAX!\n가격 50% 할인!', '#ff85a2');
                 const doc = document.getElementById('game-document');
                 if (doc) { doc.style.display = 'flex'; doc.style.visibility = 'visible'; initSignatureCanvas(); initTearHandler(); }
-                document.getElementById('game-document').querySelector && (() => {
-                    const priceEl = document.querySelector('.doc-price');
-                    if (priceEl) priceEl.innerText = `매입 제안가: ₩ ${gameState.itemPrice.toLocaleString()}`;
-                })();
                 updateDocPrice();
             } else if (gameState.catAffinity <= 0) {
                 // 호감도 0: 도망
+                removeCatGauge();
+                gameState.catAffinity = 50;
+                gameState._catUsed = [];
                 showFloatingText('고양이가 화나서 도망갔습니다!', '#ff6b6b');
                 const guestDiv = document.querySelector('.game-guest');
                 setTimeout(() => { exitGuest(guestDiv); setTimeout(() => { if(gameState.dailyGuestsQueue.length===0) finishAllDeals(); else resetGameTurn(); }, 800); }, 500);
             } else {
-                showFloatingText(`호감도 ${gameState.catAffinity >= 0 ? '+' : ''}${delta} (현재: ${gameState.catAffinity})`, good ? '#a0d8ff' : '#ff6b6b');
-                const doc = document.getElementById('game-document');
-                if (doc) { doc.style.display = 'flex'; doc.style.visibility = 'visible'; initSignatureCanvas(); initTearHandler(); }
+                // 아직 결정 안 남 → 다음 대화 계속
+                setTimeout(() => showCatTalkUI(), 800);
             }
         }
         function updateDocPrice() {
@@ -4569,38 +4708,59 @@ function generateGuest() {
         // ────────────────────────────────────────────
         // ── 뱀+쥐: 꽁냥 말풍선 + 방해 버튼 ──
         // ────────────────────────────────────────────
-        const snakeMouseChats = [
-            '"쥐야, 이번 거래 성공하면 뭐 할거야?" "당연히 우리 둘이 맛있는 거 먹어야죠~"',
-            '"이 전당포 주인, 우리 눈치 못 채는 것 같죠?" "크크크, 완전 봉이야~"',
-            '"거래 빨리 끝내고 어디 갈까?" "아무데나~ 당신이랑 있으면 어디든 좋아요♥"',
-            '"이 물건 값 잘 받아야 할텐데..." "당신 믿어요, 항상 그랬잖아요~"',
+        // 쥐 대사 (위 말풍선)
+        const mouseChats = [
+            "이번 거래 성공하면 뭐 할거야?",
+            "이 전당포 주인, 우리 눈치 못 채는 것 같죠?",
+            "거래 빨리 끝내고 어디 갈까?",
+            "이 물건 값 잘 받아야 할텐데...",
+            "우리 오늘 꼭 성공해야 해.",
+        ];
+        // 뱀 대사 (아래 말풍선)
+        const snakeChats = [
+            "당연히 우리 둘이 맛있는 거 먹어야죠~~",
+            "크크크, 완전 봉이야~",
+            "아무데나~ 당신이랑 있으면 어디든 좋아요~",
+            "당신 믿어요, 항상 그랬잖아요~",
+            "걱정하지 마요, 내가 있잖아요~~",
         ];
         let _snakeMouseChatIdx = 0;
         function showSnakeMouseUI() {
             const doc = document.getElementById('game-document');
             if (doc) { doc.style.display = 'flex'; doc.style.visibility = 'visible'; initSignatureCanvas(); initTearHandler(); }
 
-            // 꽁냥 말풍선 (왼쪽 위)
-            const chatEl = document.createElement('div');
-            chatEl.id = 'snake-mouse-chat';
-            chatEl.style.cssText = 'position:fixed;top:6vh;left:2vw;max-width:24vw;background:#fff8e8;color:#3a2410;font-family:Gaegu,serif;font-size:1.3vw;font-weight:bold;line-height:1.5;border-radius:1vw;border:0.2vw solid #c9a86a;padding:1vw 1.4vw;z-index:9000;box-shadow:0 0.4vw 1.2vw rgba(0,0,0,0.5);';
-            chatEl.innerText = snakeMouseChats[_snakeMouseChatIdx % snakeMouseChats.length];
-            _snakeMouseChatIdx++;
-            document.body.appendChild(chatEl);
+            // 위 말풍선 (쥐)
+            const mouseEl = document.createElement('div');
+            mouseEl.id = 'snake-mouse-chat';
+            mouseEl.style.cssText = 'position:fixed;top:20vh;left:1.5vw;max-width:26vw;background:#fff8e8;color:#3a2410;font-family:Gaegu,serif;font-size:1.5vw;font-weight:bold;line-height:1.5;border-radius:1vw;border:0.2vw solid #c9a86a;padding:1vw 1.5vw;z-index:9000;box-shadow:0 0.4vw 1.2vw rgba(0,0,0,0.5);';
+            mouseEl.innerHTML = '<span style="font-size:1vw;color:#888;display:block;margin-bottom:0.3vh">쥐</span>' + mouseChats[_snakeMouseChatIdx % mouseChats.length];
+            document.body.appendChild(mouseEl);
 
-            // 꽁냥 계속 갱신 (3초마다)
+            // 아래 말풍선 (뱀)
+            const snakeEl = document.createElement('div');
+            snakeEl.id = 'snake-chat';
+            snakeEl.style.cssText = 'position:fixed;top:37vh;left:1.5vw;max-width:26vw;background:#f0fff0;color:#1a3a1a;font-family:Gaegu,serif;font-size:1.5vw;font-weight:bold;line-height:1.5;border-radius:1vw;border:0.2vw solid #6aa86a;padding:1vw 1.5vw;z-index:9000;box-shadow:0 0.4vw 1.2vw rgba(0,0,0,0.5);';
+            snakeEl.innerHTML = '<span style="font-size:1vw;color:#888;display:block;margin-bottom:0.3vh">뱀</span>' + snakeChats[_snakeMouseChatIdx % snakeChats.length];
+            document.body.appendChild(snakeEl);
+
+            _snakeMouseChatIdx++;
+
+            // 3초마다 갱신
             const chatTimer = setInterval(() => {
-                if (!document.getElementById('snake-mouse-chat')) { clearInterval(chatTimer); return; }
-                chatEl.innerText = snakeMouseChats[_snakeMouseChatIdx % snakeMouseChats.length];
+                const m = document.getElementById('snake-mouse-chat');
+                const s = document.getElementById('snake-chat');
+                if (!m || !s) { clearInterval(chatTimer); return; }
+                m.innerHTML = '<span style="font-size:0.85vw;color:#888;display:block;margin-bottom:0.2vh">쥐</span>' + mouseChats[_snakeMouseChatIdx % mouseChats.length];
+                s.innerHTML = '<span style="font-size:0.85vw;color:#888;display:block;margin-bottom:0.2vh">뱀</span>' + snakeChats[_snakeMouseChatIdx % snakeChats.length];
                 _snakeMouseChatIdx++;
             }, 3000);
             gameState._snakeChatTimer = chatTimer;
 
-            // 방해 버튼 (말풍선 아래)
+            // 방해 버튼
             const btnEl = document.createElement('button');
             btnEl.id = 'snake-bother-btn';
-            btnEl.innerText = '방해하기 👊';
-            btnEl.style.cssText = 'position:fixed;top:22vh;left:2vw;padding:0.7vw 1.5vw;font-family:Gaegu,serif;font-size:1.2vw;font-weight:bold;background:#3a2a08;color:#fcd53f;border:0.15vw solid #cba328;border-radius:0.5vw;cursor:pointer;z-index:9001;';
+            btnEl.innerText = '방해하기';
+            btnEl.style.cssText = 'position:fixed;top:54vh;left:1.5vw;padding:0.8vw 2vw;font-family:Gaegu,serif;font-size:1.3vw;font-weight:bold;background:#3a2a08;color:#fcd53f;border:0.15vw solid #cba328;border-radius:0.5vw;cursor:pointer;z-index:9001;';
             btnEl.onclick = snakeBother;
             document.body.appendChild(btnEl);
         }
@@ -4626,8 +4786,9 @@ function generateGuest() {
         function cleanupSnakeUI() {
             clearInterval(gameState._snakeChatTimer);
             const c = document.getElementById('snake-mouse-chat');
+            const s = document.getElementById('snake-chat');
             const b = document.getElementById('snake-bother-btn');
-            if (c) c.remove(); if (b) b.remove();
+            if (c) c.remove(); if (s) s.remove(); if (b) b.remove();
         }
 
         // ────────────────────────────────────────────
@@ -4639,10 +4800,16 @@ function generateGuest() {
             const doc = document.getElementById('game-document');
             if (doc) doc.style.display = 'none';
 
+            const openers = [
+                "혹시,,~ 이 아리따운 미녀분!! 전화번호가 어찌 되시는지~?!",
+                "용감한,,!! 남자가! 미녀를~@@@ 얻는법~,,!!ㅋ"
+            ];
+            const opener = openers[Math.floor(Math.random() * openers.length)];
+
             sb.innerHTML = `<div style="font-size:1.2vw;font-weight:bold;text-align:center;line-height:1.6">
-                "당신을,, 사랑합니다!! ㅋ❤️ 이 물건 천만원에 살 수 있어요??"<br>
+                "${opener}<br>당신을,, 사랑합니다!!"<br>
                 <div style="margin-top:1vh;display:flex;gap:2vw;justify-content:center">
-                    <button onclick="pigAccept()" style="padding:0.5vw 2vw;font-size:1.1vw;background:#3a2a08;color:#fcd53f;border:0.12vw solid #cba328;border-radius:0.4vw;cursor:pointer">수락 ❤️</button>
+                    <button onclick="pigAccept()" style="padding:0.5vw 2vw;font-size:1.1vw;background:#3a2a08;color:#fcd53f;border:0.12vw solid #cba328;border-radius:0.4vw;cursor:pointer">수락</button>
                     <button onclick="pigReject()" style="padding:0.5vw 2vw;font-size:1.1vw;background:#2a0808;color:#ff6b6b;border:0.12vw solid #a32828;border-radius:0.4vw;cursor:pointer">거절</button>
                 </div>
             </div>`;
@@ -4819,8 +4986,8 @@ function rejectItem() {
 
             const guest = document.querySelector('.game-guest');
 
-            // ── 악어: 거래 거절 시 30% 확률 1천만 뜯김 ──
-            if (gameState.lastGuest === 'crocodile' && Math.random() < 0.3) {
+            // ── 악어: 거래 거절 시 50% 확률 1천만 뜯김 ──
+            if (gameState.lastGuest === 'crocodile' && Math.random() < 0.5) {
                 const stolen = 10000000;
                 gameState.money = Math.max(0, gameState.money - stolen);
                 updateMoneyCounter();
@@ -4958,7 +5125,7 @@ function renderLobbyItems() {
             if (entry.judged) {
                 abox.style.display = 'none';
                 jres.style.display = 'block';
-                jres.innerHTML = entry.judgmentResult ? "🔵 당신의 판정: <span style='color:#51cf66;'>[ 진품 판정 완료 ]</span>" : "🔴 당신의 판정: <span style='color:#ff6b6b;'>[ 가품 판정 완료 ]</span>";
+                jres.innerHTML = entry.judgmentResult ? "당신의 판정: <span style='color:#51cf66;'>[ 진품 판정 완료 ]</span>" : "당신의 판정: <span style='color:#ff6b6b;'>[ 가품 판정 완료 ]</span>";
                 
                 let finalImg = entry.item.baseImg + (entry.item.authentic ? '_real.jpg' : '_fake.jpg');
                 if (entry.item.owner === 'pigeon' || entry.item.owner === 'streamer') finalImg = `${entry.item.baseImg}.jpg`;
@@ -4974,7 +5141,7 @@ function renderLobbyItems() {
             document.getElementById('receipt-modal').style.display = 'flex';
         }
 
-        // ── 🔍 돋보기 기능: 물품의 진성 정체 껍데기 필터 오픈 ──
+        // ──  돋보기 기능: 물품의 진성 정체 껍데기 필터 오픈 ──
         function revealItem() {
             if (currentAppraiseIdx === -1) return;
             const entry = gameState.purchasedItems[currentAppraiseIdx];
@@ -5328,7 +5495,7 @@ function renderLobbyItems() {
             const content = document.getElementById('settlement-content');
             if (!modal || !title || !content) return;
 
-            title.innerText = `📋 제 ${gameState.day} 일차 결산 보고서`;
+            title.innerText = ` 제 ${gameState.day} 일차 결산 보고서`;
 
             let todayExpense = 0;
             const todayDeals = gameState.obtainedCount || 0;
@@ -5415,7 +5582,7 @@ function renderLobbyItems() {
             });
 
             endScreen.innerHTML = `
-                <div style="font-size: 4.5vw; margin-bottom: 2vh; text-shadow: 0 0 2vw rgba(252, 213, 63, 0.5); font-family: 'Georgia', serif;">🎉 7일 영업 종료 🎉</div>
+                <div style="font-size: 4.5vw; margin-bottom: 2vh; text-shadow: 0 0 2vw rgba(252, 213, 63, 0.5); font-family: 'Georgia', serif;">7일 영업 종료</div>
                 
                 <div style="background: rgba(0,0,0,0.8); border: 0.3vw solid #cba328; border-radius: 1.5vw; padding: 3vw 5vw; margin-bottom: 4vh; box-shadow: 0 1vw 3vw rgba(0,0,0,0.8); text-align: left; min-width: 45vw;">
                     <div style="font-size: 1.8vw; color: #e8c878; margin-bottom: 2vh; border-bottom: 0.15vw dashed #e8c878; padding-bottom: 1vh; text-align: center; font-weight: bold;">[ 일주일 주간 최종 결산 보고서 ]</div>
@@ -5483,6 +5650,8 @@ let currentBookType = 'guide'; // 'guide'(도감) 또는 'dict'(사전) 상태 �
 
         // ── 책 열기 함수 (어떤 책을 눌렀는지 type을 받습니다) ──
         function openBookReader(type) {
+            // 드래그 후 클릭 억제
+            if (window.__suppressBookClick) { window.__suppressBookClick = false; return; }
             const reader = document.getElementById('book-reader');
             if (!reader || bookReaderOpen) return;
 
@@ -5504,11 +5673,7 @@ let currentBookType = 'guide'; // 'guide'(도감) 또는 'dict'(사전) 상태 �
             if (type === 'dict') reader.classList.add('theme-brown');
             else reader.classList.add('theme-red');
             
-            // 튜토리얼: 서류 보관함 열기 이벤트
-            if (tutorial.active && type === 'documents') {
-                tutEvent('open-docbook');
-                setTimeout(() => { if (tutorial.active) tutRender(); }, 300);
-            }
+            // 튜토리얼: 서류 보관함은 탭 클릭 시 이벤트 발생 (renderDocScrollItems에서 처리)
             
             renderBookReaderContent();
             updateBookPageNo();
@@ -5551,7 +5716,7 @@ let currentBookType = 'guide'; // 'guide'(도감) 또는 'dict'(사전) 상태 �
                         <button onclick="appraiseDocument(${idx})"
                             style="padding:0.5vw 1.4vw; font-size:1vw; font-weight:bold; font-family:'Georgia',serif;
                                    background:#3a2a08; color:#fcd53f; border:0.12vw solid #cba328; border-radius:0.4vw; cursor:pointer;">
-                            🔍 이 물품 감정하기
+                            이 물품 감정하기
                         </button>
                     </div>`;
             }
@@ -5783,7 +5948,7 @@ function goToLobby() {
             // 튜토리얼: 로비 복귀 → 단계 진행 + 주인장 마무리 안내
             if (tutorial.active) {
                 tutEvent('go-lobby');
-                setTimeout(() => { if (tutorial.active) tutRender(); }, 400);
+                setTimeout(() => { if (tutorial.active) tutRender(); }, 1200); // 월드 이동(0.7s) 완전 완료 후
             }
         }
 
@@ -5809,6 +5974,7 @@ function goToLobby() {
         let navDragStartTime = 0;
         function navDragStart(e) {
             if (document.body.classList.contains('modal-open')) return;   // 수첩 열림 중 드래그 차단
+            if (tutorial.active) return;   // 튜토리얼 중 드래그 이동 차단
             if (!isLobbyActive() || enteringGame || isCatalogOpen() || catalogAnimating) return;
             if (document.getElementById('receipt-modal').style.display === 'flex') return;
             navDragStartX = (e.touches ? e.touches[0].clientX : e.clientX);
@@ -6370,7 +6536,8 @@ function goToLobby() {
                 gameState.purchasedItems.push({
                     item: gameState.currentItem,
                     signature: sigDataUrl,
-                    buyPrice: actualPrice
+                    buyPrice: actualPrice,
+                    day: gameState.day
                 });
                 gameState.money -= actualPrice;
                 updateMoneyCounter();
@@ -6522,7 +6689,7 @@ function goToLobby() {
             const content = document.getElementById('settlement-content');
             if (!modal || !title || !content) return;
 
-            title.innerText = `📋 제 ${gameState.day} 일차 결산 보고서`;
+            title.innerText = ` 제 ${gameState.day} 일차 결산 보고서`;
 
             let todayExpense = 0;
             const todayDeals = gameState.obtainedCount || 0;
@@ -7193,7 +7360,7 @@ function startTutorial() {
     </script>
 <div id="settlement-modal" class="game-modal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.85); z-index: 2147483645; display: none; justify-content: center; align-items: center;">
         <div class="refresh-modal-box" style="width: 32vw; max-width: 50vw; padding: 2.5vw 3.5vw;">
-            <div class="refresh-modal-title" id="settlement-title" style="font-size: 2.2vw; text-shadow: 0 0 1vw rgba(252, 213, 63, 0.3);">📋 제 1 일차 결산 보고서</div>
+            <div class="refresh-modal-title" id="settlement-title" style="font-size: 2.2vw; text-shadow: 0 0 1vw rgba(252, 213, 63, 0.3);"> 제 1 일차 결산 보고서</div>
             <div class="refresh-modal-text" id="settlement-content" style="font-size: 1.1vw; line-height: 1.8; text-align: left; margin: 2vw 0; font-family: monospace; color: #e8c878; font-style: normal;">
                 </div>
             <div class="refresh-modal-buttons" style="justify-content: center;">
