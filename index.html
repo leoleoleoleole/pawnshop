@@ -3905,6 +3905,14 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                 }
             },
             { 
+                id: 'crow', frames: ['crow.jpg'], 
+                dialogue: {
+                    enter: ["흔치 않은 물건이다, 기회를 놓치지 말도록.", "어둠 속에서 찾아낸 보물이지", "이것이 네게 불길한 행운을 가져다줄 거다"],
+                    accept: ["반짝이는 것은 언제나 좋지. 거래 성립이다.", "너의 선택이 현명했다는 걸 알게 될 거다.", "이 행운이 너를 지켜주길..."],
+                    reject: ["까마귀는 다시 돌아오지 않는다.", "어리석은 자는 행운을 걷어차는 법이지.", "후회하게 될지도 모르지..."]
+                }
+            },
+            { 
                 id: 'mouse', frames: ['mouse_and_snake.jpg'], 
                 dialogue: {
                     accept: ["입단속 잘하라고.", "좋아, 흔적 없이 사라져 주지.", "거래 성사... 계획대로야.", "거래는 깔끔하게 끝났다. 입조심해라."],
@@ -4783,8 +4791,8 @@ function generateGuest() {
                 deskItem.classList.remove('show');
                 const doc = document.getElementById('game-document');
                 if (doc) doc.style.display = 'none';
-                showGuestDialogue('enter');
-                setTimeout(() => showCrowBuyUI(), 1500);
+  
+                setTimeout(() => showCrowBuyUI(), 500);
                 return;
             }
 
@@ -5399,32 +5407,59 @@ function rejectItem() {
 
             const guest = document.querySelector('.game-guest');
 
-            // ── 악어: 거래 거절 시 50% 확률 1천만 뜯김 ──
+            // ── 악어: 거래 거절 시 50% 확률로 현재 소지금의 20%를 뜯김 ──
             if (gameState.lastGuest === 'crocodile' && Math.random() < 0.5) {
-                const stolen = 10000000;
+                const stolen = Math.floor(gameState.money * 0.2); // 소지금의 20% 계산
                 gameState.money = Math.max(0, gameState.money - stolen);
+                
+                // 돈 차감 UI 업데이트
                 updateMoneyCounter();
+                
+                // 차감액을 실시간 텍스트로 작게 띄우기 (위로 쓱 사라지는 애니메이션)
+                const stolenText = `−₩${stolen.toLocaleString()}`;
+                const floatingDiv = document.createElement('div');
+                floatingDiv.innerText = stolenText;
+                floatingDiv.style.position = 'absolute';
+                floatingDiv.style.top = '30vh';
+                floatingDiv.style.left = '50%';
+                floatingDiv.style.transform = 'translateX(-50%)';
+                floatingDiv.style.color = '#ff6b6b';
+                floatingDiv.style.fontSize = '3vw';
+                floatingDiv.style.fontWeight = 'bold';
+                floatingDiv.style.textShadow = '0 0.5vw 1vw rgba(0,0,0,0.8)';
+                floatingDiv.style.zIndex = '9999';
+                floatingDiv.style.transition = 'all 1.5s ease-out';
+                document.body.appendChild(floatingDiv);
+                
                 setTimeout(() => {
-                    showFloatingText('악어가 협박으로 ₩1,000만을 뜯어갔다!', '#ff6b6b');
+                    floatingDiv.style.top = '10vh';
+                    floatingDiv.style.opacity = '0';
+                }, 50);
+                setTimeout(() => floatingDiv.remove(), 1600);
+                
+                // 악어 전용 대사 + 일반 시스템 플로팅 메시지 동시 출력
+                setTimeout(() => {
+                    showFloatingText(`악어의 협박으로 소지금을 ${stolenText}만큼 뜯겼다...`, '#ff6b6b');
                 }, 800);
-                // 악어 전용 뜯김 대사
+                
                 if (guest) {
                     const sb = document.getElementById('speech-bubble');
                     if (sb) {
-                        sb.innerHTML = '<div style="font-size:1.3vw;font-weight:bold;text-align:center;padding:1vw">"이 정도는 내놔야 공평하지 않겠어? 크크크."</div>';
+                        sb.innerHTML = '<div style="font-size:1.3vw;font-weight:bold;text-align:center;padding:1vw">"이 정도는 내놔야 공평하지 않겠어?"</div>';
                         sb.classList.add('visible');
                         setTimeout(() => sb.classList.remove('visible'), 2000);
                     }
                 }
             }
 
+            // 거절 이후 처리 로직 (공통)
             if (guest) {
                 showGuestDialogue('reject', () => {
                     setTimeout(() => {
                         hideSpeechBubble();
                         exitGuest(guest);
                         setTimeout(() => {
-                            // 광부: 소지금 소진 시 조기 마감
+                            // 소지금 0원 시 조기 마감
                             if (gameState.money <= 0 && !gameState.earlyClose) {
                                 gameState.earlyClose = true;
                                 showFloatingText('소지금 소진! 오늘 영업을 마감합니다.', '#ff6b6b');
@@ -7314,17 +7349,20 @@ function goToLobby() {
             if (!ui || !secEl) return;
             
             ui.style.display = 'block';
-            let timeLeft = 10;
-            secEl.innerText = timeLeft;
+            let timeLeft = 10.00;
+            secEl.innerText = timeLeft.toFixed(2);
 
             taInterval = setInterval(() => {
-                timeLeft--;
-                secEl.innerText = timeLeft;
+                timeLeft -= 0.05; // 50ms 마다 매우 빠르게 감소
                 if (timeLeft <= 0) {
+                    timeLeft = 0;
+                    secEl.innerText = "0.00";
                     stopTimeAttack();
                     lizardRunAway();
+                } else {
+                    secEl.innerText = timeLeft.toFixed(2);
                 }
-            }, 1000);
+            }, 50);
         }
 
         function stopTimeAttack() {
@@ -7437,7 +7475,7 @@ function goToLobby() {
               await: 'go-lobby', hint: '오른쪽으로 이동해 로비로 가세요', onAdvance: 'closeSettle' },
             { // 15 (로비 복귀)
               place: 'bubble-owner',
-              lines: ["다시 왔네?", "게임시작 말풍선을 누르면 다음날이 시작되고 같은 방식으로 게임을 이어나가면 돼.", "게임은 총 7일 동안 이루어지고, 총 20억을 버는게 목적이야.", "잘 운영해보라고!"],
+              lines: ["다시 왔네?", "게임시작 말풍선을 누르면 다음날이 시작되고 같은 방식으로 게임을 이어나가면 돼.", "게임은 총 7일 동안 이루어지고, 총 10억을 버는게 목적이야.", "잘 운영해보라고!"],
               await: 'finish', hint: '계속하려면 말풍선을 클릭하세요' }
         ];
 
