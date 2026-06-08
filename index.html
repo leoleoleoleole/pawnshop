@@ -1109,10 +1109,15 @@
 }
         #desk-item.show {
             display: block;
-            transform: translateY(0);
             opacity: 1;
+            transform: translateY(0);
+            animation: deskItemEnter 0.6s cubic-bezier(0.34, 1.3, 0.64, 1) forwards;
         }
-
+        @keyframes deskItemEnter {
+            0%   { opacity: 0; transform: translateY(4vh) scale(0.92); }
+            60%  { opacity: 1; transform: translateY(-0.5vh) scale(1.02); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
         /* 보유 금액 표시 (게임 화면 좌상단, 카운터 아래) */
         #money-counter {
             display: none;   /* 보유 금액은 왼쪽 날짜 밑(#money-display)으로 이동 */
@@ -2205,7 +2210,7 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
         /* ───────── 튜토리얼 시스템 ───────── */
         /* 캐릭터 옆 말풍선 (로비=주인장, 감정소=감정사) */
         #tut-bubble {
-            position: fixed; z-index: 2147483646;
+            position: fixed; z-index: 2147483647;
             max-width: 26vw; padding: 1.4vw 1.8vw;
             background: #fff8e8; color: #3a2410;
             font-family: 'Gaegu', 'Nanum Pen Script', 'Georgia', serif;
@@ -2213,6 +2218,7 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
             border-radius: 1.2vw; border: 0.2vw solid #c9a86a;
             box-shadow: 0 0.6vw 1.8vw rgba(0,0,0,0.5);
             display: none; cursor: pointer; user-select: none;
+            isolation: isolate;
         }
         #tut-bubble.show { display: block; animation: tutBubblePop 0.3s cubic-bezier(0.34,1.56,0.64,1); }
         @keyframes tutBubblePop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -2941,20 +2947,29 @@ function startAutoAppraise(idx) {
         
         const entry = gameState.purchasedItems[idx];
         entry.judged = true;
-        
-        // 실제 아이템의 진가품 여부가 감정 결과가 됩니다.
         entry.judgmentResult = entry.item.authentic;
 
-        // 사전(갈색 책) 도감 해금 데이터 업데이트
         if (!gameState.unlockedEncyclopedia) gameState.unlockedEncyclopedia = {};
         gameState.unlockedEncyclopedia[entry.item.baseImg] = true;
 
-        // 흔들림 효과 제거 및 UI 재렌더링 (스크롤 위치 유지)
         card.classList.remove('judging');
-        const container = document.getElementById('h-doc-container');
-        const prevScroll = container ? container.scrollLeft : 0;
-        renderDocScrollItems();
-        if (container) container.scrollLeft = prevScroll;
+
+        // 자연스러운 페이드 전환으로 결과 표시
+        card.style.transition = 'opacity 0.4s ease';
+        card.style.opacity = '0';
+        setTimeout(() => {
+            const container = document.getElementById('h-doc-container');
+            const prevScroll = container ? container.scrollLeft : 0;
+            renderDocScrollItems();
+            if (container) container.scrollLeft = prevScroll;
+            // 새로 렌더된 카드에 페이드인
+            const newCard = document.getElementById(`doc-card-${idx}`);
+            if (newCard) {
+                newCard.style.opacity = '0';
+                newCard.style.transition = 'opacity 0.4s ease';
+                requestAnimationFrame(() => { newCard.style.opacity = '1'; });
+            }
+        }, 400);
         
         // 튜토리얼 진행 중이었다면 이벤트 발생
         if (tutorial.active) {
@@ -3493,6 +3508,8 @@ function exitToLobby() {
 const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, tearPoints: [], signCtx: null, isDrawing: false, ropeUsed: false, lastGuest: null, money: 200000000, itemPrice: 20000000, currentItem: null, lastItem: null, purchasedItems: [], day: 1, dealsPerDay: 6, totalDays: 7, needsAppraisal: false, appraisedToday: false, gameStarted: false, dailyGuestsQueue: [], originalDailyQueue: [], readyToFinalize: false,
     /* 캐릭터별 특수 상태 */
     catAffinity: 50,           // 고양이 호감도 (기본 50, 0~100)
+    catVisitCount: 0,          // 고양이 방문 횟수
+    catHasVisited: false,      // 고양이 첫 방문 여부
     catTalking: false,        // 고양이 대화 중
     pigConfessing: false,     // 돼지 고백 중
     snakeMouseBothering: false, // 뱀+쥐 방해 중
@@ -3515,12 +3532,12 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             button_diamond: { name: "다이아 버튼", info: "전 세계 극소수 최정상 크리에이터들만 손에 넣을 수 있는 초고화질 다이아 버튼." },
             button_ruby: { name: "루비 버튼", info: "플랫폼 역사에 영원히 각인될 위대한 업적을 달성한 존재에게만 헌정되는 궁극의 루비 버튼." },
             gold: { name: "공식 정련 순금괴", info: "중앙 은행 공인 정련소의 직인과 일련번호가 선명하게 찍힌 99.99% 포나인 순금 주괴." },
-            clock: { name: "명품 한정판 다이아 시계", info: "스위스 하이엔드 공방의 장인이 극소량으로 조립한 다이아몬드 세공 오토매틱 시계." },
-            lighter: { name: "천연 상아 수제 라이터", info: "최고급 천연 상아 통원석을 예술적으로 카빙하여 황동 가스 부속을 매립한 수제 라이터." },
+            clock: { name: "명품 한정판 순금 시계", info: "스위스 하이엔드 공방의 장인이 극소량으로 조립한 순금 세공 오토매틱 시계." },
+            lighter: { name: "순금 수제 라이터", info: "최고급 천연 순금 통원석을 예술적으로 카빙하여 황동 가스 부속을 매립한 수제 라이터." },
             wine: { name: "밀수된 와인", info: "의문의 블랙 보틀. 겉보기엔 빈티지 와인 같지만 사실 알코올이 없는 최고급 무알콜 포도주스이다." },
-            flower: { name: "천연 루비 세공 장미꽃", info: "천연 적색 루비 원석 조각들을 정밀 카빙 가공하여 장미 꽃잎 형태로 접합한 예술 보석품." },
+            flower: { name: "천연 순금 세공 장미꽃", info: "천연 적색 순금 원석 조각들을 정밀 카빙 가공하여 장미 꽃잎 형태로 접합한 예술 보석품." },
             happy: { name: "사이비 교단의 비밀 성서", info: "기이한 문양และ 주문이 가득 찬 오싹한 가죽 성서." },
-            gem: { name: "천연 보랏빛 자수정 정동", info: "지하 천연 동굴 암반층에서 수만 년간 결정화된 대형 자수정 원석 정동." },
+            gem: { name: "천연 수정", info: "지하 천연 동굴 암반층에서 수만 년간 결정화된 대형 자수정 원석 정동." },
             monocle: { name: "황동 프레임 명품 모노클", info: "상류 귀족 및 회계사들이 지적 품격을 강조하기 위해 외눈에 착용하던 명품 외눈안경." }
         };
 
@@ -3538,7 +3555,8 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             // ── 기본 후보군 (불시/성경구매비둘기 제외) ──
             const normalPool = guests.filter(g =>
                 g.id !== 'streamer' && g.id !== 'lizard' && g.id !== 'crow' &&
-                !(g.id === 'pigeon' && gameState.pigeonBought)
+                !(g.id === 'pigeon' && gameState.pigeonBought) &&
+                !(g.id === 'cat' && gameState.catHasVisited)  // 첫 방문 후 예약 제외
             );
 
             // 스트리머 확률 보정
@@ -3578,6 +3596,17 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             if (crowGuest && Math.random() < 0.20) {
                 const ci = Math.floor(Math.random() * Math.max(1, gameState.dailyGuestsQueue.length - 1)) + 1;
                 gameState.dailyGuestsQueue.splice(ci, 0, { ...crowGuest });
+            }
+
+            // ── 불시 손님: 고양이 (첫 방문 이후 돌발 출현, 호감도 기반 확률) ──
+            if (gameState.catHasVisited) {
+                const aff = gameState.catAffinity || 50;
+                const catProb = aff > 75 ? 0.5 : aff > 60 ? 0.35 : aff > 50 ? 0.2 : 0.1;
+                const catGuest = guests.find(g => g.id === 'cat');
+                if (catGuest && Math.random() < catProb) {
+                    const ci = Math.floor(Math.random() * Math.max(1, gameState.dailyGuestsQueue.length));
+                    gameState.dailyGuestsQueue.splice(ci, 0, { ...catGuest });
+                }
             }
 
             // ── 불시 손님: 도마뱀 ──
@@ -3878,7 +3907,6 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             { 
                 id: 'mouse', frames: ['mouse_and_snake.jpg'], 
                 dialogue: {
-                    enter: ["확실한 물건이니 절대 의심하지 마라", "우린 아주 은밀한 걸 가져왔지", "조용히 처리해 주면 좋겠는데", "빨리 처리해. 꼬리 밟히기 전에."],
                     accept: ["입단속 잘하라고.", "좋아, 흔적 없이 사라져 주지.", "거래 성사... 계획대로야.", "거래는 깔끔하게 끝났다. 입조심해라."],
                     reject: ["후회하게 될 거다!", "이런...", "쯧... 냄새를 맡았나 보군.", "네 녀석 이름은 명부에 적어두겠다."]
                 }
@@ -3889,14 +3917,6 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                     enter: ["그래~ 아주 값진 물건이라고~", "어때~? 마음에 들어~? 당연하지~", "여긴 나에 비해 너무 초라한 걸~", "이 정도 물건은 돼야 내 눈높이에 맞지 않겠어?"],
                     accept: ["당연하지, 영광인 줄 알라고.", "설마 거절이라도 하려 했던 거야?", "흥, 그래도 상식은 박혀 있네.", "다음에 기분 내키면 또 들러주지~"],
                     reject: ["하? 너 제정신이야? 내가 누군진 알고 그러는 거지?", "내 제안을 거절한 대가는 그리 가볍지 않을 텐데~", "이 바닥에서 더 먹고살기 싫은가 보구나?"]
-                }
-            },
-            { 
-                id: 'crow', frames: ['crow.jpg'], 
-                dialogue: {
-                    enter: ["흔치 않은 물건이다, 기회를 놓치지 말도록.", "어둠 속에서 찾아낸 보물이지", "이것이 네게 불길한 행운을 가져다줄 거다"],
-                    accept: ["반짝이는 동전! 좋아!", "계약은 성립되었다", "다시 만날 때를 기다리지..."],
-                    reject: ["멍청한 자식!!", "불운이 너를 덮칠 거다....", "어리석구나....", "어리석은 선택이 너의 명줄을 재촉할 것이다..."]
                 }
             },
             { 
@@ -3931,6 +3951,167 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             },
         ]; // <-- guests 배열이 끝나는 대괄호입니다.
 
+        // ── 진가품 텍스트 묘사 풀 (스팀펑크풍 & 평어체 적용) ──
+        const ITEM_DESC_POOL = {
+            'camera': {
+                real: [
+                    "태엽과 나사결이 불규칙하게 마모되어 있어, 오랫동안 누군가의 거친 손길을 거친 듯한 투박함이 느껴진다.",
+                    "조리개 링을 돌릴 때 부드럽지 않고 거친 금속 마찰음과 함께 미세한 증기가 빠지는 듯한 소리가 들린다.",
+                    "렌즈 안쪽에 은염 화합물과 미세한 검댕이 눌어붙어 있어 세월의 흔적을 고스란히 보여준다.",
+                    "셔터를 누르면 경쾌한 소리 대신 묵직한 태엽이 풀리며 내부의 톱니바퀴가 힘겹게 맞물려 돌아가는 진동이 느껴진다."
+                ],
+                fake: [
+                    "태엽과 양철 나사결이 한 치의 오차도 없이 완벽한 대칭을 이루고 있다.",
+                    "조리개 링을 돌릴 때 마찰 없이 돌며, 얇은 양철판이 부딪히는 가볍운 소리가 연속해서 울려 퍼진다.",
+                    "오래된 기계식 사진기여서일까 곳곳에서 실금이 보이며 랜즈에도 금이 가있다.",
+                    "셔터를 누르면 반발력 없이 부드럽게 스프링이 튕기는 가볍고 찰칵거리는 소리가 난다."
+                ]
+            },
+            'book': {
+                real: [
+                    "고서적임에도 모든 페이지의 두께와 크기가 증기 절단기로 자른 듯 완벽하게 일치하여 이질적인 느낌이다.",
+                    "오래된 철식 잉크가 톱니바퀴 설계도 주변으로 미세하게 번져 있어 형태를 제대로 알아보기 힘든 곳이 있다.",
+                    "오래된 세월의 향기 대신, 책을 펼치면 기분 좋은 표백제 냄새가 은은하게 풍긴다.",    
+                    "표지 가죽이 심하게 갈라져 있고 군데군데 누군가 급하게 황동 징을 박아 덧댄 투박한 자국이 있다.",  
+                    "표지 모서리가 단 한 번도 펼치지 않은 새 책처럼 빳빳하고, 압축 종이 질감이 느껴진다.",            
+                ],
+                fake: [    
+                    "양피지의 두께가 들쭉날쭉하며, 가장자리가 산화되어 불규칙하게 뜯겨져 있어 보관 상태가 의심스럽다.",
+                    "고대 문자로 쓰인 글씨의 테두리가 번짐 없이 날카롭고 선명하다.",
+                    "책등 안쪽을 자세히 살펴보면 실이나 철사가 공업용 아교가 단단하게 종이들을 고정하고 있다.",
+                          
+                    "책등을 엮은 구리선이 녹슬고 삭아내려 살짝만 건드려도 페이지가 통째로 뜯어질 것 같이 아슬아슬하다.",
+                    "책을 펼칠 때마다 마른 흙과 짙은 기계 윤활유 특유의 불쾌한 냄새가 코를 찌른다."
+                ]
+            },
+            'coin': {
+                real: [
+                    "황금빛 광택이 은은하게 감돌며, 묵직한 무게감이 손끝에 전해진다.",
+                    "아무런 문양없이 표면이 깨끗하며, 가장자리가 불규칙하게 마모되어 있다.",
+                    "금화 표면에 지나치게 깨끗하며 인위적인지 구별을 할 수 없다.",
+                    "바닥에 떨어뜨렸을 때 맑게 튕기지 않고 '툭' 하는 둔탁하고 무거운 소리가 난다."
+                ],
+                fake: [
+                    "앞면에 정체불명의 낯선 초상화가 뚜렷하게 각인되어 있으며 어딘가 굉장히 익숙한 느낌이 든다.",
+                    "뒷면에 숫자와 낯선 고대 왕국의 문자로 보이는 문자가 아주 선명하게 적혀 있다.",
+                    "황금빛으로 조잡하게 칠해져 있지만, 테두리의 톱니바퀴 모양을 보니 거리에서 흔히 쓰는 자판기용 동전이 확실하다.",
+                    "무게가 가볍고, 차가운 질감이 느껴진다.",
+                    "바닥에 던지면 '챙그랑' 하는 맑은 쇳소리가 울려 퍼진다."
+                ]
+            },
+            'gold': {
+                real: [
+                    "금괴의 표면이 매끄럽지 않고 곰보처럼 파인 자국과 미세한 냉각 주름이 불규칙하게 퍼져 있다.",
+                    "바닥에 내려놓았을 때 쇳소리가 나지 않고 소리가 흙바닥에 먹히는 듯한 둔탁한 타격음이 발생한다.",
+                    "측면에 새겨진 일련번호의 깊이와 간격이 비뚤빼뚤하여 누군가 급하게 정으로 직접 내리친 듯하다.",
+                    "모서리 부분이 둥글게 마모되거나 무언가에 강하게 찍혀 형태가 온전한 직육면체가 아니다.",
+                    "손에 쥐었을 때 묵직하면서도 묘한 서늘함이 느껴지며, 체온과 동화되기까지 꽤 오랜 시간이 걸린다."
+                ],
+                fake: [
+                    "금괴의 표면이 완벽하게 매끄러워 주변의 빛을 화려하게 반사해 낸다.",
+                    "바닥에 내려놓았을 때 속이 빈 맑고 높은 금속음이 울려 퍼진다.",
+                    "측면에 새겨진 일련번호가 자동 타각기로 찍어낸 듯 완벽한 간격과 일정한 깊이로 정교하게 각인되어 있다.",
+                    "모서리가 증기 절단기로 막 깎아낸 것처럼 예리하고 완벽한 직각을 이루며 흠집 하나 찾아볼 수 없다.",
+                    "손에 쥐었을 때 묵직하면서도 묘한 서늘함이 느껴지며, 무언가 끈적거린다."
+                ]
+            },
+            'clock': {
+                real: [
+                    "초침이 움직일 때 끊어지지 않고 물 흐르듯 연속적으로 이동하며 묵직한 태엽의 진동을 만든다.",
+                    "다이얼 유리에 불빛을 비춰보면 완전히 투명하지 않고 푸르스름한 빛이 살짝 감돈다.",
+                    "귀를 가까이 대면 '째깍' 소리가 아닌 수십 개의 톱니바퀴가 긁히는 듯한 기계음이 난다.",
+                    "시간을 맞추는 용두를 감을 때 뻑뻑하고 묵직한 저항감이 느껴지며 내부에서 태엽이 감기는 마찰음이 발생한다.",
+                    "황동 케이스 안쪽 구석에 미세한 금속 찌꺼기들이 끼어 있어 투박해 보인다."
+                ],
+                fake: [
+                    "초침이 움직일 때 일정한 간격으로 규칙적이게 틱-틱- 거리는 움직임을 보인다.",
+                    "다이얼 유리에 빛을 비추면 굴절이나 두께감 없이 얇은 반사광이 뚜렷하게 보인다.",
+                    "귀를 대면 정교한 태엽이 맞물리는 소리 대신, 비어있는 양철통 안에서 울리듯 가볍고 텅 빈 소리가 난다.",
+                    "시간을 맞추는 용두를 감을 때 저항감없이 태엽이 감기며 부드럽게 돌아간다.",
+                ]
+            },
+            'lighter': {
+                real: [
+                    "도금 표면에 미세한 흠집이 나 있으며, 어두운 곳에서도 은은한 광택이 돈다.",
+                    "뚜껑을 열 때 관절 부위가 뻑뻑해 약간의 힘이 필요하며, 깊고 울림이 있는 묵직한 '핑' 쇳소리가 울린다.",
+                    "톱니바퀴를 굴리면 강한 마찰음과 함께 타오르는 듯한 푸른빛 불꽃이 피어오른다.",
+                    "연료 주입구를 덮은 뚜껑의 나사결이 사람의 손을 많이 탄 듯 심하게 닳아 있다.",
+                    "손에 쥐었을 때 크기에 비해 유독 무겁고, 금속 특유의 서늘함이 체온과 섞이기까지 오랜 시간이 걸린다."
+                ],
+                fake: [
+                    "황금빛을 내려 했으나, 동합금을 쓴 탓에 표면이 기묘하게 붉고 탁한 주황빛을 띤다.",
+                    "뚜껑을 열 때 관절 부위가 뻑뻑해 약간의 힘이 필요하며, 양철판이 부딪히는 짧고 가벼운 소리가 난다.",
+                    "톱니바퀴를 굴리면 약한 마찰음과 함께, 거칠고 정열정인 붉은색 불꽃이 피어오른다.",
+                    "수십 년 된 골동품이라기엔 모서리와 이음새가 기계에서 찍어낸 것 처럼 날카롭고 깨끗하며 전체적인 관리 상태가 좋다.",
+                    "손에 쥐었을 때 겉보기와 달리 가볍고, 금속 특유의 서늘함이 체온과 섞이기까지 큰 시간이 걸리지 않는다."
+                ]
+            },
+            'wine': {
+                real: [
+                    "병을 불빛에 비춰보면 맑지 않고 바닥에 탁한 모래 같은 포도 껍질 침전물이 뭉쳐서 두껍게 가라앉아 있다.",
+                    "병목을 막고 있는 코르크 마개가 내부의 습기를 머금어 시커먼 색으로 촉촉하게 젖어 팽창해 있으며, 톱밥을 뭉친 질감이다..",
+                    "코를 대면 향긋한 과일 향 대신 젖은 흙, 가죽, 그리고 눅눅한 지하실의 곰팡이 냄새 같은 무거운 향이 훅 올라온다.",
+                    "병에 붙은 양피지 라벨이 습기로 인해 쭈글쭈글하고 글씨를 알아보기 힘들 정도로 가장자리가 해져 있다.",
+                    "병을 살짝 흔들었을 때 내부의 액체가 점성 있는 용액처럼 조금 묵직하게 유리벽을 타고 서서히 흘러내린다."
+                ],
+                fake: [
+                    "수십 년 된 와인임에도 병을 강하게 흔들어도 바닥에 가라앉는 침전물 하나 없이 속이 유리처럼 맑고 투명하다.",
+                    "코르크 마개가 수분을 흡수하지 않은 듯 뽀송뽀송하게 건조한 상태이며, 톱밥을 뭉친 질감이다.",
+                    "코를 대면 복잡한 숙성의 향 대신, 깔끔한 알코올과 포도의 냄새가 은은하게 풍긴다.",
+                    "병에 붙은 라벨이 세월의 풍파를 겪지 않은 듯, 대량 인쇄된 공장제 종이처럼 빳빳하고 매끄러운 광택을 낸다.",
+                    "병을 살짝 흔들면 가볍고 찰랑거리는 소리가 나며 유리벽을 타고 부드럽게 미끄러져 내린다."
+                ]
+            },
+            'flower': {
+                real: [
+                    "짙은 빛을 띠고 있으며, 자연의 유려함보다는 인위적이며 크고 무식하게 주조되었다.",
+                    "굵고 투박한 줄기에는 정교한 태엽과 톱니바퀴 문양이 양각되어 있어 귀족들의 사치품임을 증명한다.",
+                    "꽃잎의 두께가 제각각 다르고 투박하여, 억지로 빚어낸 거친 수공예의 흔적이 역력하다.",
+                    "꽃받침 아래의 미세한 용두를 돌리면 황금 꽃잎이 묵직한 마찰음을 내며 느릿하고 기괴하게 전개된다.",
+                    "손에 쥐었을 때 생화의 가벼움은 전혀 없고, 사람의 뼈를 부러뜨릴 수 있을 정도로 무식하게 무거운 중량이 느껴진다."
+                ],
+                fake: [
+                    "화려한 광택을 띠고 있으나, 깊이감 없는 창백한 빛깔을 가지고 있다.",
+                    "줄기 부분을 살짝 쥐어보면 금속의 묵직함 대신, 속이 빈 가벼운 느낌이 들며 건들면 찌그러질 듯 삐걱거린다.",
+                    "꽃잎의 두께와 곡률이 한 치의 오차도 없이 동일하여, 공장의 증기 프레스로 수천 개씩 찍어낸 조잡한 양산품의 형태를 띤다.",
+                    "꽃받침 아래에 기계 장치가 달려 있으나, 돌려보아도 작동을 하지 않고 내부에서 헛도는 소리만 날 뿐이다.",
+                    "재물을 과시하려는 듯한 과장된 크기에 비해 무게가 가벼워 휴대하기 편안하다."
+                ]
+            },
+            'gem': {
+                real: [
+                    "바깥쪽 모암 부분에 흙과 먼지가 켜켜이 퇴적되어 굳은 흉측한 층리 결이 남아 있다.",
+                    "안쪽 결정들의 크기가 들쭉날쭉하며, 불빛을 받는 각도에 따라 색이 거무튀튀하고 칙칙하게 변하기도 한다.",
+                    "결정의 뿌리 쪽으로 갈수록 색이 탁해지고 불투명해지는 색들의 불규칙한 그라데이션이 보인다.",
+                    "결정과 겉의 모암이 만나는 경계선이 복잡하게 얽혀 특유의 질감이 두드러진다.",
+                    "손으로 표면을 훑어보면 깎아지른 듯 날카로우면서도 불규칙한 결정의 단면이 손끝을 베일 듯 무자비하게 스친다."
+                ],
+                fake: [
+                    "바깥쪽 모암 부분이 돌가루를 반듯하게 뭉쳐놓은 것처럼 질감이 균일하고 밋밋하여 조형물 같은 느낌을 준다.",
+                    "안쪽 결정들의 크기와 밖으로 튀어나온 각도 메우 투박하여 길거리에 떨어진 돌덩이 같다.",
+                    "결정의 뾰족한 끝부분이 짙은 회색이고 안쪽 뿌리는 완전히 불투명하여, 인공 염색액에 담갔다 뺀 흔적이 다분하다.",
+                    "결정과 겉의 모암의 경계선이 다듬은 것처럼 일직선으로 뚜렷하고 깔끔하게 나뉘어 있다.",
+                    "결정의 표면이 매끄럽게 연마 처리를 마친 것처럼 날카로움 없이 둥글고 부드럽다."
+                ]
+            },
+            'monocle': {
+                real: [
+                    "렌즈에 어떠한 도수나 굴절률이 없으며 단순 자기 과시용 장식품으로 쓰이는 듯하다.",
+                    "프레임 안쪽에 장인의 이니셜이 뾰족한 끌로 억지로 찍어낸 듯 깊이가 다르고 삐뚤빼뚤하게 새겨져 있다.",
+                    "피부와 직접 닿는 프레임 부분의 황동 도금이 사람의 땀과 증기에 의해 은은하게 녹슬고 마모되어 있다.",
+                    "렌즈를 감싸는 태엽과 프레임의 장력이 미세하게 약해져 있어, 흔들면 렌즈가 아주 살짝 달그락거리는 소리가 난다.",
+                    "콧대에 닿는 패드 부분의 가죽이 오랜 사용으로 마모되어 누군가의 피부색에 가깝게 짙게 땀에 전 자국이 있다."
+                ],
+                fake: [
+                    "렌즈를 통해 글씨를 보면 굴절이 들어가 있어 시야가 묘하게 왜곡되고 살짝 어지럽다.",
+                    "장인의 이니셜이 폰트가 반듯하고 일정한 얕은 깊이로 완벽하게 찍혀 있다.",
+                    "수십 년 된 물건이라는 설명이 무색하게 프레임에 녹슨 곳 하나 없이 관리가 잘 되어 깨끗하다.",
+                    "렌즈와 프레임 사이의 유격이 전혀 없이, 빈틈없이 고정되어 있다.",
+                    "콧대 패드 부분의 가죽이 뻣뻣함하고 관리를 위해 사용한 듯한 화학 약품 냄새가 난다."
+                ]
+            }
+        };
+
         const items = [
             // ── 공용 물품 ──
             { id:'com1', owner:'common', cat:'골동품', baseImg:'camera', authentic:true, name:"앤틱 옛날 카메라", desc:"세월의 흔적이 고스란히 묻어있는 구식 수동 카메라." },
@@ -3953,27 +4134,27 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             // ── 까마귀 전용 ──
 
             // ── 악어 전용 ──
-            { id:'crc1', owner:'crocodile', cat:'사치품', baseImg:'clock', authentic:true, name:"명품 한정판 다이아 시계", desc:"최고급 브랜드에서 소량 제작한 부의 상징인 한정판 시계." },
-            { id:'crc2', owner:'crocodile', cat:'사치품', baseImg:'clock', authentic:false, name:"명품 한정판 다이아 시계", desc:"공사장 노가다판에서 흔히 보이는 보급형 손목 시계" },
+            { id:'crc1', owner:'crocodile', cat:'사치품', baseImg:'clock', authentic:true, name:"명품 한정푼 순금 시계", desc:"최고급 브랜드에서 소량 제작한 부의 상징인 한정판 시계." },
+            { id:'crc2', owner:'crocodile', cat:'사치품', baseImg:'clock', authentic:false, name:"명품 한정판 순금 시계", desc:"공사장 노가다판에서 흔히 보이는 보급형 손목 시계" },
 
             // ── 고양이 전용 ──
-            { id:'cat1', owner:'cat', cat:'사치품', baseImg:'lighter', authentic:true, name:"천연 상아 수제 라이터", desc:"순금을 통째로 녹이고 코딩한 귀족의 수제 라이터." },
-            { id:'cat2', owner:'cat', cat:'사치품', baseImg:'lighter', authentic:false, name:"천연 상아 수제 라이터", desc:"금색 라카칠로 금색입힌 라이터이다, 냄새가 안 좋다." },
+            { id:'cat1', owner:'cat', cat:'사치품', baseImg:'lighter', authentic:true, name:"순금 수제 라이터", desc:"순금을 통째로 녹이고 코딩한 귀족의 수제 라이터." },
+            { id:'cat2', owner:'cat', cat:'사치품', baseImg:'lighter', authentic:false, name:"순금 수제 라이터", desc:"금색 라카칠로 금색입힌 라이터이다, 냄새가 안 좋다." },
 
             // ── 쥐 & 뱀 전용 (★포도주스 반전 반영!) ──
             { id:'mou1', owner:'mouse', cat:'음료', baseImg:'wine', authentic:true, name:"밀수된 와인", desc:"의문의 블랙 보틀. 겉보기엔 빈티지 와인 같지만 사실 알코올이 없는 최고급 무알콜 포도주스이다." },
             { id:'mou2', owner:'mouse', cat:'음료', baseImg:'wine', authentic:false, name:"밀수된 와인", desc:"의문의 블랙 보틀. 겉보기엔 빈티지 와인 같지만 사실 안에는 물이 담겨있다." },
 
             // ── 돼지 전용 ──
-            { id:'pig1', owner:'pig', cat:'예술품', baseImg:'flower', authentic:true, name:"천연 루비 세공 장미꽃", desc:"꽃잎 하나하나를 천연 루비로 정교하게 깎아 만든 화려한 보석 장미." },
-            { id:'pig2', owner:'pig', cat:'예술품', baseImg:'flower', authentic:false, name:"천연 루비 세공 장미꽃", desc:"꽃잎 하나하나를 천연 루비로 정교하게 깎아 만든 화려한 보석 장미." },
+            { id:'pig1', owner:'pig', cat:'예술품', baseImg:'flower', authentic:true, name:"천연 순금 세공 장미꽃", desc:"꽃잎 하나하나를 천연 루비로 정교하게 깎아 만든 화려한 보석 장미." },
+            { id:'pig2', owner:'pig', cat:'예술품', baseImg:'flower', authentic:false, name:"천연 순금 세공 장미꽃", desc:"꽃잎 하나하나를 천연 루비로 정교하게 깎아 만든 화려한 보석 장미." },
 
             // ── 비둘기 전용 (진가품 없음, 파일명 그대로) ──
             { id:'pge1', owner:'pigeon', cat:'종교물품', baseImg:'happy', authentic:true, name:"사이비 교단의 비밀 성서", desc:"기이한 문양และ 주문이 가득 찬 오싹한 가죽 성서." },
 
             // ── 광부 전용 ──
-            { id:'min1', owner:'miners', cat:'보석 원석', baseImg:'gem', authentic:true,  name:"천연 보랏빛 자수정 정동", desc:"안쪽에 푸른 빛의 천연 수정이 밝게 빛나고 있는 귀중한 보석." },
-            { id:'min2', owner:'miners', cat:'보석 원석', baseImg:'gem', authentic:false, name:"평범한 돌맹이",            desc:"그냥 길가에서 집어온 돌멩이. 아무런 가치가 없다." },
+            { id:'min1', owner:'miners', cat:'보석 원석', baseImg:'gem', authentic:true,  name:"천연 수정", desc:"안쪽에 푸른 빛의 천연 수정이 밝게 빛나고 있는 귀중한 보석." },
+            { id:'min2', owner:'miners', cat:'보석 원석', baseImg:'gem', authentic:false, name:"평범한 돌맹이", desc:"그냥 길가에서 집어온 돌멩이. 아무런 가치가 없다." },
             // ── 염소 전용 ──
             { id:'goa1', owner:'goat', cat:'사치품', baseImg:'monocle', authentic:true, name:"황동 프레임 명품 모노클", desc:"귀족이나 회계사들이 한쪽 눈에 끼는 지적이고 고급스러운 외눈안경." },
             { id:'goa2', owner:'goat', cat:'사치품', baseImg:'monocle', authentic:false, name:"황동 프레임 명품 모노클", desc:"귀족이나 회계사들이 한쪽 눈에 끼는 지적이고 고급스러운 외눈안경의 레플리카 버전." }
@@ -4079,7 +4260,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             let entryMode;
             if (isFreshGame) entryMode = 'new';
             else if (startingNextDay) { entryMode = 'nextday'; gameState.day += 1; }
-            else entryMode = 'resume';   
+            else entryMode = 'resume';
             gameState._entryMode = entryMode;
             gameState.gameStarted = true;
 
@@ -4186,6 +4367,7 @@ function startGameSetup(mode = 'new') {
                 gameState.needsAppraisal = false;
                 gameState.appraisedToday = false;
                 gameState.readyToFinalize = false;
+                gameState._settlementShown = false;
                 gameState.surpriseProbability = 0.2;
                 
                 // ★ 새 게임 시작 시 도감 해금 기록을 텅 빈 상태로 초기화합니다.
@@ -4201,6 +4383,7 @@ function startGameSetup(mode = 'new') {
                 gameState.obtainedCount = 0;
                 gameState.needsAppraisal = false;
                 gameState.appraisedToday = false;
+                gameState._settlementShown = false;
                 
                 prepareNewDay(); 
             }
@@ -4243,6 +4426,9 @@ function startGameSetup(mode = 'new') {
             // 고양이 호감도 게이지 정리
             if (typeof removeCatGauge === 'function') removeCatGauge();
             else { const g = document.getElementById('cat-affinity-gauge'); if (g) g.remove(); }
+            // game-document pointer-events 초기화
+            const gd = document.getElementById('game-document');
+            if (gd) gd.style.pointerEvents = '';
             const doc = document.getElementById('game-document');
             doc.style.display = 'none'; doc.style.visibility = 'visible';
             doc.classList.remove('torn'); doc.classList.remove('burning-doc');
@@ -4291,6 +4477,11 @@ function startGameSetup(mode = 'new') {
 
        // ── 상황별 랜덤 대사 타이핑 출력 & 특수 손님 경고 ──
         function showGuestDialogue(situation, onComplete) {
+            // 쥐+뱀: 큰 말풍선 미사용
+            if (gameState.lastGuest === 'mouse') {
+                if (typeof onComplete === 'function') onComplete();
+                return;
+            }
             const sb = document.getElementById('speech-bubble');
             if (!sb) return;
 
@@ -4358,6 +4549,26 @@ function generateGuest() {
                 finishAllDeals();
                 return;
             }
+
+            // 비둘기 전도로 도망간 손님 알림 연출
+            if (gameState._pigeonScaredName) {
+                const scaredName = gameState._pigeonScaredName;
+                gameState._pigeonScaredName = null;
+                const doc = document.getElementById('game-document');
+                showFloatingText(`${scaredName} 손님이 전도에 질려 도망쳤습니다!`, '#ffd700');
+                if (doc && doc.style.display !== 'none') {
+                    doc.style.transition = 'transform 0.4s ease-out, opacity 0.4s ease';
+                    doc.style.transform = 'translateY(-30vh) scale(0.85)';
+                    doc.style.opacity = '0.3';
+                    setTimeout(() => {
+                        doc.style.transform = '';
+                        doc.style.opacity = '';
+                        doc.style.transition = '';
+                    }, 1200);
+                }
+                setTimeout(() => generateGuest(), 1800);
+                return;
+            }
             const guest = gameState.dailyGuestsQueue.shift();
             gameState.lastGuest = guest.id;
             gameState.currentGuestData = guest;
@@ -4367,9 +4578,9 @@ function generateGuest() {
                 guest.id !== 'lizard' && guest.id !== 'crow' && guest.id !== 'streamer') {
                 const orderIdx = gameState.originalDailyQueue.findIndex(g => g.id === guest.id);
                 if (orderIdx >= 0) {
-                    const orderNames = ['첫 번째','두 번째','세 번째','네 번째','다섯 번째'];
-                    const guestName = guestDisplayNames[guest.id] || guest.id;
-                    showFloatingText(`${orderNames[orderIdx]||orderIdx+1+'번째'} 손님\n${guestName}`, '#fcd53f');
+                    const orderKr = ['첫','두','세','네','다섯','여섯','일곱','여덟','아홉','열'];
+                    const label = (orderKr[orderIdx] || (orderIdx+1)) + ' 번째 손님';
+                    showFloatingText(label, '#fcd53f');
                 }
             }
             let itemData;
@@ -4406,6 +4617,24 @@ function generateGuest() {
                 } while (validItems.length > 1 && itemData.id === gameState.lastItem);
             }
 
+            // ★ [핵심 추가] 아이템별 진가품 설명 랜덤 선택 로직
+            itemData = { ...itemData };
+            const pool = ITEM_DESC_POOL[itemData.baseImg];
+            if (pool) {
+                const isReal = itemData.authentic;
+                const descVariants = isReal ? pool.real : pool.fake;
+                if (descVariants && descVariants.length > 0) {
+                    const randomIdx = Math.floor(Math.random() * descVariants.length);
+                    if (guest.id === 'monkey') {
+                        // 원숭이가 훔쳐온 물건인 경우 장물 단서 텍스트 유지
+                        itemData.desc = `(누군가의 주머니나 보물창고에서 훔쳐온 흔적이 뚜렷한 장물입니다.) ${descVariants[randomIdx]}`;
+                    } else {
+                        // 일반 손님의 경우 텍스트를 무작위 변형문으로 완전 대체
+                        itemData.desc = descVariants[randomIdx];
+                    }
+                }
+            }
+
             gameState.lastItem = itemData.id;
             gameState.currentItem = itemData;
 
@@ -4414,14 +4643,14 @@ function generateGuest() {
             else if (itemData.id === 'str2') gameState.itemPrice = 30000000;   // 골드 3천
             else if (itemData.id === 'str3') gameState.itemPrice = 30000000;   // 다이아 3천
             else if (itemData.id === 'str4') gameState.itemPrice = 30000000;   // 루비 3천
-            else if (itemData.owner === 'miners') gameState.itemPrice = 20000000; // 광부 2천 고정
-            else if (itemData.owner === 'goat') {
-                // 염소: 3천~5천만 사이 랜덤 (천만 단위)
+            else if (guest.id === 'miners') gameState.itemPrice = 20000000; // 광부 2천 고정
+            else if (guest.id === 'goat') {
+                // 염소: 3천/4천/5천만 중 랜덤
                 gameState.itemPrice = (Math.floor(Math.random() * 3) + 3) * 10000000;
             }
+            else if (guest.id === 'crocodile') gameState.itemPrice = 40000000; // 악어 4천만 고정
+            else if (guest.id === 'pigeon') gameState.itemPrice = 0; // 비둘기 성경 0원
             else if (itemData.owner === 'common') gameState.itemPrice = 10000000;
-            else if (itemData.owner === 'crocodile') gameState.itemPrice = 40000000; // 악어 4천만
-            else if (itemData.owner === 'pigeon') gameState.itemPrice = 0; // 비둘기 성경 0원
             else gameState.itemPrice = 20000000;
 
             const guestDiv = document.createElement('div');
@@ -4530,11 +4759,11 @@ function generateGuest() {
                 gameState.money += donate;
                 updateMoneyCounter();
                 showFloatingText('비둘기는 신자인 당신을 위해 매일 기부를 하러 찾아 올 것입니다.', '#a0d8ff');
-                // 50% 확률로 다음 손님 도망
+                // 50% 확률로 다음 손님 도망 → 다음 턴에 알림
                 if (Math.random() < 0.5 && gameState.dailyGuestsQueue.length > 0) {
                     const scared = gameState.dailyGuestsQueue.shift();
                     const scaredName = (guestDisplayNames && guestDisplayNames[scared.id]) || scared.id;
-                    setTimeout(() => showFloatingText(`${scaredName} 손님이 전도에 질려 도망쳤습니다!`, '#ffd700'), 1500);
+                    gameState._pigeonScaredName = scaredName; // 다음 턴에 연출용
                 }
                 // 2.5초 후 퇴장
                 setTimeout(() => {
@@ -4577,6 +4806,9 @@ function generateGuest() {
             } else if (guest.id === 'pig') {
                 // 돼지: 입장 대사 없이 바로 고백 대사
                 setTimeout(() => showPigConfessUI(), 800);
+            } else if (guest.id === 'mouse') {
+                // 쥐+뱀: 큰 말풍선(speech-bubble) 없이 꽁냥 말풍선만 사용
+                setTimeout(() => showSnakeMouseUI(), 800);
             } else {
                 showGuestDialogue('enter');
             }
@@ -4592,12 +4824,7 @@ function generateGuest() {
                 setTimeout(() => showCatTalkUI(), 1500);
             }
 
-            // ── 뱀+쥐: 꽁냥 말풍선 + 방해 버튼 (기존 입장 대사 말풍선 생략) ──
-            if (guest.id === 'mouse') {
-                const sb2 = document.getElementById('speech-bubble');
-                if (sb2) { sb2.classList.remove('visible'); sb2.innerHTML = ''; }
-                setTimeout(() => showSnakeMouseUI(), 800);
-            }
+            // ── 뱀+쥐: 위에서 처리됨 ──
         }
         
         // ── 스트리머 방송 허락 질문 ──
@@ -4684,7 +4911,7 @@ function generateGuest() {
             const eligible = myItems.filter(e => e.item.owner !== 'pigeon');
             if (eligible.length === 0) { showGuestDialogue('enter'); return; }
             const target = eligible[Math.floor(Math.random() * eligible.length)];
-            const price = Math.floor((Math.random() * 4 + 1) * 10000000); // 1천~5천만
+            const price = roundToLeadingDigit(Math.floor((Math.random() * 4 + 1) * 10000000)); // 1천~5천만, 앞자리만
             gameState.crowTargetItem = { entry: target, price };
 
             if (doc) { doc.style.display = 'none'; }
@@ -4701,7 +4928,15 @@ function generateGuest() {
         function crowSell() {
             const { entry, price } = gameState.crowTargetItem || {};
             if (!entry) return;
+            // purchasedItems에서 제거하되 결산용 crowSales에 기록
             gameState.purchasedItems = gameState.purchasedItems.filter(e => e !== entry);
+            if (!gameState.crowSales) gameState.crowSales = [];
+            gameState.crowSales.push({
+                item: entry.item,
+                crowPrice: price,
+                day: gameState.day,
+                buyPrice: entry.buyPrice || 0
+            });
             gameState.money += price;
             updateMoneyCounter();
             showFloatingText(`까마귀에게 팔았습니다! +₩${price.toLocaleString()}`, '#fcd53f');
@@ -4759,23 +4994,35 @@ function generateGuest() {
             if (el) el.remove();
         }
 
+        function getCatDiscount() {
+            const aff = gameState.catAffinity || 50;
+            if (aff > 75) return 0.50;
+            if (aff > 60) return 0.25;
+            if (aff > 50) return 0.10;
+            return 0;
+        }
+
         function showCatTalkUI() {
             const sb = document.getElementById('speech-bubble');
             if (!sb) return;
+
+            // 방문 횟수별 호감도 상승량 계산
+            const visitCount = gameState.catVisitCount || 0;
+            const gainMap = [10, 15, 50]; // 1,2,3번째 방문
+            const maxGain = gainMap[Math.min(visitCount, gainMap.length - 1)];
+
             const unused = catTalkLines.filter((_, i) => !(gameState._catUsed || []).includes(i));
             const pool = unused.length > 0 ? unused : catTalkLines;
             const q = pool[Math.floor(Math.random() * pool.length)];
-            gameState._catQ = q;
+            gameState._catQ = { ...q, maxGain };
             if (!gameState._catUsed) gameState._catUsed = [];
             gameState._catUsed.push(catTalkLines.indexOf(q));
 
-            // 서류가 아직 없으면 열고 → 게이지를 서명칸에 배치 (순서 중요)
             const doc = document.getElementById('game-document');
             if (doc && doc.style.display === 'none') {
                 doc.style.display = 'flex'; doc.style.visibility = 'visible';
                 initSignatureCanvas(); initTearHandler();
             }
-            // 서류 표시 직후 게이지 생성 (DOM이 그려진 다음 프레임에서)
             requestAnimationFrame(() => showCatGauge());
 
             sb.innerHTML = `<div style="font-size:1.2vw;font-weight:bold;text-align:center;line-height:1.6">
@@ -4791,38 +5038,43 @@ function generateGuest() {
 
         function catReply(good) {
             const q = gameState._catQ;
-            const delta = good ? q.gScore : q.bScore;
+            // 좋은 답변: maxGain 만큼 상승 / 나쁜 답변: gScore/bScore 사용
+            const delta = good ? (q.maxGain || q.gScore) : q.bScore;
             gameState.catAffinity = Math.max(0, Math.min(100, (gameState.catAffinity || 50) + delta));
             const sb = document.getElementById('speech-bubble');
             if (sb) { sb.innerHTML = ''; sb.style.pointerEvents = 'none'; sb.classList.remove('visible'); }
 
+            // 방문 횟수 증가 (한 번 방문 당 한 번만)
+            gameState.catVisitCount = (gameState.catVisitCount || 0) + 1;
+            gameState.catHasVisited = true;
+
             showCatGauge();
 
-            if (gameState.catAffinity >= 100) {
-                // 호감도 MAX: 50% 할인 → 서류에 취소선 + 할인가 표시
+            // 호감도 구간별 할인 적용
+            const discount = getCatDiscount();
+            const origPrice = gameState.itemPrice;
+
+            if (gameState.catAffinity <= 0) {
+                // 호감도 0: 도망
                 removeCatGauge();
-                gameState.catAffinity = 50;
-                gameState._catUsed = [];
-                const origPrice = gameState.itemPrice;
-                gameState.itemPrice = Math.floor(origPrice * 0.5);
-                showFloatingText('고양이 호감도 MAX!\n가격 50% 할인!', '#ff85a2');
-                // 서류 가격란: 원래 가격 취소선 + 할인가
-                const priceEl = document.getElementById('doc-price');
-                if (priceEl) {
-                    priceEl.innerHTML = `매입 제안가: <span style="text-decoration:line-through;color:#999">₩ ${origPrice.toLocaleString()}</span> → <span style="color:#e53935;font-weight:bold">₩ ${gameState.itemPrice.toLocaleString()}</span>`;
-                }
-            } else if (gameState.catAffinity <= 0) {
-                // 호감도 0: 서류 숨기고 도망
-                removeCatGauge();
-                gameState.catAffinity = 50;
-                gameState._catUsed = [];
                 const doc = document.getElementById('game-document');
                 if (doc) doc.style.display = 'none';
                 showFloatingText('고양이가 화나서 도망갔습니다!', '#ff6b6b');
                 const guestDiv = document.querySelector('.game-guest');
                 setTimeout(() => { exitGuest(guestDiv); setTimeout(() => { if(gameState.dailyGuestsQueue.length===0) finishAllDeals(); else resetGameTurn(); }, 800); }, 500);
             } else {
-                setTimeout(() => showCatTalkUI(), 800);
+                // 할인 적용 후 서류 표시
+                removeCatGauge();
+                if (discount > 0) {
+                    gameState.itemPrice = Math.floor(origPrice * (1 - discount));
+                    showFloatingText(`고양이 호감도 ${gameState.catAffinity}\n${Math.round(discount*100)}% 할인!`, '#ff85a2');
+                    const priceEl = document.getElementById('doc-price');
+                    if (priceEl) {
+                        priceEl.innerHTML = `매입 제안가: <span style="text-decoration:line-through;color:#999">₩ ${origPrice.toLocaleString()}</span> → <span style="color:#e53935;font-weight:bold">₩ ${gameState.itemPrice.toLocaleString()}</span>`;
+                    }
+                } else {
+                    showFloatingText(`고양이 호감도 ${gameState.catAffinity}`, '#ff85a2');
+                }
             }
         }
         function updateDocPrice() {
@@ -4956,8 +5208,8 @@ function generateGuest() {
             showGuestDialogue('accept', () => {
                 setTimeout(() => {
                     showFloatingText(isGood
-                        ? '사랑하는 당신을 위해 물건을 헐값에 제시합니다.'
-                        : '사랑하는 당신을 위해 물건을 헐값에 제시합니다.', isGood ? '#a0d8ff' : '#ffd700');
+                        ? '돼지가 사랑하는 당신을 위해 물건을 헐값에 팝니다.'
+                        : '돼지가 사랑하는 당신을 위해 물건을 헐값에 팝니다.', isGood ? '#a0d8ff' : '#ffd700');
                     const doc = document.getElementById('game-document');
                     if (doc) { doc.style.display = 'flex'; doc.style.visibility = 'visible'; initSignatureCanvas(); initTearHandler(); }
                     // 10억 취소선 + 1천만 표시
@@ -4984,7 +5236,7 @@ function generateGuest() {
             gameState.signCtx.strokeStyle = '#2c1a0e'; gameState.signCtx.lineWidth = 3.5;
             gameState.signCtx.lineJoin = 'round'; gameState.signCtx.lineCap = 'round';
             sc.onmousedown = (e) => {
-                // 고양이 호감도가 아직 결정되지 않았으면 서명 차단
+                // 고양이 호감도가 아직 결정되지 않았으면 서명 차단 (고양이 손님일 때만)
                 if (gameState.lastGuest === 'cat' && document.getElementById('cat-affinity-gauge')) return;
                 e.stopPropagation();
                 gameState.isDrawing = true;
@@ -5100,7 +5352,7 @@ function showFloatingText(text, color) {
     color = color || '#fcd53f';
     const el = document.createElement('div');
     el.style.cssText = [
-        'position:fixed','top:30vh','left:50%','transform:translateX(-50%)',
+        'position:fixed','top:12vh','left:50%','transform:translateX(-50%)',
         'font-family:Gaegu,serif','font-size:1.5vw','font-weight:bold',
         'color:' + color,
         'background:rgba(0,0,0,0.72)',
@@ -5587,7 +5839,8 @@ function renderLobbyItems() {
                     return;
                 }
                 // 카탈로그(감정사 책)를 열어보고 나오면 오늘 감정 완료로 인정
-                if (gameState.needsAppraisal && !gameState.appraisedToday) {
+                if (gameState.needsAppraisal && !gameState._settlementShown) {
+                    gameState._settlementShown = true;
                     completeAppraisal();
                 }
             }, 1050);
@@ -5604,12 +5857,11 @@ function renderLobbyItems() {
                 updateMoneyCounter();
             }
 
-            // ★ [수정됨] 7일차 종료 시와 일반 일차 종료 시의 화면 분기
             if (gameState.day >= gameState.totalDays) {
                 gameState.readyToFinalize = true;
-                finalizeGame(); // 7일차일 때는 일별 정산 없이 즉시 총합 정산(영업 종료) 화면 노출!
+                finalizeGame();
             } else {
-                showSettlementModal(gain); // 1~6일차에는 영수증 가치에 기반한 일별 결산 보고서 노출
+                showSettlementModal(gain);
             }
         }
 
@@ -5655,77 +5907,116 @@ function renderLobbyItems() {
             return totalGain;
         }
 
-        // ── 영수증식 일일 결산 보고서 화면 연동 ──
+// ── 영수증식 일일 결산 보고서 (에러 수정 및 디자인 유지판) ──
         function showSettlementModal(gain) {
             const modal = document.getElementById('settlement-modal');
             const title = document.getElementById('settlement-title');
             const content = document.getElementById('settlement-content');
             if (!modal || !title || !content) return;
 
-            title.innerText = `제 ${gameState.day} 일차 결산 보고서`;
+            // 제목은 카드 안에 포함하므로 외부 타이틀은 숨김
+            title.style.display = 'none';
 
             let todayExpense = 0;
+            let todayGain = 0;
             const todaysItems = gameState.purchasedItems.filter(e => (e.day || 1) === gameState.day);
 
-            let itemsHtml = '';
+            let itemRows = '';
             if (todaysItems.length === 0) {
-                itemsHtml = `<div style="text-align:center;color:#aaa;font-size:1.1vw;padding:2vh 0;font-family:Gaegu,serif">오늘 거래 내역이 없습니다</div>`;
+                itemRows = `<div style="color:#999;font-size:0.9vw;text-align:center;padding:1vh 0">거래 없음</div>`;
             } else {
                 todaysItems.forEach((entry, i) => {
-                    const buyPrice  = entry.buyPrice  || 0;
-                    const sellPrice = entry.sellPrice !== undefined ? entry.sellPrice : 0;
-                    todayExpense += buyPrice;
-                    const judged   = entry.judged;
-                    const isSuccess = judged && sellPrice > 0;
-                    const statusColor = !judged ? '#aaa' : isSuccess ? '#6ee66e' : '#ff6b6b';
-                    const statusText  = !judged ? '미감정' : isSuccess ? '판정 성공' : '판정 실패';
-                    const buyStr  = `−₩${(buyPrice/10000).toLocaleString()}만`;
-                    const sellStr = judged ? `+₩${(sellPrice/10000).toLocaleString()}만` : '−';
-                    itemsHtml += `
-                        <div style="display:grid;grid-template-columns:1.4em 1fr auto auto auto;align-items:center;gap:0.6vw;padding:0.9vh 0.8vw;background:${i%2===0?'rgba(255,255,255,0.04)':'transparent'};border-radius:0.3vw;">
-                            <span style="color:#888;font-size:0.9vw">${i+1}.</span>
-                            <span style="color:#3a2010;font-size:1.0vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:bold">${entry.item.name}</span>
-                            <span style="font-size:0.85vw;font-weight:bold;color:${statusColor};background:rgba(0,0,0,0.3);padding:0.2vh 0.6vw;border-radius:2em;white-space:nowrap">${statusText}</span>
-                            <span style="color:#a32020;font-size:0.9vw;text-align:right;white-space:nowrap">${buyStr}</span>
-                            <span style="color:${isSuccess?'#6ee66e':'#777'};font-size:0.9vw;text-align:right;white-space:nowrap">${sellStr}</span>
+                    const judged = entry.judged;
+                    const isReal = entry.item.authentic;
+                    
+                    const badge = !judged ? '미감정' : (isReal ? '진품' : '가품');
+                    const bColor = !judged ? '#888' : (isReal ? '#2b7a1a' : '#a32020');
+                    
+                    const buy  = entry.buyPrice  || 0;
+                    const sell = entry.sellPrice || 0;
+                    todayExpense += buy;
+                    todayGain += sell;
+                    
+                    const profit = sell - buy;
+                    const pSign = profit >= 0 ? '+' : '−';
+                    const pCol  = profit >= 0 ? '#2b7a1a' : '#a32020';
+                    
+                    itemRows += `
+                        <div style="padding:0.5vh 0;border-bottom:0.08vw dashed rgba(90,58,26,0.25);font-size:0.85vw;">
+                            <div style="display:flex;align-items:center;gap:0.4vw;margin-bottom:0.2vh">
+                                <span style="color:#888;min-width:1.4vw">${i+1}.</span>
+                                <span style="flex:1;color:#3a2010;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:bold">${entry.item.name}</span>
+                                <span style="color:${bColor};font-size:0.78vw;background:rgba(0,0,0,0.07);padding:0.1vh 0.5vw;border-radius:0.3vw;white-space:nowrap">${badge}</span>
+                            </div>
+                            <div style="text-align:right;font-size:0.78vw;color:#5a3a1a;padding-left:1.8vw">
+                                <span style="color:#a32020">−${(buy/10000).toLocaleString()}만</span>
+                                <span style="color:#2b7a1a"> +${(sell/10000).toLocaleString()}만</span>
+                                = <span style="color:${pCol};font-weight:bold">${pSign}${Math.abs(profit/10000).toLocaleString()}만</span>
+                            </div>
                         </div>`;
                 });
             }
 
-            const netProfit = gain - todayExpense;
-            const netColor  = netProfit >= 0 ? '#6ee66e' : '#ff6b6b';
-            const netSign   = netProfit >= 0 ? '+' : '';
+            // 까마귀 판매 내역 추가
+            const todayCrowSales = (gameState.crowSales || []).filter(e => (e.day || 1) === gameState.day);
+            if (todayCrowSales.length > 0) {
+                todayCrowSales.forEach((cs, i) => {
+                    const crowProfit = cs.crowPrice - cs.buyPrice;
+                    const pCol = crowProfit >= 0 ? '#2b7a1a' : '#a32020';
+                    const pSign = crowProfit >= 0 ? '+' : '−';
+                    itemRows += `
+                        <div style="padding:0.5vh 0;border-bottom:0.08vw dashed rgba(90,58,26,0.25);font-size:0.85vw;background:rgba(0,0,0,0.04);">
+                            <div style="display:flex;align-items:center;gap:0.4vw;margin-bottom:0.2vh">
+                                <span style="color:#888;min-width:1.4vw">${todaysItems.length + i + 1}.</span>
+                                <span style="flex:1;color:#3a2010;font-weight:bold">${cs.item.name}</span>
+                                <span style="color:#555;font-size:0.78vw;background:rgba(0,0,0,0.07);padding:0.1vh 0.5vw;border-radius:0.3vw">까마귀 판매</span>
+                            </div>
+                            <div style="text-align:right;font-size:0.78vw;color:#5a3a1a;padding-left:1.8vw">
+                                <span style="color:#a32020">−${(cs.buyPrice/10000).toLocaleString()}만</span>
+                                <span style="color:#2b7a1a"> +${(cs.crowPrice/10000).toLocaleString()}만</span>
+                                = <span style="color:${pCol};font-weight:bold">${pSign}${Math.abs(crowProfit/10000).toLocaleString()}만</span>
+                            </div>
+                        </div>`;
+                    todayExpense += cs.buyPrice;
+                    todayGain += cs.crowPrice;
+                });
+            }
 
+            // ★ 누락되었던 순이익 계산 로직 추가 (오류 해결의 핵심)
+            const netProfit = gain - todayExpense;
+            const isProfit = netProfit >= 0;
+            const pColor = isProfit ? '#2b7a1a' : '#a32020';
+
+// 책 속 결산 보고서와 동일한 서류 카드 스타일 (세로 축소 및 스크롤 최적화)
             content.innerHTML = `
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.4vh;padding-bottom:0.8vh;border-bottom:0.1vw solid rgba(255,220,120,0.25)">
-                    <span style="color:#d8b87a;font-size:1.1vw">오늘 거래</span>
-                    <span style="color:#fff;font-size:1.3vw;font-weight:bold">${todaysItems.length} 건</span>
+                <div style="text-align:center;padding:1.5vh 1vw 1vh;border-bottom:0.18vw solid rgba(90,58,26,0.35);background:rgba(255,255,255,0.15)">
+                    <div style="font-size:1.4vw;font-weight:bold;letter-spacing:0.08em;color:#2a1808">결 산 보 고 서</div>
+                    <div style="font-size:0.8vw;color:#7a5a2a;margin-top:0.3vh">PAWNSHOP SETTLEMENT</div>
                 </div>
-                <div style="background:rgba(90,58,26,0.08);border:0.12vw solid rgba(90,58,26,0.2);border-radius:0.6vw;overflow:hidden;margin-bottom:1.5vh">
-                    <div style="background:rgba(90,58,26,0.12);padding:0.5vh 0.8vw;font-size:0.85vw;color:#7a5a2a;letter-spacing:0.05em">
-                        품명 ▸ 결과 ▸ 매입가 ▸ 감정수익
+                <div style="padding:1vh 1.5vw 0;font-size:0.9vw;color:#5a3a1a">
+                    <span style="font-weight:bold">거래일자:</span> 제 ${gameState.day} 일 차
+                </div>
+                <div style="margin:0.8vh 1.2vw;padding:0.8vh 1vw;background:rgba(255,255,255,0.35);border:0.1vw solid rgba(90,58,26,0.25);border-radius:0.3vw;display:flex;flex-direction:column;flex-grow:1;min-height:0;">
+                    <div style="font-weight:bold;color:#3a2010;margin-bottom:0.5vh;font-size:0.9vw">[ 거래 물품 내역 ]</div>
+                    <div style="flex-grow:1;overflow-y:auto;">${itemRows}</div>
+                </div>
+                <div style="padding:0.6vh 1.5vw;border-top:0.1vw solid rgba(90,58,26,0.2);font-size:0.95vw">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:0.4vh">
+                        <span style="color:#5a3a1a">매입 지출</span>
+                        <span style="color:#a32020;font-weight:bold">−₩${(todayExpense/10000).toLocaleString()}만</span>
                     </div>
-                    <div style="max-height:16vh;overflow-y:auto;padding:0.3vh 0">
-                        ${itemsHtml}
+                    <div style="display:flex;justify-content:space-between;margin-bottom:0.6vh">
+                        <span style="color:#5a3a1a">감정 수입</span>
+                        <span style="color:#2b7a1a;font-weight:bold">+₩${(gain/10000).toLocaleString()}만</span>
                     </div>
                 </div>
-                <div style="background:rgba(90,58,26,0.08);border-radius:0.4vw;padding:1.2vh 1.2vw;margin-bottom:1.5vh">
-                    <div style="display:flex;justify-content:space-between;margin-bottom:0.8vh">
-                        <span style="color:#aaa;font-size:1vw">물품 매입 지출</span>
-                        <span style="color:#ff8a8a;font-size:1.05vw;font-weight:bold">−₩${todayExpense.toLocaleString()}</span>
-                    </div>
-                    <div style="display:flex;justify-content:space-between">
-                        <span style="color:#aaa;font-size:1vw">감정 처분 수입</span>
-                        <span style="color:#6ee66e;font-size:1.05vw;font-weight:bold">+₩${gain.toLocaleString()}</span>
-                    </div>
+                <div style="margin:0 1.2vw 1vh;padding:0.9vh 1vw;background:${isProfit?'rgba(43,122,26,0.1)':'rgba(163,32,32,0.1)'};border:0.12vw solid ${pColor}55;border-radius:0.3vw;display:flex;justify-content:space-between;font-size:1.15vw;font-weight:bold">
+                    <span style="color:#2a1808">당일 순이익</span>
+                    <span style="color:${pColor}">${isProfit?'+':''}₩${netProfit.toLocaleString()}</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.4);border:0.15vw solid ${netColor}44;border-radius:0.6vw;padding:1.2vh 1.2vw;margin-bottom:1.2vh">
-                    <span style="color:#eee;font-size:1.2vw;font-weight:bold">당일 순이익</span>
-                    <span style="color:${netColor};font-size:1.6vw;font-weight:bold">${netSign}₩${netProfit.toLocaleString()}</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:0.5vh 0.2vw">
-                    <span style="color:#c8a040;font-size:1vw">현재 총 보유 자산</span>
-                    <span style="color:#fcd53f;font-size:1.4vw;font-weight:bold">₩${gameState.money.toLocaleString()}</span>
+                <div style="padding:0 1.5vw 0.5vh;display:flex;justify-content:space-between;font-size:0.85vw;color:#7a5a2a">
+                    <span>현재 총 보유 자산</span>
+                    <span style="color:#c8880a;font-weight:bold">₩${gameState.money.toLocaleString()}</span>
                 </div>`;
 
             modal.style.display = 'flex';
@@ -5768,29 +6059,44 @@ function renderLobbyItems() {
                     dayItems.forEach((entry, i) => {
                         const judged = entry.judged;
                         const ok = judged && (entry.sellPrice || 0) > 0;
-                        const badge = judged ? (ok ? '판정 성공' : '판정 실패') : '미감정';
-                        const bColor = judged ? (ok ? '#2b7a1a' : '#a32020') : '#888';
+                        const isReal2 = entry.item.authentic;
+                        const badge = !judged ? '미감정' : (isReal2 ? '진품' : '가품');
+                        const bColor = !judged ? '#888' : (isReal2 ? '#2b7a1a' : '#a32020');
+                        const buy  = entry.buyPrice  || 0;
+                        const sell = entry.sellPrice || 0;
+                        const profit = sell - buy;
+                        const pSign = profit >= 0 ? '+' : '−';
+                        const pCol  = profit >= 0 ? '#2b7a1a' : '#a32020';
                         itemRows += `
-                            <div style="display:flex;align-items:center;gap:0.4vw;padding:0.4vh 0;border-bottom:0.08vw dashed rgba(90,58,26,0.25);font-size:0.82vw;">
-                                <span style="color:#888;min-width:1.2vw">${i+1}.</span>
-                                <span style="flex:1;color:#3a2010;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:bold">${entry.item.name}</span>
-                                <span style="color:${bColor};font-size:0.75vw;background:rgba(0,0,0,0.07);padding:0.1vh 0.5vw;border-radius:0.3vw;white-space:nowrap">${badge}</span>
+                            <div style="padding:0.5vh 0;border-bottom:0.08vw dashed rgba(90,58,26,0.25);font-size:0.78vw;">
+                                <div style="display:flex;align-items:center;gap:0.4vw;margin-bottom:0.2vh">
+                                    <span style="color:#888;min-width:1.2vw">${i+1}.</span>
+                                    <span style="flex:1;color:#3a2010;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:bold">${entry.item.name}</span>
+                                    <span style="color:${bColor};font-size:0.7vw;background:rgba(0,0,0,0.07);padding:0.1vh 0.4vw;border-radius:0.3vw;white-space:nowrap">${badge}</span>
+                                </div>
+                                <div style="text-align:right;font-size:0.72vw;color:#5a3a1a;padding-left:1.6vw">
+                                    <span style="color:#a32020">−${(buy/10000).toLocaleString()}만</span>
+                                    <span style="color:#2b7a1a"> +${(sell/10000).toLocaleString()}만</span>
+                                    = <span style="color:${pCol};font-weight:bold">${pSign}${Math.abs(profit/10000).toLocaleString()}만</span>
+                                </div>
                             </div>`;
                     });
                 }
 
                 // 손님 서류와 동일한 스타일 (물품 매입 계약서와 유사)
                 html += `
-                <div style="min-width:22vw;width:22vw;height:64vh;background:#e8d5b0;
+                <div style="min-width:22vw;width:22vw;height:64vh;
+                    background:#e8d5b0;
+                    background-image:repeating-linear-gradient(transparent, transparent 2.4vh, rgba(90,58,26,0.08) 2.4vh, rgba(90,58,26,0.08) 2.5vh);
                     border-radius:0.3vw;
                     box-shadow:0.4vw 0.6vw 2vw rgba(0,0,0,0.6), inset 0 0 0 0.12vw rgba(90,58,26,0.12);
                     display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;
                     font-family:Gaegu,serif;color:#2a1808;border:0.15vw solid rgba(90,58,26,0.3);">
 
                     <!-- 서류 제목 -->
-                    <div style="text-align:center;padding:1.8vh 1vw 1vh;border-bottom:0.18vw solid rgba(90,58,26,0.35);">
-                        <div style="font-size:1.25vw;font-weight:bold;letter-spacing:0.05em">결 산 보 고 서</div>
-                        <div style="width:80%;height:0.08vw;background:rgba(90,58,26,0.3);margin:0.4vh auto 0"></div>
+                    <div style="text-align:center;padding:1.8vh 1vw 1vh;border-bottom:0.18vw solid rgba(90,58,26,0.35);background:rgba(255,255,255,0.15)">
+                        <div style="font-size:1.3vw;font-weight:bold;letter-spacing:0.08em">결 산 보 고 서</div>
+                        <div style="font-size:0.75vw;color:#7a5a2a;margin-top:0.3vh">PAWNSHOP SETTLEMENT</div>
                     </div>
 
                     <!-- 거래일자 -->
@@ -6379,6 +6685,7 @@ function goToLobby() {
 
             gameState.needsAppraisal = true;
             gameState.appraisedToday = false;
+            gameState._settlementShown = false;
 
             try { stopFireParticles(); } catch(e){}
             try { stopFlameLoop(); } catch(e){}
@@ -6987,6 +7294,7 @@ function goToLobby() {
 
 
         // ── 일일 결산 보고서 모달 닫기 ──
+        // ── 일일 결산 보고서 모달 닫기 ──
         function closeSettlementModal() {
             const modal = document.getElementById('settlement-modal');
             if (modal) modal.style.display = 'none';
@@ -7129,7 +7437,7 @@ function goToLobby() {
               await: 'go-lobby', hint: '오른쪽으로 이동해 로비로 가세요', onAdvance: 'closeSettle' },
             { // 15 (로비 복귀)
               place: 'bubble-owner',
-              lines: ["다시 왔네?", "게임시작 말풍선을 누르면 다음날이 시작되고 같은 방식으로 게임을 이어나가면 돼.", "게임은 총 7일 동안 이루어지고, 총 10억을 버는게 목적이야.", "잘 운영해보라고!"],
+              lines: ["다시 왔네?", "게임시작 말풍선을 누르면 다음날이 시작되고 같은 방식으로 게임을 이어나가면 돼.", "게임은 총 7일 동안 이루어지고, 총 20억을 버는게 목적이야.", "잘 운영해보라고!"],
               await: 'finish', hint: '계속하려면 말풍선을 클릭하세요' }
         ];
 
@@ -7314,6 +7622,20 @@ function startTutorial() {
             const place = step.place;
             // 동작 대기 상태(마지막 대사 다 봄)
             const atMission = tutorial.waiting && !moreLines;
+
+            // 튜토리얼 말풍선이 활성화된 동안 game-document가 클릭을 가로채지 않도록
+            const gameDoc = document.getElementById('game-document');
+            if (gameDoc) {
+                // sign/tear 대기 중이면 서명 허용, 그 외 대사 진행 중에는 차단
+                const awaitingAction = step.await === 'sign' || step.await === 'tear' || step.await === 'sign-fail';
+                if (atMission && awaitingAction) {
+                    gameDoc.style.pointerEvents = '';  // 서명/제출 허용
+                } else if (moreLines) {
+                    gameDoc.style.pointerEvents = 'none';  // 대사 중 차단
+                } else {
+                    gameDoc.style.pointerEvents = '';  // 그 외 허용
+                }
+            }
 
             // ★ 대사 표시 후 3초 동안은 넘김 불가. 새 줄을 렌더할 때 타이머 시작.
             //   _canAdvance가 true가 되면 "클릭하여 계속"/힌트를 표시.
@@ -7581,11 +7903,11 @@ function startTutorial() {
         }
     </script>
 <div id="settlement-modal" class="game-modal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background-color:rgba(0,0,0,0.82);z-index:2147483645;display:none;justify-content:center;align-items:center;">
-        <div style="width:32vw;background:#e8d5b0;border-radius:0.5vw;padding:3vh 2.8vw;box-shadow:0.5vw 1vw 3vw rgba(0,0,0,0.8);font-family:Gaegu,serif;color:#2a1808;position:relative;max-height:85vh;overflow-y:auto;">
-            <div id="settlement-title" style="text-align:center;font-size:1.8vw;font-weight:bold;border-bottom:0.2vw solid rgba(90,58,26,0.4);padding-bottom:1vh;margin-bottom:2vh;color:#2a1808">제 1 일차 결산 보고서</div>
-            <div id="settlement-content" style="font-size:1vw;line-height:1.8;text-align:left;color:#2a1808"></div>
-            <div style="margin-top:2vh;text-align:center;">
-                <button onclick="closeSettlementModal()" style="padding:0.8vw 3vw;font-size:1.2vw;font-weight:bold;background:linear-gradient(180deg,#fcd53f,#cba328);color:#2a1808;border:0.15vw solid #8a6a10;border-radius:0.8vw;cursor:pointer;font-family:Gaegu,serif;box-shadow:0 0.3vw 0.8vw rgba(0,0,0,0.4)">다음 날로</button>
+        <div style="width:42vw;height:calc(42vw * 1.15);background:#e8d5b0;background-image:repeating-linear-gradient(transparent, transparent 2.4vh, rgba(90,58,26,0.08) 2.4vh, rgba(90,58,26,0.08) 2.5vh);border-radius:0.3vw;padding:0;box-shadow:0.4vw 0.6vw 2vw rgba(0,0,0,0.7), inset 0 0 0 0.12vw rgba(90,58,26,0.12);border:0.15vw solid rgba(90,58,26,0.3);font-family:Gaegu,serif;color:#2a1808;position:relative;overflow-y:auto;display:flex;flex-direction:column;">
+            <div id="settlement-title" style="display:none"></div>
+            <div id="settlement-content" style="font-size:1vw;line-height:1.6;text-align:left;color:#2a1808;flex:1;display:flex;flex-direction:column;"></div>
+            <div style="padding:1.5vh 0 2vh;text-align:center;">
+                <button onclick="closeSettlementModal()" style="padding:0.8vw 3vw;font-size:1.2vw;font-weight:bold;background:rgba(90,58,26,0.12);color:#2a1808;border:0.2vw solid rgba(90,58,26,0.4);border-radius:0.3vw;cursor:pointer;font-family:Gaegu,serif">다음 날로</button>
             </div>
         </div>
     </div>
