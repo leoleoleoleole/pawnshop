@@ -2516,7 +2516,7 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
             font-size: 2cqw; font-weight: bold; line-height: 1.55; text-align: center;
             text-shadow: 0 0.2cqw 0.6cqw rgba(0,0,0,0.9);
             display: flex; align-items: flex-start; justify-content: center;
-            opacity: 0; transition: opacity 1s ease;
+            opacity: 0; transition: opacity 0.45s ease;
         }
         #cutscene-text.show { opacity: 1; }
         #cutscene-panels { position: absolute; left: 0; top: 0; width: 100cqw; height: 74cqh; }
@@ -3228,6 +3228,23 @@ function startAutoAppraise(idx) {
         document.addEventListener('keydown', handleRefreshKey, true);
         if (document.body) document.body.addEventListener('keydown', handleRefreshKey, true);
         document.addEventListener('keydown', function(e) {
+            // ── 테스트용 단축키 ──
+            //  e: 잔고를 12억으로 설정,  q: 즉시 최종 정산 화면으로
+            if (e.key === 'e' || e.key === 'E') {
+                gameState.money = 1200000000;
+                if (typeof updateMoneyCounter === 'function') updateMoneyCounter();
+                if (typeof showFloatingText === 'function') showFloatingText('[테스트] 잔고를 12억으로 설정', '#fcd53f');
+                return;
+            }
+            if (e.key === 'q' || e.key === 'Q') {
+                // 진행 중 UI 정리 후 곧바로 최종 정산 의식 진입
+                gameState.readyToFinalize = true;
+                const sm = document.getElementById('settlement-modal');
+                if (sm) sm.style.display = 'none';
+                document.body.classList.remove('modal-open');
+                if (typeof startFinalCeremony === 'function') startFinalCeremony();
+                return;
+            }
             // F5 또는 Ctrl+R / Cmd+R
             if (isRefreshKey(e)) {
                 if (!refreshConfirmed) {
@@ -4442,7 +4459,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             // 7일차 감정까지 끝났으면 '정산하기' 말풍선, 아니면 '게임 시작'
             if (gameState.readyToFinalize) {
                 b.innerText = '정산하기';
-                b.onclick = function(e) { e.stopPropagation(); hideOwnerBubble(); finalizeGame(); };
+                b.onclick = function(e) { e.stopPropagation(); hideOwnerBubble(); startFinalCeremony(); };
             } else {
                 b.innerText = '게임 시작';
                 b.onclick = function(e) { enterGameFromOwner(); e.stopPropagation(); };
@@ -4473,10 +4490,14 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                     return;
                 }
             } else {
-                // 튜토리얼 활성: 현재 step이 game-start를 기다리는 단계이면 허용
+                // 튜토리얼 활성: 현재 step이 game-start를 기다리는 단계이고, 안내 대사를 끝까지 본 경우에만 허용
                 const curStep = tutCurrent();
                 if (!curStep || curStep.await !== 'game-start') {
                     return;   // 아직 그 단계가 아님 → 차단
+                }
+                const atLastLine = tutorial.sub >= curStep.lines.length - 1;
+                if (!atLastLine) {
+                    return;   // "게임시작 버튼을 누르세요" 안내를 아직 다 안 봄 → 차단
                 }
                 // 게임 시작 말풍선을 눌렀으니 즉시 말풍선 숨기고 단계 강제 진행
                 hideOwnerBubble();
@@ -6253,8 +6274,9 @@ function renderLobbyItems() {
             }
 
             if (gameState.day >= gameState.totalDays) {
+                // 7일차: 그날 결산 보고서도 다른 날과 동일하게 표시하되, 닫으면 최종 정산으로 이어짐
                 gameState.readyToFinalize = true;
-                finalizeGame();
+                showSettlementModal(gain);
             } else {
                 showSettlementModal(gain);
             }
@@ -6443,6 +6465,18 @@ function renderLobbyItems() {
 
             modal.style.display = 'flex';
             document.body.classList.add('modal-open');
+
+            // 7일차(마지막 날): 버튼을 "최종 정산"으로 바꿔 주간 결산 의식으로 이어지게 함
+            const sBtn = document.getElementById('settlement-next-btn');
+            if (sBtn) {
+                if (gameState.day >= gameState.totalDays) {
+                    sBtn.innerText = '최종 정산 →';
+                    sBtn.onclick = function() { closeSettlementModal(true); };
+                } else {
+                    sBtn.innerText = '다음 날로';
+                    sBtn.onclick = function() { closeSettlementModal(false); };
+                }
+            }
         }
 
         // ── 7일차 주간 최종 결산 화면 고도화 ──
@@ -7823,7 +7857,7 @@ function goToLobby() {
 
         // ── 일일 결산 보고서 모달 닫기 ──
         // ── 일일 결산 보고서 모달 닫기 ──
-        function closeSettlementModal() {
+        function closeSettlementModal(isFinal) {
             const modal = document.getElementById('settlement-modal');
             if (modal) modal.style.display = 'none';
             document.body.classList.remove('modal-open');
@@ -7831,6 +7865,272 @@ function goToLobby() {
             if (!gameState.receivedReports.includes(gameState.day)) {
                 gameState.receivedReports.push(gameState.day);
             }
+            // 7일차(마지막 날): 로비로 가지 않고 최종 정산 의식(커튼→전체화면 주간 결산)으로 진입
+            if (isFinal || gameState.day >= gameState.totalDays) {
+                startFinalCeremony();
+                return;
+            }
+            goToLobby();
+        }
+
+        // ════════════════════════════════════════════
+        // 7일차 종료 후 최종 정산 의식
+        // ════════════════════════════════════════════
+        // 모든 날의 손익을 집계
+        function computeWeeklyTotals() {
+            const days = {};
+            const ensure = (d) => { if (!days[d]) days[d] = { buy:0, sell:0, stolen:0 }; return days[d]; };
+            (gameState.purchasedItems || []).forEach(e => {
+                const d = e.day || 1; const o = ensure(d);
+                o.buy += (e.buyPrice || 0); o.sell += (e.sellPrice || 0);
+            });
+            (gameState.crowSales || []).forEach(e => {
+                const d = e.day || 1; const o = ensure(d);
+                o.buy += (e.buyPrice || 0); o.sell += (e.crowPrice || 0);
+            });
+            (gameState.crocStolen || []).forEach(e => {
+                const d = e.day || 1; const o = ensure(d);
+                o.stolen += (e.amount || 0);
+            });
+            return days;
+        }
+
+        function startFinalCeremony() {
+            // 커튼이 닫혔다 열리면서 전체화면 주간 결산 보고서 공개
+            curtainTransition(() => { buildWeeklyReport(); });
+        }
+
+        // 전체 화면을 꽉 채우는 주간 결산 보고서
+        function buildWeeklyReport() {
+            // 기존 것 제거
+            const old = document.getElementById('weekly-report');
+            if (old) old.remove();
+
+            const days = computeWeeklyTotals();
+            let rows = '';
+            let grandProfit = 0;
+            for (let d = 1; d <= gameState.totalDays; d++) {
+                const o = days[d] || { buy:0, sell:0, stolen:0 };
+                const net = o.sell - o.buy - o.stolen;
+                grandProfit += net;
+                const pos = net >= 0;
+                rows += `
+                    <div style="display:flex;align-items:center;gap:1cqw;padding:0.7cqh 0;border-bottom:0.1cqw dashed rgba(90,58,26,0.3);font-size:1.1cqw;">
+                        <span style="min-width:5cqw;font-weight:bold;color:#3a2010">제 ${d} 일차</span>
+                        <span style="flex:1;text-align:right;color:#a32020">−₩${(o.buy + o.stolen).toLocaleString()}</span>
+                        <span style="flex:1;text-align:right;color:#2b7a1a">+₩${o.sell.toLocaleString()}</span>
+                        <span style="min-width:9cqw;text-align:right;font-weight:bold;color:${pos?'#2b7a1a':'#a32020'}">${pos?'+':'−'}₩${Math.abs(net).toLocaleString()}</span>
+                    </div>`;
+            }
+
+            const finalMoney = gameState.money;
+            const success = finalMoney >= 1000000000;   // 10억
+
+            const overlay = document.createElement('div');
+            overlay.id = 'weekly-report';
+            overlay.style.cssText = 'position:absolute;inset:0;width:100cqw;height:100cqh;z-index:5500;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center, #2a1808 0%, #1a0d04 100%);';
+            overlay.innerHTML = `
+                <div style="width:72cqw;max-height:88cqh;background:#e8d5b0;background-image:repeating-linear-gradient(transparent,transparent 2.4cqh,rgba(90,58,26,0.08) 2.4cqh,rgba(90,58,26,0.08) 2.5cqh);border:0.2cqw solid rgba(90,58,26,0.4);border-radius:0.4cqw;box-shadow:0 1cqw 4cqw rgba(0,0,0,0.8);padding:2.5cqh 3cqw;font-family:Gaegu,serif;color:#2a1808;display:flex;flex-direction:column;overflow:hidden;">
+                    <div style="text-align:center;border-bottom:0.2cqw solid rgba(90,58,26,0.4);padding-bottom:1.2cqh;margin-bottom:1cqh">
+                        <div style="font-size:2.2cqw;font-weight:bold;letter-spacing:0.1em;color:#2a1808">주 간 최 종 결 산</div>
+                        <div style="font-size:1cqw;color:#7a5a2a;margin-top:0.4cqh">7일간의 전당포 운영 기록</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:1cqw;padding:0.3cqh 0;font-size:0.85cqw;color:#7a5a2a;border-bottom:0.1cqw solid rgba(90,58,26,0.3)">
+                        <span style="min-width:5cqw">날짜</span>
+                        <span style="flex:1;text-align:right">지출</span>
+                        <span style="flex:1;text-align:right">수입</span>
+                        <span style="min-width:9cqw;text-align:right">순이익</span>
+                    </div>
+                    <div style="flex:1;overflow-y:auto;min-height:0">${rows}</div>
+                    <div style="margin-top:1.2cqh;padding:1.2cqh 1.5cqw;background:rgba(200,136,10,0.12);border:0.15cqw solid rgba(200,136,10,0.5);border-radius:0.4cqw;display:flex;justify-content:space-between;align-items:center;font-weight:bold">
+                        <span style="font-size:1.5cqw;color:#2a1808">최종 보유 금액</span>
+                        <span style="font-size:2cqw;color:#c8880a">₩${finalMoney.toLocaleString()}</span>
+                    </div>
+                    <div style="text-align:center;margin-top:1.2cqh;font-size:1.3cqw;font-weight:bold;color:${success?'#2b7a1a':'#a32020'}">
+                        ${success ? '목표 달성! 10억을 모았습니다' : '목표 미달성... 10억에 도달하지 못했습니다.'}
+                    </div>
+                    <div style="text-align:center;margin-top:1.5cqh">
+                        <button id="weekly-next-btn" style="padding:1cqh 4cqw;font-size:1.4cqw;font-weight:bold;background:#3a2a08;color:#fcd53f;border:0.2cqw solid #cba328;border-radius:0.5cqw;cursor:pointer;font-family:Gaegu,serif">다음으로 넘어가기 →</button>
+                    </div>
+                </div>`;
+            const stage = document.getElementById('stage') || document.body;
+            stage.appendChild(overlay);
+
+            document.getElementById('weekly-next-btn').onclick = function() {
+                if (success) {
+                    // 커튼이 닫혔다 열리면서 엔딩 그림 등장
+                    curtainTransition(() => {
+                        overlay.remove();
+                        showEndingSequence();
+                    });
+                } else {
+                    overlay.remove();
+                    showRestartScreen();
+                }
+            };
+        }
+
+        // 커튼을 닫았다(덮음) → onCovered 실행 → 다시 여는 공통 연출
+        function curtainTransition(onCovered) {
+            const curtain = document.getElementById('curtain');
+            if (!curtain) { if (onCovered) onCovered(); return; }
+            const txt = curtain.querySelector('.curtain-text');
+            if (txt) txt.style.display = 'none';
+            curtain.style.display = 'flex';
+            curtain.style.zIndex = '6000';
+            curtain.style.transformOrigin = 'right center';
+            curtain.style.transform = 'translateX(-100cqw) scaleX(0)';
+            curtain.style.transition = 'none';
+            curtain.style.opacity = '1';
+            void curtain.offsetWidth;
+            // 닫힘
+            curtain.style.transition = 'transform 1.0s cubic-bezier(0.4,0,0.2,1)';
+            curtain.style.transform = 'translateX(0) scaleX(1)';
+            setTimeout(() => {
+                if (onCovered) onCovered();
+                // 열림
+                curtain.style.transition = 'transform 1.0s cubic-bezier(0.4,0,0.2,1)';
+                curtain.style.transformOrigin = 'right center';
+                curtain.style.transform = 'translateX(100cqw) scaleX(0)';
+                setTimeout(() => {
+                    curtain.style.display = 'none';
+                    curtain.style.transform = 'translateX(-100cqw) scaleX(0)';
+                }, 1050);
+            }, 1150);
+        }
+
+        // 성공 엔딩: 업로드된 이미지들을 순서대로 표시
+        function showEndingSequence() {
+            const old = document.getElementById('ending-seq');
+            if (old) old.remove();
+            const overlay = document.createElement('div');
+            overlay.id = 'ending-seq';
+            overlay.style.cssText = 'position:absolute;inset:0;width:100cqw;height:100cqh;z-index:5600;background:#000;cursor:pointer;overflow:hidden;';
+            const panelWrap = document.createElement('div');
+            panelWrap.style.cssText = 'position:absolute;inset:0;';
+            overlay.appendChild(panelWrap);
+            const hint = document.createElement('div');
+            hint.style.cssText = 'position:absolute;right:4cqw;bottom:4cqh;color:#f5e8c8;font-family:Gaegu,serif;font-size:1.6cqw;font-weight:bold;opacity:0;transition:opacity 0.5s;text-shadow:0 0.2cqw 0.6cqw rgba(0,0,0,0.9);';
+            hint.innerText = '클릭하여 계속 ▶';
+            overlay.appendChild(hint);
+            const stage = document.getElementById('stage') || document.body;
+            stage.appendChild(overlay);
+
+            // 엔딩 이미지 순서: end1 → end2 → end3 → end4 → end5
+            const seq = ['end1.jpg','end2.jpg','end3.jpg','end4.jpg','end5.jpg'];
+            const imgs = seq.map(src => {
+                const d = document.createElement('div');
+                // 마지막(end5)은 페이드 없이 즉시 표시
+                const isLast = (src === 'end5.jpg');
+                d.style.cssText = `position:absolute;inset:0;background-image:url('${src}');background-size:contain;background-position:center;background-repeat:no-repeat;opacity:0;transition:opacity ${isLast?'0s':'1.2s'} ease;`;
+                d.dataset.src = src;
+                panelWrap.appendChild(d);
+                return d;
+            });
+
+            let idx = -1;
+            let busy = false;
+            let restartBubbleShown = false;
+
+            // end2 화면에서 띄우는 "다시 시작하기" 말풍선 (로비처럼)
+            function showRestartBubble() {
+                if (document.getElementById('ending-restart-bubble')) return;
+                restartBubbleShown = true;
+                const bub = document.createElement('div');
+                bub.id = 'ending-restart-bubble';
+                bub.style.cssText = 'position:absolute;top:38cqh;left:52cqw;z-index:30;background:#fff8e8;color:#2a1808;font-family:Gaegu,serif;font-size:1.4cqw;font-weight:bold;padding:1.2cqh 2cqw;border-radius:1cqw;border:0.2cqw solid #c9a86a;box-shadow:0 0.4cqw 1.2cqw rgba(0,0,0,0.6);cursor:pointer;animation:tutBubblePop 0.3s cubic-bezier(0.34,1.56,0.64,1);';
+                bub.innerText = '다시 시작하기';
+                bub.onclick = (e) => {
+                    e.stopPropagation();
+                    overlay.remove();
+                    returnToLobbyAfterEnd();
+                };
+                overlay.appendChild(bub);
+            }
+            function hideRestartBubble() {
+                const b = document.getElementById('ending-restart-bubble');
+                if (b) b.remove();
+                restartBubbleShown = false;
+            }
+
+            function showStep(i) {
+                const isLast = (i >= imgs.length - 1);
+                hint.style.opacity = '0';
+                imgs[i].style.opacity = '1';
+                if (isLast) {
+                    // 마지막 그림: 한 번에 표시, 이후 힌트만
+                    busy = false;
+                    setTimeout(() => { hint.style.opacity = '1'; }, 200);
+                } else {
+                    busy = true;
+                    setTimeout(() => { busy = false; hint.style.opacity = '1'; }, 1300);
+                }
+            }
+
+            function showNext() {
+                if (busy) return;
+                // 현재 end2가 떠 있으면: 다음으로 넘어가지 않고 다시 시작 말풍선 토글
+                if (idx >= 0 && imgs[idx].dataset.src === 'end2.jpg') {
+                    if (!restartBubbleShown) { showRestartBubble(); return; }
+                    else { hideRestartBubble(); }   // 다시 클릭하면 닫고 계속 진행
+                }
+                idx++;
+                if (idx >= imgs.length) {
+                    // 모든 그림 끝 → 재시작 화면
+                    overlay.remove();
+                    showRestartScreen(true);
+                    return;
+                }
+                showStep(idx);
+            }
+
+            // 첫 이미지 자동 표시
+            setTimeout(() => { idx = 0; showStep(0); }, 300);
+            overlay.onclick = showNext;
+        }
+
+        // 실패/엔딩 종료 후: 다시 시작하기 화면
+        function showRestartScreen(cleared) {
+            const old = document.getElementById('restart-screen');
+            if (old) old.remove();
+            const overlay = document.createElement('div');
+            overlay.id = 'restart-screen';
+            overlay.style.cssText = 'position:absolute;inset:0;width:100cqw;height:100cqh;z-index:5700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3cqh;background:radial-gradient(ellipse at center, #2a1808 0%, #0a0502 100%);font-family:Gaegu,serif;';
+            overlay.innerHTML = `
+                <div style="font-size:2.5cqw;font-weight:bold;color:${cleared?'#fcd53f':'#e8d5b0'};text-shadow:0 0.3cqw 1cqw rgba(0,0,0,0.8);text-align:center">
+                    ${cleared ? '축하합니다! 전당포 운영에 성공했습니다!' : '아쉽지만 목표를 달성하지 못했습니다.'}
+                </div>
+                <div style="font-size:1.3cqw;color:#c9a86a">최종 보유 금액: ₩${gameState.money.toLocaleString()}</div>
+                <button id="restart-btn" style="padding:1.2cqh 5cqw;font-size:1.6cqw;font-weight:bold;background:#3a2a08;color:#fcd53f;border:0.2cqw solid #cba328;border-radius:0.6cqw;cursor:pointer;font-family:Gaegu,serif">다시 시작하기</button>`;
+            const stage = document.getElementById('stage') || document.body;
+            stage.appendChild(overlay);
+            document.getElementById('restart-btn').onclick = function() {
+                overlay.remove();
+                returnToLobbyAfterEnd();
+            };
+        }
+
+        // 엔딩 종료 후 로비로 복귀 (게임 상태 초기화하여 새 게임 준비)
+        function returnToLobbyAfterEnd() {
+            // 새 게임 상태로 초기화
+            gameState.day = 1;
+            gameState.money = 200000000;
+            gameState.purchasedItems = [];
+            gameState.crowSales = [];
+            gameState.crocStolen = [];
+            gameState.receivedReports = [];
+            gameState.obtainedCount = 0;
+            gameState.needsAppraisal = false;
+            gameState.appraisedToday = false;
+            gameState.readyToFinalize = false;
+            gameState._settlementShown = false;
+            gameState.gameStarted = false;
+            gameState.dailyGuestsQueue = [];
+            gameState.originalDailyQueue = [];
+            gameState.pigeonBible = false;
+            gameState.pigeonBought = false;
+            updateMoneyCounter();
+            updateDayIndicator && updateDayIndicator();
             goToLobby();
         }
         // ── 도마뱀 전용 타임어택 (말풍선 내부 표시 + 시간이 줄수록 떨림 심화) ──
@@ -8000,13 +8300,39 @@ function goToLobby() {
         ];
 
 // ───────── 스토리 컷씬 엔진 ─────────
-// 각 컷: 순서대로 페이드인할 패널 이미지 배열. 마지막 컷(5)은 1장.
+// 각 컷: 순서대로 페이드인할 패널 이미지 배열 + 각 패널에 대응하는 글귀(texts).
+// 마지막 컷(5)은 이미지 1장에 여러 줄의 글귀가 순서대로 표시된다.
 const CUTSCENE_CUTS = [
-    { panels: ['story1_1.jpg', 'story1_2.jpg', 'story1_3.jpg'], text: '' },
-    { panels: ['story2_1.jpg', 'story2_2.jpg', 'story2_3.jpg'], text: '' },
-    { panels: ['story3_1.jpg', 'story3_2.jpg', 'story3_3.jpg'], text: '' },
-    { panels: ['story4_1.jpg', 'story4_2.jpg', 'story4_3.jpg'], text: '' },
-    { panels: ['story5.jpg'], text: '' }
+    { panels: ['story1_1.jpg', 'story1_2.jpg', 'story1_3.jpg'],
+      texts: [
+        '며칠 전, 전당포를 운영하시던 어머니가 돌아가셨다.',
+        '어머니는 오랜 지병을 앓다 끝내 세상을 떠나셨다.',
+        '내게 남은 것은 어머니가 물려주신 재산과 지도뿐이었기에, 지도에 표시된 곳으로 가보기로 했다.'
+      ] },
+    { panels: ['story2_1.jpg', 'story2_2.jpg', 'story2_3.jpg'],
+      texts: [
+        '드디어 지도에 표시된 곳에 도착했다.',
+        '용기를 내어 문을 열고 들어가 보니..',
+        '용도가 무엇인지 도무지 알 수 없는 공간이 있었다.'
+      ] },
+    { panels: ['story3_1.jpg', 'story3_2.jpg', 'story3_3.jpg'],
+      texts: [
+        '호기심에 주변을 둘러보았다.',
+        '그러던 와중..',
+        '탁자에 놓인 편지 한 장이 눈에 들어왔다.'
+      ] },
+    { panels: ['story4_1.jpg', 'story4_2.jpg', 'story4_3.jpg'],
+      texts: [
+        '편지의 글씨체를 보니, 어머니가 쓰신 것만 같았다.',
+        '마침 어머니가 말씀하시던, 안드로이드로 보이는 누군가가 눈에 들어왔다.',
+        '그녀는 내게 밝은 미소를 지으며 손을 흔들고 있었다.'
+      ] },
+    { panels: ['story5.jpg'],
+      texts: [
+        '나는 어머니가 남겨주신 안드로이드 로봇과 함께 전당포를 운영하기로 마음먹었다.',
+        '앞으로 어떤 손님이 올지는 알 수 없지만..',
+        '언젠가 부자가 되는 것이 나의 목표다.'
+      ] }
 ];
 const cutscene = { active: false, cut: 0, shown: 0, revealing: false, _timer: null };
 
@@ -8032,14 +8358,14 @@ function renderCutsceneCut() {
     cutscene.revealing = true;
 
     const cut = CUTSCENE_CUTS[cutscene.cut];
-    const panelImgs = cut.panels || cut;   // 구버전 배열 호환
+    const panelImgs = cut.panels || cut;          // 구버전 배열 호환
+    const texts = cut.texts || (cut.text ? [cut.text] : []);
+    // 표시 단계 수: 글귀 수와 이미지 수 중 큰 쪽 (5번 컷은 이미지 1장 + 글귀 3줄)
+    const steps = Math.max(panelImgs.length, texts.length);
+    cutscene._steps = steps;
+    cutscene._texts = texts;
 
-    // 대사 표시 (있을 때만)
-    if (textEl) {
-        const t = (cut && cut.text) ? cut.text : '';
-        textEl.innerText = t;
-        if (t) textEl.classList.add('show'); else textEl.classList.remove('show');
-    }
+    if (textEl) { textEl.innerText = ''; textEl.classList.remove('show'); }
 
     // 패널 div들을 모두 생성(처음엔 invisible)
     panelImgs.forEach((img, i) => {
@@ -8050,31 +8376,80 @@ function renderCutsceneCut() {
         panelsEl.appendChild(d);
     });
 
-    // 순서대로 하나씩 페이드인
-    function revealNext() {
+    // 단계별로: 해당 이미지 페이드인(있으면) + 글귀 표시
+    function showStep(i) {
         const panels = panelsEl.querySelectorAll('.cutscene-panel');
-        if (cutscene.shown >= panels.length) {
+        if (i < panels.length) panels[i].classList.add('visible');
+        // 글귀 교체 (짧게 사라졌다 나타나는 페이드)
+        if (textEl) {
+            const t = texts[i] || '';
+            textEl.classList.remove('show');
+            setTimeout(() => {
+                textEl.innerText = t;
+                if (t) textEl.classList.add('show');
+            }, 180);
+        }
+    }
+
+    function revealNext() {
+        if (cutscene.shown >= steps) {
             cutscene.revealing = false;
             hintEl.classList.add('show');
             return;
         }
-        panels[cutscene.shown].classList.add('visible');
+        showStep(cutscene.shown);
         cutscene.shown++;
-        cutscene._timer = setTimeout(revealNext, 2500);  // 2.5초 간격으로 페이드인
+        cutscene._timer = setTimeout(revealNext, 4500);  // 4.5초 간격 (글귀 읽을 시간)
     }
     cutscene._timer = setTimeout(revealNext, 1000);
 }
 
 function cutsceneClick() {
     if (!cutscene.active) return;
-    // 아직 패널들이 다 안 떴으면: 즉시 전부 표시(스킵)
+    // 아직 단계가 다 안 진행됐으면: 다음 단계로 즉시 진행 (클릭으로 한 단계씩 넘김)
     if (cutscene.revealing) {
         if (cutscene._timer) { clearTimeout(cutscene._timer); cutscene._timer = null; }
-        const panels = document.querySelectorAll('#cutscene-panels .cutscene-panel');
-        panels.forEach(p => p.classList.add('visible'));
-        cutscene.shown = panels.length;
-        cutscene.revealing = false;
-        document.getElementById('cutscene-hint').classList.add('show');
+        const panelsEl = document.getElementById('cutscene-panels');
+        const textEl = document.getElementById('cutscene-text');
+        const hintEl = document.getElementById('cutscene-hint');
+        const panels = panelsEl.querySelectorAll('.cutscene-panel');
+        const steps = cutscene._steps || panels.length;
+        const texts = cutscene._texts || [];
+
+        // 다음 단계 표시
+        if (cutscene.shown < steps) {
+            const i = cutscene.shown;
+            if (i < panels.length) panels[i].classList.add('visible');
+            if (textEl) {
+                const t = texts[i] || '';
+                textEl.innerText = t;
+                if (t) textEl.classList.add('show'); else textEl.classList.remove('show');
+            }
+            cutscene.shown++;
+        }
+        // 모든 단계 끝났으면 힌트 표시
+        if (cutscene.shown >= steps) {
+            cutscene.revealing = false;
+            hintEl.classList.add('show');
+        } else {
+            // 아직 남았으면 자동 진행 타이머 재가동
+            cutscene._timer = setTimeout(function tick() {
+                if (cutscene.shown >= steps) {
+                    cutscene.revealing = false;
+                    hintEl.classList.add('show');
+                    return;
+                }
+                const i = cutscene.shown;
+                if (i < panels.length) panels[i].classList.add('visible');
+                if (textEl) {
+                    const t = texts[i] || '';
+                    textEl.classList.remove('show');
+                    setTimeout(() => { textEl.innerText = t; if (t) textEl.classList.add('show'); }, 180);
+                }
+                cutscene.shown++;
+                cutscene._timer = setTimeout(tick, 4500);
+            }, 4500);
+        }
         return;
     }
     // 다 떴으면 다음 컷으로
@@ -8204,12 +8579,27 @@ function startTutorial() {
                     // 미션(동작 대기) 단계는 대기 없이 즉시 진행/표시 가능
                     tutorial._canAdvance = true;
                 } else {
-                    // 일반 안내 대사는 1.5초 후에 넘길 수 있음
+                    // 일반 안내 대사는 2.5초 후에 넘길 수 있음
                     tutorial._canAdvance = false;
+                    const cur0 = tutCurrent();
+                    const isLast0 = cur0 && tutorial.sub >= cur0.lines.length - 1;
+                    const isActionMission = cur0 && isLast0 &&
+                        typeof TUT_ACTION_MISSIONS !== 'undefined' && TUT_ACTION_MISSIONS.has(cur0.await);
+                    // 동작형 미션의 마지막 안내는 더 오래(3.5초) 보여줘 미션을 읽을 시간을 줌
+                    const delay = isActionMission ? 3500 : 2500;
                     tutorial._advTimer = setTimeout(() => {
                         tutorial._canAdvance = true;
+                        // ★ 동작형 미션(밧줄/서명/불태우기/감정 등)의 마지막 안내 대사라면,
+                        //   사용자가 말풍선을 추가로 클릭하지 않아도 곧바로 미션을 수행할 수 있게 자동 활성화
+                        const cur = tutCurrent();
+                        const isLastLine = cur && tutorial.sub >= cur.lines.length - 1;
+                        if (cur && isLastLine && !tutorial.waiting &&
+                            typeof TUT_ACTION_MISSIONS !== 'undefined' && TUT_ACTION_MISSIONS.has(cur.await)) {
+                            tutAdvanceLine();   // waiting=true 로 전환 (보류된 동작이 있으면 함께 처리)
+                            return;
+                        }
                         if (tutorial.active) tutRender();   // 힌트 표시 갱신
-                    }, 1500);
+                    }, delay);
                 }
             }
             const showHint = tutorial._canAdvance;   // 안내 표시 여부
@@ -8468,7 +8858,7 @@ function startTutorial() {
             <div id="settlement-title" style="display:none"></div>
             <div id="settlement-content" style="font-size:1cqw;line-height:1.6;text-align:left;color:#2a1808;flex:1;display:flex;flex-direction:column;"></div>
             <div style="padding:1.5cqh 0 2cqh;text-align:center;">
-                <button onclick="closeSettlementModal()" style="padding:0.8cqw 3cqw;font-size:1.2cqw;font-weight:bold;background:rgba(90,58,26,0.12);color:#2a1808;border:0.2cqw solid rgba(90,58,26,0.4);border-radius:0.3cqw;cursor:pointer;font-family:Gaegu,serif">다음 날로</button>
+                <button id="settlement-next-btn" onclick="closeSettlementModal(false)" style="padding:0.8cqw 3cqw;font-size:1.2cqw;font-weight:bold;background:rgba(90,58,26,0.12);color:#2a1808;border:0.2cqw solid rgba(90,58,26,0.4);border-radius:0.3cqw;cursor:pointer;font-family:Gaegu,serif">다음 날로</button>
             </div>
         </div>
     </div>
