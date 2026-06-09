@@ -37,19 +37,20 @@
         /* ── 게임 무대 래퍼: 컨테이너 단위(cqw/cqh)의 기준 ── */
         #stage {
             position: relative;
-            width: 100vw;
-            height: 100vh;
+            /* 화면비와 무관하게 항상 16:9를 유지하며 화면 안에 꽉 맞춤 (남는 쪽은 검은 여백) */
+            width: min(100vw, 177.78vh);
+            height: min(100vh, 56.25vw);
             overflow: hidden;
             container-type: size;
             container-name: stage;
             background: #000;
             flex-shrink: 0;
         }
-        /* 모바일/태블릿: 화면비에 상관없이 16:9 무대를 화면 안에 꽉 맞추고 위아래/좌우 검은 여백(레터박스) */
-        @media (hover: none) and (pointer: coarse) {
+        /* 동적 뷰포트 높이 지원 브라우저(안드로이드 크롬 등): 주소창 영역까지 고려해 실제 보이는 높이 사용 */
+        @supports (height: 100dvh) {
             #stage {
-                width: min(100vw, 177.78vh);
-                height: min(100vh, 56.25vw);
+                width: min(100vw, 177.78dvh);
+                height: min(100dvh, 56.25vw);
             }
         }
 
@@ -71,6 +72,9 @@
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
             overscroll-behavior: none;
+        }
+        @supports (height: 100dvh) {
+            html, body { height: 100dvh; }
         }
 
         /* ── 모바일 세로 화면: 가로로 돌리도록 안내 ── */
@@ -2801,7 +2805,7 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
     <script>
        // ── 모바일 16:9 레터박스: 모든 게임 요소를 #stage 래퍼로 감싸 컨테이너 단위(cqw/cqh) 기준을 만든다 ──
        function wrapGameInStage() {
-           if (document.getElementById('stage')) return;
+           if (document.getElementById('stage')) { sizeStage(); return; }
            const body = document.body;
            const stage = document.createElement('div');
            stage.id = 'stage';
@@ -2813,16 +2817,42 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
                if (node.id === 'rotate-overlay') return true;
                return false;
            };
-           // 첫 번째 게임 요소 위치에 stage 삽입
            const children = Array.from(body.childNodes);
-           // stage를 body 맨 앞에 넣고, 바깥에 둘 것 빼고 모두 이동
            body.insertBefore(stage, body.firstChild);
            children.forEach(node => {
                if (node === stage) return;
                if (keepOutside(node)) return;
                stage.appendChild(node);
            });
+           sizeStage();
        }
+
+       // 실제 보이는 화면 안에 16:9 무대를 꽉 맞춰 px로 직접 지정 (CSS min/dvh/컨테이너 미지원 브라우저도 동작)
+       // 컨테이너 쿼리 길이 단위(cqw/cqh) 지원 여부 — 미지원이면 무대를 화면 전체로 두고 vw/vh 폴백에 맡김
+       const _supportsCQ = (window.CSS && CSS.supports && (CSS.supports('width: 1cqw') || CSS.supports('height: 1cqh')));
+       function sizeStage() {
+           const stage = document.getElementById('stage');
+           if (!stage) return;
+           const vw = window.innerWidth;
+           const vh = window.innerHeight;
+           if (!_supportsCQ) {
+               // 컨테이너 단위 미지원: 16:9 강제 시 콘텐츠가 cqh를 못 읽어 잘리므로, 화면을 꽉 채워 vw/vh 폴백으로 표시
+               stage.style.width = vw + 'px';
+               stage.style.height = vh + 'px';
+               return;
+           }
+           const ratio = 16 / 9;
+           let w, h;
+           if (vw / vh > ratio) {
+               h = vh; w = Math.round(vh * ratio);
+           } else {
+               w = vw; h = Math.round(vw / ratio);
+           }
+           stage.style.width = w + 'px';
+           stage.style.height = h + 'px';
+       }
+       window.addEventListener('resize', sizeStage);
+       window.addEventListener('orientationchange', () => setTimeout(sizeStage, 100));
        if (document.readyState === 'loading') {
            document.addEventListener('DOMContentLoaded', wrapGameInStage);
        } else {
