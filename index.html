@@ -3484,6 +3484,18 @@ function exitToLobby() {
                 rope.style.top = '-130vh';
                 playChimeSound();
             }, 180);
+
+            // ── 비둘기 전도로 손님이 도망간 상태: 커튼을 열지 않고 알림만 띄운 뒤 종을 다시 내림 ──
+            if (gameState._pigeonScaredName) {
+                gameState._pigeonScaredName = null;
+                setTimeout(() => {
+                    showFloatingText('손님이 전도에 질려 도망쳤습니다!', '#ffd700');
+                    // 손님을 부르지 않고 종만 다시 내려와 재타격을 유도
+                    resetGameTurn();
+                }, 700);
+                return;
+            }
+
             // 밧줄 당기면: 커튼 열림 → 손님 등장 → 손님이 자리잡으면 커튼 닫힘
             setTimeout(() => {
                 openStageCurtain();               // 커튼이 왼→오로 슬라이드되며 열림
@@ -3519,6 +3531,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
     streamerBroadcasted: null,   // null=미결정, true=허락, false=거절
     earlyClose: false,           // 조기 마감 여부
     receivedReports: [],         // 결산 보고서를 받은 일차 목록
+    crocStolen: [],              // 악어 강탈 기록 [{day, amount}]
 };
        // 손님 목록: 상황별 대사(등장, 수락, 거절) 3개씩 무작위 출력
        // ── 도감 사전용 공식 진품 마스터 텍스트 데이터 (사진 제외, 정밀 지식 수록) ──
@@ -3555,7 +3568,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             // ── 기본 후보군 (불시/성경구매비둘기 제외) ──
             const normalPool = guests.filter(g =>
                 g.id !== 'streamer' && g.id !== 'lizard' && g.id !== 'crow' &&
-                !(g.id === 'pigeon' && gameState.pigeonBought) &&
+                !(g.id === 'pigeon' && (gameState.pigeonBought || gameState.pigeonBible)) &&
                 !(g.id === 'cat' && gameState.catHasVisited)  // 첫 방문 후 예약 제외
             );
 
@@ -3620,9 +3633,9 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                 gameState.surpriseProbability = Math.min(1.0, gameState.surpriseProbability + 0.2);
             }
 
-            // ── 비둘기 돌발 등장 (낮은 확률 8%) ──
+            // ── 비둘기 돌발 등장 (낮은 확률 8%) — 성경 미소지/미구매 시에만 ──
             const pigeonGuest = guests.find(g => g.id === 'pigeon');
-            if (pigeonGuest && Math.random() < 0.08) {
+            if (pigeonGuest && !gameState.pigeonBought && !gameState.pigeonBible && Math.random() < 0.08) {
                 // 마지막 자리가 아닌 위치에 삽입
                 const maxIdx = Math.max(1, gameState.dailyGuestsQueue.length - 1);
                 const pi = Math.floor(Math.random() * maxIdx);
@@ -4370,6 +4383,9 @@ function startGameSetup(mode = 'new') {
                 gameState.day = 1;
                 gameState.money = 200000000;
                 gameState.purchasedItems = [];
+                gameState.crowSales = [];
+                gameState.crocStolen = [];
+                gameState.receivedReports = [];
                 gameState.lastGuest = null;
                 gameState.gameStarted = true;
                 gameState.needsAppraisal = false;
@@ -4560,21 +4576,10 @@ function generateGuest() {
 
             // 비둘기 전도로 도망간 손님 알림 연출
             if (gameState._pigeonScaredName) {
-                const scaredName = gameState._pigeonScaredName;
                 gameState._pigeonScaredName = null;
-                const doc = document.getElementById('game-document');
-                showFloatingText(`${scaredName} 손님이 전도에 질려 도망쳤습니다!`, '#ffd700');
-                if (doc && doc.style.display !== 'none') {
-                    doc.style.transition = 'transform 0.4s ease-out, opacity 0.4s ease';
-                    doc.style.transform = 'translateY(-30vh) scale(0.85)';
-                    doc.style.opacity = '0.3';
-                    setTimeout(() => {
-                        doc.style.transform = '';
-                        doc.style.opacity = '';
-                        doc.style.transition = '';
-                    }, 1200);
-                }
-                setTimeout(() => generateGuest(), 1800);
+                showFloatingText('손님이 전도에 질려 도망쳤습니다!', '#ffd700');
+                // 바로 다음 손님을 부르지 않고, 종을 다시 내려 사용자가 다시 치도록 함
+                resetGameTurn();
                 return;
             }
             const guest = gameState.dailyGuestsQueue.shift();
@@ -4675,8 +4680,10 @@ function generateGuest() {
                     trembleTimer = setInterval(() => {
                         fi = (fi + 1) % guest.frames.length;
                         guestDiv.style.backgroundImage = `url('${guest.frames[fi]}')`;
-                        const dx = (Math.random() - 0.5) * 0.7;
-                        const dy = (Math.random() - 0.5) * 0.7;
+                        // 남은 시간이 줄수록 떨림 폭이 커짐 (lizardTremble: 0.7 → ~4.5vw)
+                        const amp = (typeof lizardTremble === 'number') ? lizardTremble : 0.7;
+                        const dx = (Math.random() - 0.5) * amp;
+                        const dy = (Math.random() - 0.5) * amp;
                         guestDiv.style.transform = `translate(${dx}vw, ${dy}vw)`;
                     }, 85);
                 }, 850);
@@ -4806,6 +4813,8 @@ function generateGuest() {
             } else {
                 doc.style.display = 'flex'; doc.style.visibility = 'visible';
                 initSignatureCanvas(); initTearHandler();
+                // 쥐+뱀: 서류가 뜨는 즉시 방해 버튼을 서명칸에 배치 (대화 시작 전부터 존재)
+                if (guest.id === 'mouse') placeSnakeBotherBtn();
             }
             
             if (tutorial.active) {
@@ -4910,14 +4919,21 @@ function generateGuest() {
             if (!doc || !sb) return;
 
             const myItems = gameState.purchasedItems;
-            // 아직 거래한 물건이 없으면 일반 거래로 진행
-            if (!myItems || myItems.length === 0) {
-                showGuestDialogue('enter');
+            const eligible = (myItems || []).filter(e => e.item.owner !== 'pigeon');
+            // 까마귀가 살 수 있는 물건이 없으면 거래 없이 그냥 떠남
+            if (eligible.length === 0) {
+                if (doc) doc.style.display = 'none';
+                sb.innerHTML = `<div style="font-size:1.2vw;font-weight:bold;text-align:center;line-height:1.6">"흥... 살 만한 물건이 없군. 다음을 기약하지."</div>`;
+                sb.style.pointerEvents = 'none';
+                sb.classList.add('visible');
+                const guestDiv = document.querySelector('.game-guest');
+                setTimeout(() => {
+                    hideSpeechBubble();
+                    exitGuest(guestDiv);
+                    setTimeout(() => { if(gameState.dailyGuestsQueue.length===0) finishAllDeals(); else resetGameTurn(); }, 800);
+                }, 1800);
                 return;
             }
-
-            const eligible = myItems.filter(e => e.item.owner !== 'pigeon');
-            if (eligible.length === 0) { showGuestDialogue('enter'); return; }
             const target = eligible[Math.floor(Math.random() * eligible.length)];
             const price = roundToLeadingDigit(Math.floor((Math.random() * 4 + 1) * 10000000)); // 1천~5천만, 앞자리만
             gameState.crowTargetItem = { entry: target, price };
@@ -5097,7 +5113,7 @@ function generateGuest() {
         // ────────────────────────────────────────────
         // ── 뱀+쥐: 꽁냥 말풍선 + 방해 버튼 ──
         // ────────────────────────────────────────────
-        // 쥐 대사 (위 말풍선)
+        // 쥐 대사(질문/말 건넴) 와 뱀 대사(대답) 가 인덱스로 짝지어진 '대화 쌍'
         const mouseChats = [
             "이번 거래 성공하면 뭐 할거야?",
             "이 전당포 주인, 우리 눈치 못 채는 것 같죠?",
@@ -5105,7 +5121,6 @@ function generateGuest() {
             "이 물건 값 잘 받아야 할텐데...",
             "우리 오늘 꼭 성공해야 해.",
         ];
-        // 뱀 대사 (아래 말풍선)
         const snakeChats = [
             "당연히 우리 둘이 맛있는 거 먹어야죠~~",
             "크크크, 완전 봉이야~",
@@ -5113,71 +5128,168 @@ function generateGuest() {
             "당신 믿어요, 항상 그랬잖아요~",
             "걱정하지 마요, 내가 있잖아요~~",
         ];
-        let _snakeMouseChatIdx = 0;
+        let _snakeTurn = 0;            // 0=쥐 차례, 1=뱀 차례
+        let _snakePairIdx = 0;         // 현재 대화 쌍 인덱스
+        let _snakeChatTimeout = null;  // 다음 대사 예약 타이머
+
+        // 기본 소환 위치(vw/vh) 주변으로 랜덤하게 흔들되 화면 밖으로는 나가지 않게 제한
+        function _snakeRandPos(baseLeftVw, baseTopVh) {
+            const jL = (Math.random() - 0.5) * 8;   // ±4vw
+            const jT = (Math.random() - 0.5) * 10;  // ±5vh
+            let left = baseLeftVw + jL;
+            let top  = baseTopVh + jT;
+            // 말풍선 폭(최대 26vw)을 고려해 좌우/상하 화면 안으로 clamp
+            if (left < 1) left = 1;
+            if (left > 70) left = 70;     // 26vw 폭 + 여유
+            if (top < 6) top = 6;
+            if (top > 60) top = 60;
+            return { left, top };
+        }
+
+        function _renderSnakeLine() {
+            // 이전 말풍선 제거 (한 번에 하나만 떠서 번갈아 대화하는 느낌)
+            const old = document.getElementById('snake-line-bubble');
+            if (old) old.remove();
+
+            const isMouse = (_snakeTurn === 0);
+            const speaker = isMouse ? '쥐' : '뱀';
+            const text = isMouse
+                ? mouseChats[_snakePairIdx % mouseChats.length]
+                : snakeChats[_snakePairIdx % snakeChats.length];
+
+            // 쥐는 위쪽(20vh), 뱀은 아래쪽(37vh) 부근을 기준으로 랜덤 위치
+            const pos = isMouse ? _snakeRandPos(1.5, 20) : _snakeRandPos(3.5, 37);
+
+            const el = document.createElement('div');
+            el.id = 'snake-line-bubble';
+            const bg = isMouse ? '#fff8e8' : '#f0fff0';
+            const bd = isMouse ? '#c9a86a' : '#6aa86a';
+            const fg = isMouse ? '#3a2410' : '#1a3a1a';
+            el.style.cssText = `position:fixed;top:${pos.top}vh;left:${pos.left}vw;max-width:26vw;background:${bg};color:${fg};font-family:Gaegu,serif;font-size:1.5vw;font-weight:bold;line-height:1.5;border-radius:1vw;border:0.2vw solid ${bd};padding:1vw 1.5vw;z-index:9000;box-shadow:0 0.4vw 1.2vw rgba(0,0,0,0.5);opacity:0;transform:scale(0.85);transition:opacity 0.25s ease, transform 0.3s cubic-bezier(0.34,1.5,0.64,1);`;
+            el.innerHTML = `<span style="font-size:1vw;color:#888;display:block;margin-bottom:0.3vh">${speaker}</span>` + text;
+            document.body.appendChild(el);
+            // 등장 후 실제 크기로 화면 하단/우측 넘침 재보정
+            requestAnimationFrame(() => {
+                el.style.opacity = '1'; el.style.transform = 'scale(1)';
+                const r = el.getBoundingClientRect();
+                const W = window.innerWidth, H = window.innerHeight;
+                if (r.right > W - 8)  el.style.left = Math.max(8, W - r.width - 8) + 'px';
+                if (r.bottom > H - 8) el.style.top  = Math.max(8, H - r.height - 8) + 'px';
+            });
+
+            // 다음 차례 예약: 쥐가 말하면 뱀이 답, 뱀이 답하면 다음 쌍의 쥐
+            if (_snakeTurn === 0) {
+                _snakeTurn = 1;                 // 다음은 뱀(대답)
+            } else {
+                _snakeTurn = 0;                 // 다음은 쥐(새 화제)
+                _snakePairIdx++;
+            }
+            // 쥐·뱀 모두 비슷한 시간 떠 있도록 균등하게 텀을 둠
+            const delay = 2000;
+            _snakeChatTimeout = setTimeout(_renderSnakeLine, delay);
+        }
+
         function showSnakeMouseUI() {
             const doc = document.getElementById('game-document');
             if (doc) { doc.style.display = 'flex'; doc.style.visibility = 'visible'; initSignatureCanvas(); initTearHandler(); }
 
-            // 위 말풍선 (쥐)
-            const mouseEl = document.createElement('div');
-            mouseEl.id = 'snake-mouse-chat';
-            mouseEl.style.cssText = 'position:fixed;top:20vh;left:1.5vw;max-width:26vw;background:#fff8e8;color:#3a2410;font-family:Gaegu,serif;font-size:1.5vw;font-weight:bold;line-height:1.5;border-radius:1vw;border:0.2vw solid #c9a86a;padding:1vw 1.5vw;z-index:9000;box-shadow:0 0.4vw 1.2vw rgba(0,0,0,0.5);';
-            mouseEl.innerHTML = '<span style="font-size:1vw;color:#888;display:block;margin-bottom:0.3vh">쥐</span>' + mouseChats[_snakeMouseChatIdx % mouseChats.length];
-            document.body.appendChild(mouseEl);
+            // 대화 시작 (번갈아 등장)
+            _snakeTurn = 0;
+            _snakePairIdx = Math.floor(Math.random() * mouseChats.length);
+            if (_snakeChatTimeout) { clearTimeout(_snakeChatTimeout); _snakeChatTimeout = null; }
+            _renderSnakeLine();
+            // 호환용: 기존 정리 코드가 참조하는 타이머 핸들 비활성화
+            gameState._snakeChatTimer = null;
 
-            // 아래 말풍선 (뱀)
-            const snakeEl = document.createElement('div');
-            snakeEl.id = 'snake-chat';
-            snakeEl.style.cssText = 'position:fixed;top:37vh;left:1.5vw;max-width:26vw;background:#f0fff0;color:#1a3a1a;font-family:Gaegu,serif;font-size:1.5vw;font-weight:bold;line-height:1.5;border-radius:1vw;border:0.2vw solid #6aa86a;padding:1vw 1.5vw;z-index:9000;box-shadow:0 0.4vw 1.2vw rgba(0,0,0,0.5);';
-            snakeEl.innerHTML = '<span style="font-size:1vw;color:#888;display:block;margin-bottom:0.3vh">뱀</span>' + snakeChats[_snakeMouseChatIdx % snakeChats.length];
-            document.body.appendChild(snakeEl);
+            // ── 방해 버튼: 서류의 서명칸에 꽉 차게 배치 (이미 서류 표시 시점에 생성됨) ──
+            placeSnakeBotherBtn();
+        }
 
-            _snakeMouseChatIdx++;
-
-            // 3초마다 갱신
-            const chatTimer = setInterval(() => {
-                const m = document.getElementById('snake-mouse-chat');
-                const s = document.getElementById('snake-chat');
-                if (!m || !s) { clearInterval(chatTimer); return; }
-                m.innerHTML = '<span style="font-size:0.85vw;color:#888;display:block;margin-bottom:0.2vh">쥐</span>' + mouseChats[_snakeMouseChatIdx % mouseChats.length];
-                s.innerHTML = '<span style="font-size:0.85vw;color:#888;display:block;margin-bottom:0.2vh">뱀</span>' + snakeChats[_snakeMouseChatIdx % snakeChats.length];
-                _snakeMouseChatIdx++;
-            }, 3000);
-            gameState._snakeChatTimer = chatTimer;
-
-            // 방해 버튼
-            const btnEl = document.createElement('button');
+        // 쥐+뱀 방해 버튼을 서명칸(#sig-box)에 꽉 차게 생성 + 서명 캔버스 비활성화
+        function placeSnakeBotherBtn() {
+            const sigBox = document.getElementById('sig-box');
+            if (!sigBox) return;
+            // 서명 캔버스를 비활성화(클릭/그리기 차단)하여 서명 버그 방지
+            const sc = document.getElementById('signature-canvas');
+            if (sc) {
+                sc.onmousedown = sc.onmousemove = sc.onmouseup = sc.onmouseleave = null;
+                sc.style.pointerEvents = 'none';
+            }
+            let btnEl = document.getElementById('snake-bother-btn');
+            if (btnEl) btnEl.remove();
+            btnEl = document.createElement('button');
             btnEl.id = 'snake-bother-btn';
             btnEl.innerText = '방해하기';
-            btnEl.style.cssText = 'position:fixed;top:54vh;left:1.5vw;padding:0.8vw 2vw;font-family:Gaegu,serif;font-size:1.3vw;font-weight:bold;background:#3a2a08;color:#fcd53f;border:0.15vw solid #cba328;border-radius:0.5vw;cursor:pointer;z-index:9001;';
-            btnEl.onclick = snakeBother;
-            document.body.appendChild(btnEl);
+            btnEl.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;margin:0;padding:0;font-family:Gaegu,serif;font-size:1.4vw;font-weight:bold;background:rgba(58,42,8,0.92);color:#fcd53f;border:0.15vw solid #cba328;border-radius:0.3vw;cursor:pointer;z-index:120;box-shadow:inset 0 0 1vw rgba(0,0,0,0.4);';
+            btnEl.onmouseover = () => { btnEl.style.background = 'rgba(74,54,16,0.95)'; };
+            btnEl.onmouseout  = () => { btnEl.style.background = 'rgba(58,42,8,0.92)'; };
+            btnEl.onclick = (e) => { e.stopPropagation(); snakeBother(); };
+            sigBox.appendChild(btnEl);
+            // 서명 힌트 문구를 방해 안내로 교체
+            const hint = document.getElementById('sign-hint');
+            if (hint) { hint.textContent = '서명칸을 눌러 쥐와 뱀을 방해할 수 있습니다.'; hint.style.color = '#8a5a1a'; }
         }
         function snakeBother() {
+            if (_snakeChatTimeout) { clearTimeout(_snakeChatTimeout); _snakeChatTimeout = null; }
             clearInterval(gameState._snakeChatTimer);
-            const chatEl = document.getElementById('snake-mouse-chat');
+            const lineEl = document.getElementById('snake-line-bubble');
             const btnEl = document.getElementById('snake-bother-btn');
-            if (chatEl) chatEl.remove();
+            if (lineEl) lineEl.remove();
             if (btnEl) btnEl.remove();
 
             if (Math.random() < 0.5) {
-                // 50% 도망
+                // 50% 도망 → 서명 불가 상태로 서류를 위로 올려 사라지게 함
                 showFloatingText('방해에 기분 상한 쥐+뱀이 도망갔습니다!', '#ff6b6b');
                 const guestDiv = document.querySelector('.game-guest');
-                setTimeout(() => { exitGuest(guestDiv); setTimeout(() => { if(gameState.dailyGuestsQueue.length===0) finishAllDeals(); else resetGameTurn(); }, 800); }, 500);
+                const doc = document.getElementById('game-document');
+                // 서명 차단
+                const sc = document.getElementById('signature-canvas');
+                if (sc) { sc.onmousedown = sc.onmousemove = sc.onmouseup = sc.onmouseleave = null; sc.style.pointerEvents = 'none'; }
+                if (doc) { doc.onmousedown = null; doc.style.pointerEvents = 'none'; }
+                window.onmousemove = null; window.onmouseup = null;
+                // 서류가 위로 솟구치며 사라짐
+                if (doc && doc.style.display !== 'none') {
+                    doc.style.transition = 'transform 0.55s cubic-bezier(0.55,0,0.5,1), opacity 0.45s ease 0.1s';
+                    doc.style.transformOrigin = 'top center';
+                    doc.style.transform = 'translateY(-120vh) scale(0.85)';
+                    doc.style.opacity = '0';
+                }
+                setTimeout(() => { exitGuest(guestDiv); setTimeout(() => { if(gameState.dailyGuestsQueue.length===0) finishAllDeals(); else resetGameTurn(); }, 800); }, 700);
             } else {
-                // 50% 할인
-                gameState.itemPrice = Math.floor(gameState.itemPrice * 0.5);
+                // 50% 할인 → 서명으로 거래 진행 가능하도록 서명 캔버스 재활성화
+                const orig = gameState.itemPrice;
+                gameState.itemPrice = Math.floor(orig * 0.5);
                 showFloatingText('불쌍해 보여서... 반값에 드릴게요.', '#a0d8ff');
-                updateDocPrice();
+                // 원가에 취소선 + 할인가 표시
+                const priceEl = document.getElementById('doc-price');
+                if (priceEl) {
+                    priceEl.innerHTML = `매입 제안가: <span style="text-decoration:line-through;color:#999;font-size:0.9em">₩ ${orig.toLocaleString()}</span> → <span style="color:#e53935;font-weight:bold">₩ ${gameState.itemPrice.toLocaleString()}</span>`;
+                } else {
+                    updateDocPrice();
+                }
+                // 서명 캔버스 다시 활성화
+                const sc = document.getElementById('signature-canvas');
+                if (sc) sc.style.pointerEvents = '';
+                if (typeof initSignatureCanvas === 'function') initSignatureCanvas();
+                const hint = document.getElementById('sign-hint');
+                if (hint) { hint.textContent = 'Sign here to accept'; hint.style.color = ''; }
             }
         }
         function cleanupSnakeUI() {
+            if (_snakeChatTimeout) { clearTimeout(_snakeChatTimeout); _snakeChatTimeout = null; }
             clearInterval(gameState._snakeChatTimer);
+            const line = document.getElementById('snake-line-bubble');
             const c = document.getElementById('snake-mouse-chat');
             const s = document.getElementById('snake-chat');
             const b = document.getElementById('snake-bother-btn');
+            if (line) line.remove();
             if (c) c.remove(); if (s) s.remove(); if (b) b.remove();
+            // 서명 힌트 원복
+            const hint = document.getElementById('sign-hint');
+            if (hint) { hint.textContent = 'Sign here to accept'; hint.style.color = ''; }
+            // 서명 캔버스 차단 해제
+            const sc = document.getElementById('signature-canvas');
+            if (sc) sc.style.pointerEvents = '';
         }
 
         // ────────────────────────────────────────────
@@ -5233,7 +5345,9 @@ function generateGuest() {
             if (sb) { sb.innerHTML = ''; sb.style.pointerEvents = 'none'; sb.classList.remove('visible'); }
             showFloatingText('돼지가 실연당해 도망갔습니다...', '#ff6b6b');
             const guestDiv = document.querySelector('.game-guest');
-            setTimeout(() => { exitGuest(guestDiv); setTimeout(() => { if(gameState.dailyGuestsQueue.length===0) finishAllDeals(); else resetGameTurn(); }, 800); }, 500);
+            // 실연당한 돼지를 pig2 이미지로 회전 교체 (다른 손님 이미지 교체와 동일한 방식)
+            if (guestDiv) spinGuest(guestDiv, 'pig2.jpg');
+            setTimeout(() => { exitGuest(guestDiv); setTimeout(() => { if(gameState.dailyGuestsQueue.length===0) finishAllDeals(); else resetGameTurn(); }, 800); }, 900);
         }
 
         function initSignatureCanvas() {
@@ -6017,10 +6131,30 @@ function renderLobbyItems() {
                 });
             }
 
-            // ★ 누락되었던 순이익 계산 로직 추가 (오류 해결의 핵심)
-            const netProfit = gain - todayExpense;
+            // 악어 강탈 내역
+            const todayCrocStolen = (gameState.crocStolen || []).filter(e => (e.day || 1) === gameState.day);
+            let todayStolen = 0;
+            todayCrocStolen.forEach((cs, i) => {
+                todayStolen += cs.amount;
+                itemRows += `
+                    <div style="padding:0.5vh 0;border-bottom:0.08vw dashed rgba(90,58,26,0.25);font-size:0.85vw;background:rgba(163,32,32,0.06);">
+                        <div style="display:flex;align-items:center;gap:0.4vw;margin-bottom:0.2vh">
+                            <span style="color:#888;min-width:1.4vw">!</span>
+                            <span style="flex:1;color:#a32020;font-weight:bold">악어의 강탈</span>
+                            <span style="color:#a32020;font-size:0.78vw;background:rgba(163,32,32,0.1);padding:0.1vh 0.5vw;border-radius:0.3vw">피해</span>
+                        </div>
+                        <div style="text-align:right;font-size:0.78vw;color:#a32020;padding-left:1.8vw;font-weight:bold">
+                            −${(cs.amount/10000).toLocaleString()}만
+                        </div>
+                    </div>`;
+            });
+
+            // ★ 순이익 계산 (감정 수입 − 매입 지출 − 강탈 피해)
+            const netProfit = gain - todayExpense - todayStolen;
             const isProfit = netProfit >= 0;
             const pColor = isProfit ? '#2b7a1a' : '#a32020';
+            // 오늘 시작 시점의 기존 소지금 역산 (현재 잔액에서 오늘 변동분을 되돌림)
+            const startMoney = gameState.money - gain + todayExpense + todayStolen;
 
 // 책 속 결산 보고서와 동일한 서류 카드 스타일 (세로 축소 및 스크롤 최적화)
             content.innerHTML = `
@@ -6035,23 +6169,30 @@ function renderLobbyItems() {
                     <div style="font-weight:bold;color:#3a2010;margin-bottom:0.5vh;font-size:0.9vw">[ 거래 물품 내역 ]</div>
                     <div style="flex-grow:1;overflow-y:auto;">${itemRows}</div>
                 </div>
-                <div style="padding:0.6vh 1.5vw;border-top:0.1vw solid rgba(90,58,26,0.2);font-size:0.95vw">
+                <div style="padding:0.6vh 1.5vw;border-top:0.1vw solid rgba(90,58,26,0.2);font-size:0.9vw">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:0.4vh">
+                        <span style="color:#5a3a1a">기존 소지금</span>
+                        <span style="color:#5a3a1a;font-weight:bold">₩${startMoney.toLocaleString()}</span>
+                    </div>
                     <div style="display:flex;justify-content:space-between;margin-bottom:0.4vh">
                         <span style="color:#5a3a1a">매입 지출</span>
-                        <span style="color:#a32020;font-weight:bold">−₩${(todayExpense/10000).toLocaleString()}만</span>
+                        <span style="color:#a32020;font-weight:bold">−₩${todayExpense.toLocaleString()}</span>
                     </div>
-                    <div style="display:flex;justify-content:space-between;margin-bottom:0.6vh">
+                    ${todayStolen > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:0.4vh">
+                        <span style="color:#5a3a1a">악어 강탈 피해</span>
+                        <span style="color:#a32020;font-weight:bold">−₩${todayStolen.toLocaleString()}</span>
+                    </div>` : ``}
+                    <div style="display:flex;justify-content:space-between;margin-bottom:0.4vh">
                         <span style="color:#5a3a1a">감정 수입</span>
-                        <span style="color:#2b7a1a;font-weight:bold">+₩${(gain/10000).toLocaleString()}만</span>
+                        <span style="color:#2b7a1a;font-weight:bold">+₩${gain.toLocaleString()}</span>
                     </div>
                 </div>
-                <div style="margin:0 1.2vw 1vh;padding:0.9vh 1vw;background:${isProfit?'rgba(43,122,26,0.1)':'rgba(163,32,32,0.1)'};border:0.12vw solid ${pColor}55;border-radius:0.3vw;display:flex;justify-content:space-between;font-size:1.15vw;font-weight:bold">
-                    <span style="color:#2a1808">당일 순이익</span>
-                    <span style="color:${pColor}">${isProfit?'+':''}₩${netProfit.toLocaleString()}</span>
+                <div style="margin:0.4vh 1.2vw 1vh;padding:0.9vh 1vw;background:rgba(200,136,10,0.1);border:0.12vw solid rgba(200,136,10,0.4);border-radius:0.3vw;display:flex;justify-content:space-between;font-size:1.15vw;font-weight:bold">
+                    <span style="color:#2a1808">최종 금액</span>
+                    <span style="color:#c8880a">₩${gameState.money.toLocaleString()}</span>
                 </div>
-                <div style="padding:0 1.5vw 0.5vh;display:flex;justify-content:space-between;font-size:0.85vw;color:#7a5a2a">
-                    <span>현재 총 보유 자산</span>
-                    <span style="color:#c8880a;font-weight:bold">₩${gameState.money.toLocaleString()}</span>
+                <div style="padding:0 1.5vw 0.6vh;text-align:right;font-size:0.85vw;color:${pColor};font-weight:bold">
+                    당일 순이익 ${isProfit?'+':'−'}₩${Math.abs(netProfit).toLocaleString()}
                 </div>`;
 
             modal.style.display = 'flex';
@@ -6082,7 +6223,14 @@ function renderLobbyItems() {
                 const dayItems = gameState.purchasedItems.filter(e => (e.day || 1) === d);
                 const daySell  = dayItems.reduce((s, e) => s + (e.sellPrice || 0), 0);
                 const dayBuy   = dayItems.reduce((s, e) => s + (e.buyPrice  || 0), 0);
-                const netProfit = daySell - dayBuy;
+                // 까마귀 판매 + 악어 강탈
+                const dayCrow  = (gameState.crowSales || []).filter(e => (e.day || 1) === d);
+                const dayCrowSell = dayCrow.reduce((s, e) => s + (e.crowPrice || 0), 0);
+                const dayCrowBuy  = dayCrow.reduce((s, e) => s + (e.buyPrice || 0), 0);
+                const dayStolen = (gameState.crocStolen || []).filter(e => (e.day || 1) === d).reduce((s, e) => s + (e.amount || 0), 0);
+                const totalBuy  = dayBuy + dayCrowBuy;
+                const totalSell = daySell + dayCrowSell;
+                const netProfit = totalSell - totalBuy - dayStolen;
                 const isProfit  = netProfit >= 0;
                 const pColor    = isProfit ? '#2b7a1a' : '#a32020';
 
@@ -6120,7 +6268,7 @@ function renderLobbyItems() {
 
                 // 손님 서류와 동일한 스타일 (물품 매입 계약서와 유사)
                 html += `
-                <div style="min-width:22vw;width:22vw;height:64vh;
+                <div class="final-day-card" data-day="${d}" style="min-width:22vw;width:22vw;height:64vh;cursor:zoom-in;
                     background:#e8d5b0;
                     background-image:repeating-linear-gradient(transparent, transparent 2.4vh, rgba(90,58,26,0.08) 2.4vh, rgba(90,58,26,0.08) 2.5vh);
                     border-radius:0.3vw;
@@ -6152,11 +6300,15 @@ function renderLobbyItems() {
                     <div style="padding:0.6vh 1.2vw;border-top:0.1vw solid rgba(90,58,26,0.2);font-size:0.82vw;">
                         <div style="display:flex;justify-content:space-between;margin-bottom:0.3vh">
                             <span style="color:#5a3a1a">매입 지출</span>
-                            <span style="color:#a32020;font-weight:bold">−₩${(dayBuy/10000).toLocaleString()}만</span>
+                            <span style="color:#a32020;font-weight:bold">−₩${(totalBuy/10000).toLocaleString()}만</span>
                         </div>
+                        ${dayStolen > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:0.3vh">
+                            <span style="color:#5a3a1a">악어 강탈 피해</span>
+                            <span style="color:#a32020;font-weight:bold">−₩${(dayStolen/10000).toLocaleString()}만</span>
+                        </div>` : ``}
                         <div style="display:flex;justify-content:space-between;margin-bottom:0.6vh">
                             <span style="color:#5a3a1a">감정 수입</span>
-                            <span style="color:#2b7a1a;font-weight:bold">+₩${(daySell/10000).toLocaleString()}만</span>
+                            <span style="color:#2b7a1a;font-weight:bold">+₩${(totalSell/10000).toLocaleString()}만</span>
                         </div>
                     </div>
 
@@ -6166,7 +6318,7 @@ function renderLobbyItems() {
                         border:0.12vw solid ${pColor}55;border-radius:0.3vw;
                         display:flex;justify-content:space-between;font-size:0.95vw;font-weight:bold;">
                         <span>당일 순이익</span>
-                        <span style="color:${pColor}">${isProfit?'+':''}₩${(netProfit/10000).toLocaleString()}만</span>
+                        <span style="color:${pColor}">${isProfit?'+':'−'}₩${Math.abs(netProfit/10000).toLocaleString()}만</span>
                     </div>
 
                     <!-- 서명란 스타일 여백 -->
@@ -6182,17 +6334,62 @@ function renderLobbyItems() {
             html += `</div>`;
             content.innerHTML = html;
 
-            // 카드 드래그 스크롤
+            // 카드 드래그 스크롤 + 클릭 시 확대
             const cards = document.getElementById('final-report-cards');
             if (cards) {
-                let drag = false, sx = 0, ss = 0;
-                cards.addEventListener('mousedown',  e => { drag=true; sx=e.clientX; ss=cards.scrollLeft; cards.style.cursor='grabbing'; });
-                cards.addEventListener('mousemove',  e => { if(drag) cards.scrollLeft = ss-(e.clientX-sx); });
+                let drag = false, sx = 0, ss = 0, moved = false;
+                cards.addEventListener('mousedown',  e => { drag=true; moved=false; sx=e.clientX; ss=cards.scrollLeft; cards.style.cursor='grabbing'; });
+                cards.addEventListener('mousemove',  e => { if(drag){ if(Math.abs(e.clientX-sx)>6) moved=true; cards.scrollLeft = ss-(e.clientX-sx); } });
                 cards.addEventListener('mouseup',    () => { drag=false; cards.style.cursor='grab'; });
                 cards.addEventListener('mouseleave', () => { drag=false; cards.style.cursor='grab'; });
+                // 클릭(드래그 아님) → 해당 카드 확대
+                cards.addEventListener('click', e => {
+                    if (moved) { moved = false; return; }
+                    const card = e.target.closest('.final-day-card');
+                    if (card) zoomFinalCard(card);
+                });
             }
 
             modal.style.display = 'flex';
+        }
+
+        // 결산 보고서 카드 확대 보기
+        function zoomFinalCard(card) {
+            // 기존 확대 오버레이 제거
+            const old = document.getElementById('final-card-zoom');
+            if (old) old.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'final-card-zoom';
+            overlay.style.cssText = 'position:absolute;inset:0;z-index:600;background:rgba(0,0,0,0.78);display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
+
+            const clone = card.cloneNode(true);
+            clone.classList.remove('final-day-card');
+            // 확대: 화면 중앙에 크게
+            clone.style.cssText = card.getAttribute('style')
+                .replace(/min-width:[^;]+;/, 'min-width:unset;')
+                .replace(/width:22vw;/, 'width:38vw;')
+                .replace(/height:64vh;/, 'height:86vh;')
+                .replace(/cursor:zoom-in;/, 'cursor:default;');
+            clone.style.transform = 'scale(0.9)';
+            clone.style.opacity = '0';
+            clone.style.transition = 'transform 0.35s cubic-bezier(0.34,1.4,0.64,1), opacity 0.3s ease';
+            // 내부 폰트 크게 (확대된 카드 가독성)
+            clone.querySelectorAll('*').forEach(el => {
+                // vw 단위 폰트는 카드가 커진 만큼 자연스럽게 커지지 않으므로 약간 키움
+            });
+            clone.addEventListener('click', e => e.stopPropagation());
+
+            overlay.appendChild(clone);
+            overlay.addEventListener('click', () => {
+                clone.style.transform = 'scale(0.9)'; clone.style.opacity = '0';
+                setTimeout(() => overlay.remove(), 250);
+            });
+
+            // 카탈로그 화면 위에 표시 (결산 모달 컨테이너 내부에 붙임)
+            const host = document.getElementById('final-report-modal') || document.body;
+            host.appendChild(overlay);
+            requestAnimationFrame(() => { clone.style.transform = 'scale(1)'; clone.style.opacity = '1'; });
         }
 
         function closeFinalReport() {
@@ -7273,6 +7470,55 @@ function goToLobby() {
             const guest = document.querySelector('.game-guest');
             const isStreamer = (gameState.lastGuest === 'streamer');
 
+            // ── 악어: 거래 거절 시 50% 확률로 현재 소지금의 20%를 강탈 ──
+            //   강탈 이벤트 발생 시 crocodile2.jpg 로 회전 교체 (다른 손님 이미지 교체와 동일한 방식)
+            let crocStole = false;
+            if (!tutorial.active && gameState.lastGuest === 'crocodile' && Math.random() < 0.5) {
+                crocStole = true;
+                const stolen = Math.floor(gameState.money * 0.2);
+                gameState.money = Math.max(0, gameState.money - stolen);
+                updateMoneyCounter();
+
+                // 결산 보고서에 반영할 강탈 기록 저장
+                if (!gameState.crocStolen) gameState.crocStolen = [];
+                gameState.crocStolen.push({ day: gameState.day, amount: stolen });
+
+                // 강탈 알림
+                showFloatingText(`악어가 당신의 ₩${stolen.toLocaleString()}원을 강탈해 갔습니다...`, '#ff6b6b');
+
+                // 강탈 시 악어를 crocodile2 이미지로 회전 교체 + 살짝 위로 올림
+                if (guest) {
+                    spinGuest(guest, 'crocodile2.jpg');
+                    guest.style.top = '-6vh';
+                }
+
+                // 강탈 전용 대사 말풍선
+                const sb = document.getElementById('speech-bubble');
+                if (sb) {
+                    sb.innerHTML = '<div style="font-size:1.3vw;font-weight:bold;text-align:center;padding:1vw">"이 정도는 내놔야 공평하지 않겠어?"</div>';
+                    sb.classList.add('visible');
+                }
+            }
+
+            // 악어 강탈 연출이 발생한 경우: 전용 대사를 충분히 보여준 뒤 늦게 퇴장
+            if (crocStole && guest) {
+                setTimeout(() => {
+                    hideSpeechBubble();
+                    exitGuest(guest);
+                    setTimeout(() => {
+                        if (gameState.money <= 0 && !gameState.earlyClose) {
+                            gameState.earlyClose = true;
+                            showFloatingText('소지금 소진! 오늘 영업을 마감합니다.', '#ff6b6b');
+                            setTimeout(() => finishAllDeals(), 1500);
+                            return;
+                        }
+                        if (gameState.dailyGuestsQueue.length === 0) finishAllDeals();
+                        else resetGameTurn();
+                    }, 800);
+                }, 3400);
+                return;
+            }
+
             // 튜토리얼: 불태우기 완료 후 단계 진행
             if (tutorial.active) {
                 const burnEvent = tutorial._afterBurnEvent || 'burn';
@@ -7340,35 +7586,62 @@ function goToLobby() {
             }
             goToLobby();
         }
-        // ── 도마뱀 전용 타임어택 도주 함수 (10초 초과 시 발동) ──
-        // ── 도마뱀 전용 타임어택 (시각적 10초 타이머) ──
+        // ── 도마뱀 전용 타임어택 (말풍선 내부 표시 + 시간이 줄수록 떨림 심화) ──
         let taInterval = null;
+        // 남은 시간 비율(0~1)에 따라 떨림 강도를 trembleTimer 가 읽어 사용
+        let lizardTremble = 0.7;   // 기본 떨림 강도(vw). 시간이 줄수록 커짐
         function startTimeAttack() {
-            const ui = document.getElementById('time-attack-ui');
-            const secEl = document.getElementById('ta-sec');
-            if (!ui || !secEl) return;
-            
-            ui.style.display = 'block';
-            let timeLeft = 10.00;
-            secEl.innerText = timeLeft.toFixed(2);
+            // 말풍선 안에 타이머 영역을 마련 (입장 대사가 타이핑된 뒤에도 유지되도록 별도 노드)
+            lizardTremble = 0.7;
+            const TOTAL = 10.00;
+            let timeLeft = TOTAL;
+
+            const ensureTimerNode = () => {
+                const sb = document.getElementById('speech-bubble');
+                if (!sb) return null;
+                sb.classList.add('visible');
+                let t = document.getElementById('lizard-timer-inbubble');
+                if (!t) {
+                    t = document.createElement('div');
+                    t.id = 'lizard-timer-inbubble';
+                    t.style.cssText = 'margin-top:1vh;text-align:center;font-family:Georgia,serif;font-weight:bold;font-size:1.5vw;color:#ff4757;letter-spacing:0.05em;';
+                    sb.appendChild(t);
+                }
+                return t;
+            };
 
             taInterval = setInterval(() => {
-                timeLeft -= 0.05; // 50ms 마다 매우 빠르게 감소
+                timeLeft -= 0.05;
                 if (timeLeft <= 0) {
                     timeLeft = 0;
-                    secEl.innerText = "0.00";
+                    const t = document.getElementById('lizard-timer-inbubble');
+                    if (t) t.innerHTML = '0.00초';
                     stopTimeAttack();
                     lizardRunAway();
-                } else {
-                    secEl.innerText = timeLeft.toFixed(2);
+                    return;
+                }
+                const ratio = timeLeft / TOTAL;           // 1 → 0
+                // 남은 시간이 줄수록 떨림 강도 증가 (0.7 → 약 4.5vw)
+                lizardTremble = 0.7 + (1 - ratio) * 3.8;
+                const t = ensureTimerNode();
+                if (t) {
+                    // 시간이 촉박할수록 글자 색이 더 붉고 커지며 더 빠르게 깜빡임
+                    const urgent = ratio < 0.35;
+                    t.style.color = urgent ? '#ff1f3d' : '#ff4757';
+                    t.style.fontSize = (1.5 + (1 - ratio) * 0.8) + 'vw';
+                    t.style.transform = `scale(${1 + (1 - ratio) * 0.08})`;
+                    t.innerHTML = `남은 시간: ${timeLeft.toFixed(2)}초`;
                 }
             }, 50);
         }
 
         function stopTimeAttack() {
             if (taInterval) { clearInterval(taInterval); taInterval = null; }
+            lizardTremble = 0.7;
             const ui = document.getElementById('time-attack-ui');
             if (ui) ui.style.display = 'none';
+            const t = document.getElementById('lizard-timer-inbubble');
+            if (t) t.remove();
         }
 
         // ── 10초 초과 시 도마뱀 강제 도주 함수 ──
@@ -7905,6 +8178,9 @@ function startTutorial() {
             gameState.day = 1;
             gameState.money = 200000000;
             gameState.purchasedItems = [];
+            gameState.crowSales = [];
+            gameState.crocStolen = [];
+            gameState.receivedReports = [];
             gameState.obtainedCount = 0;
             gameState.needsAppraisal = false;
             gameState.appraisedToday = false;
