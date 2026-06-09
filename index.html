@@ -2,7 +2,9 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Pawnshop Lobby</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,6 +48,47 @@
             -moz-user-select: none;
             -ms-user-select: none;
             -webkit-touch-callout: none;
+            /* 모바일: 더블탭 줌·길게눌러 메뉴·당겨서새로고침 방지 */
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior: none;
+        }
+
+        /* ── 모바일 세로 화면: 가로로 돌리도록 안내 ── */
+        #rotate-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 2147483647;
+            background: #1a0d04;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fcd53f;
+            font-family: 'Gaegu', 'Georgia', serif;
+            text-align: center;
+            padding: 8vw;
+            box-sizing: border-box;
+        }
+        #rotate-overlay .rotate-icon {
+            font-size: 18vw;
+            animation: rotate-hint 2s ease-in-out infinite;
+            margin-bottom: 4vh;
+        }
+        #rotate-overlay .rotate-text {
+            font-size: 5.5vw;
+            font-weight: bold;
+            line-height: 1.6;
+            text-shadow: 0 0.5vw 1vw rgba(0,0,0,0.8);
+        }
+        @keyframes rotate-hint {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-90deg); }
+        }
+        /* 세로 방향(휴대폰 폭<높이)일 때만 안내 표시 */
+        @media (orientation: portrait) and (max-width: 1024px) {
+            #rotate-overlay { display: flex; }
         }
         /* 이미지 드래그 차단 */
         img { -webkit-user-drag: none; user-drag: none; pointer-events: none; }
@@ -1134,6 +1177,25 @@
             border-radius: 0.8vw;
             white-space: nowrap;
         }
+
+        /* 게임 화면 나가기 버튼 (모바일 ESC 대체) */
+        #game-exit-btn {
+            position: absolute;
+            top: 2.5vh; right: 2vw;
+            z-index: 300;
+            color: #f3e2c0;
+            font-family: 'Gaegu', 'Georgia', serif;
+            font-size: 1.3vw;
+            font-weight: bold;
+            background: rgba(0,0,0,0.55);
+            border: 0.15vw solid #c9a86a;
+            padding: 0.7vh 1.4vw;
+            border-radius: 0.8vw;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+        #game-exit-btn:hover { background: rgba(0,0,0,0.8); }
 
         /* 로비 식탁 위 진열된 거래 완료 아이템 */
         #lobby-items {
@@ -2578,6 +2640,7 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
         <div id="stage-curtain"></div>
         <canvas id="fire-canvas"></canvas>
         <div id="money-counter">₩100,000,000</div>
+        <div id="game-exit-btn" onclick="if(!tutorial.active) showExitModal();">✕ 로비로</div>
         
         <div id="time-attack-ui">⏳ 남은 시간: <span id="ta-sec">10</span>초</div>
 
@@ -3117,11 +3180,11 @@ function exitToLobby() {
                 if (docEl) {
                     docEl.style.display='none'; docEl.style.top='10vh'; docEl.style.left=''; docEl.style.right='5vw';
                     docEl.style.transform=''; docEl.style.transformOrigin=''; docEl.style.transition=''; docEl.style.opacity='1';
-                    docEl.style.clipPath='none'; docEl.style.visibility='visible'; docEl.onmousedown=null;
+                    docEl.style.clipPath='none'; docEl.style.visibility='visible'; docEl.onmousedown=null; docEl.onpointerdown=null;
                 }
                 if (money) { money.style.transition=''; money.style.transform='translateX(-50%)'; money.style.opacity='1'; }
                 if (deskItem) { deskItem.style.transition=''; deskItem.style.opacity=''; deskItem.style.transform=''; deskItem.classList.remove('show'); }
-                window.onmousemove = null; window.onmouseup = null;
+                window.onmousemove = null; window.onmouseup = null; window.onpointermove = null; window.onpointerup = null;
                 updateObtainedCounter();
 
                 stageCurtain.style.position = 'fixed';
@@ -4460,7 +4523,7 @@ function startGameSetup(mode = 'new') {
             doc.style.left = ''; doc.style.right = '5vw';
             doc.style.transform = ''; doc.style.transformOrigin = ''; doc.style.transition = '';
             doc.style.clipPath = 'none';
-            doc.onmousedown = null;
+            doc.onmousedown = null; doc.onpointerdown = null;
             const env = document.getElementById('envelope');
             if (env) {
                 env.classList.remove('visible');
@@ -5212,7 +5275,7 @@ function generateGuest() {
             // 서명 캔버스를 비활성화(클릭/그리기 차단)하여 서명 버그 방지
             const sc = document.getElementById('signature-canvas');
             if (sc) {
-                sc.onmousedown = sc.onmousemove = sc.onmouseup = sc.onmouseleave = null;
+                sc.onmousedown = sc.onmousemove = sc.onmouseup = sc.onmouseleave = null; sc.onpointerdown = sc.onpointermove = sc.onpointerup = sc.onpointercancel = sc.onpointerleave = null;
                 sc.style.pointerEvents = 'none';
             }
             let btnEl = document.getElementById('snake-bother-btn');
@@ -5244,9 +5307,9 @@ function generateGuest() {
                 const doc = document.getElementById('game-document');
                 // 서명 차단
                 const sc = document.getElementById('signature-canvas');
-                if (sc) { sc.onmousedown = sc.onmousemove = sc.onmouseup = sc.onmouseleave = null; sc.style.pointerEvents = 'none'; }
-                if (doc) { doc.onmousedown = null; doc.style.pointerEvents = 'none'; }
-                window.onmousemove = null; window.onmouseup = null;
+                if (sc) { sc.onmousedown = sc.onmousemove = sc.onmouseup = sc.onmouseleave = null; sc.onpointerdown = sc.onpointermove = sc.onpointerup = sc.onpointercancel = sc.onpointerleave = null; sc.style.pointerEvents = 'none'; }
+                if (doc) { doc.onmousedown = null; doc.onpointerdown = null; doc.style.pointerEvents = 'none'; }
+                window.onmousemove = null; window.onmouseup = null; window.onpointermove = null; window.onpointerup = null;
                 // 서류가 위로 솟구치며 사라짐
                 if (doc && doc.style.display !== 'none') {
                     doc.style.transition = 'transform 0.55s cubic-bezier(0.55,0,0.5,1), opacity 0.45s ease 0.1s';
@@ -5357,22 +5420,35 @@ function generateGuest() {
             sc.width = sc.offsetWidth; sc.height = sc.offsetHeight;
             gameState.signCtx.strokeStyle = '#2c1a0e'; gameState.signCtx.lineWidth = 3.5;
             gameState.signCtx.lineJoin = 'round'; gameState.signCtx.lineCap = 'round';
-            sc.onmousedown = (e) => {
+            sc.style.touchAction = 'none';   // 모바일에서 서명 중 스크롤/줌 방지
+            // 캔버스 좌표 계산 (마우스/터치 공통)
+            const localPos = (e) => {
+                const r = sc.getBoundingClientRect();
+                const cx = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+                const cy = (e.touches && e.touches[0]) ? e.touches[0].clientY : e.clientY;
+                return { x: (cx - r.left) * (sc.width / r.width), y: (cy - r.top) * (sc.height / r.height) };
+            };
+            sc.onpointerdown = (e) => {
                 // 고양이 호감도가 아직 결정되지 않았으면 서명 차단 (고양이 손님일 때만)
                 if (gameState.lastGuest === 'cat' && document.getElementById('cat-affinity-gauge')) return;
                 e.stopPropagation();
+                e.preventDefault();
+                const p = localPos(e);
                 gameState.isDrawing = true;
                 gameState.signCtx.beginPath();
-                gameState.signCtx.moveTo(e.offsetX, e.offsetY);
+                gameState.signCtx.moveTo(p.x, p.y);
+                try { sc.setPointerCapture(e.pointerId); } catch(_){}
             };
-            sc.onmousemove = (e) => {
+            sc.onpointermove = (e) => {
                 if (!gameState.isDrawing) return;
                 e.stopPropagation();
-                gameState.signCtx.lineTo(e.offsetX, e.offsetY);
+                e.preventDefault();
+                const p = localPos(e);
+                gameState.signCtx.lineTo(p.x, p.y);
                 gameState.signCtx.stroke();
                 gameState.purchasedSigned = true;
             };
-            sc.onmouseup = (e) => {
+            sc.onpointerup = (e) => {
                 e.stopPropagation();
                 if (gameState.isDrawing) {
                     gameState.isDrawing = false;
@@ -5382,7 +5458,8 @@ function generateGuest() {
                     }
                 }
             };
-            sc.onmouseleave = () => { gameState.isDrawing = false; };
+            sc.onpointercancel = () => { gameState.isDrawing = false; };
+            sc.onpointerleave = () => { gameState.isDrawing = false; };
         }
 
         // 서명 완료 → 봉투 등장 → 서류를 위로 스와이프하면 봉투에 자연스럽게 들어감
@@ -5404,18 +5481,23 @@ function generateGuest() {
             let docStartTopPx = null;
             let isDraggingDoc = false;
 
-            doc.onmousedown = (e) => {
+            doc.style.touchAction = 'none';   // 모바일 드래그 중 스크롤 방지
+            const getY = (e) => (e.touches && e.touches[0]) ? e.touches[0].clientY
+                              : (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientY
+                              : e.clientY;
+
+            doc.onpointerdown = (e) => {
                 if (e.target.id === 'signature-canvas') return;
                 isDraggingDoc = true;
-                dragStartY = e.clientY;
+                dragStartY = getY(e);
                 docStartTopPx = doc.getBoundingClientRect().top;
                 doc.style.transition = 'none';
                 doc.classList.add('dragging');
                 e.preventDefault();
             };
-            window.onmousemove = (e) => {
+            window.onpointermove = (e) => {
                 if (!isDraggingDoc) return;
-                const dy = e.clientY - dragStartY;
+                const dy = getY(e) - dragStartY;
                 if (dy < 0) {
                     doc.style.top = (docStartTopPx + dy) + 'px';
                     // 위로 갈수록 점점 작아짐 (봉투에 들어가는 느낌)
@@ -5425,11 +5507,11 @@ function generateGuest() {
                     doc.style.transformOrigin = 'top center';
                 }
             };
-            window.onmouseup = (e) => {
+            window.onpointerup = (e) => {
                 if (!isDraggingDoc) return;
                 isDraggingDoc = false;
                 doc.classList.remove('dragging');
-                const dy = e.clientY - dragStartY;
+                const dy = getY(e) - dragStartY;
 
                 if (dy < -window.innerHeight * 0.18) {
                     // 💡 서류가 제출되는 순간 준비한 사운드 재생!
@@ -5503,9 +5585,9 @@ function showFloatingText(text, color) {
 
 function rejectItem() {
             hideLighter();
-            window.onmousedown = null; window.onmousemove = null; window.onmouseup = null;
+            window.onmousedown = null; window.onmousemove = null; window.onmouseup = null; window.onpointermove = null; window.onpointerup = null; window.onpointermove = null; window.onpointerup = null;
             const doc = document.getElementById('game-document');
-            doc.onmousedown = null;
+            doc.onmousedown = null; doc.onpointerdown = null;
             
             // ★ 거래 거절 시 장부 방문 체크
             if (gameState.currentGuestData) {
@@ -6958,11 +7040,11 @@ function goToLobby() {
                 if (docEl) {
                     docEl.style.display='none'; docEl.style.top='10vh'; docEl.style.left=''; docEl.style.right='5vw';
                     docEl.style.transform=''; docEl.style.transformOrigin=''; docEl.style.transition=''; docEl.style.opacity='1';
-                    docEl.style.clipPath='none'; docEl.style.visibility='visible'; docEl.onmousedown=null;
+                    docEl.style.clipPath='none'; docEl.style.visibility='visible'; docEl.onmousedown=null; docEl.onpointerdown=null;
                 }
                 if (money) { money.style.transition=''; money.style.transform='translateX(-50%)'; money.style.opacity='1'; }
                 if (deskItem) { deskItem.style.transition=''; deskItem.style.opacity=''; deskItem.style.transform=''; deskItem.classList.remove('show'); }
-                window.onmousemove = null; window.onmouseup = null;
+                window.onmousemove = null; window.onmouseup = null; window.onpointermove = null; window.onpointerup = null;
 
                 stageCurtain.style.position = 'fixed';
                 stageCurtain.style.top = '0'; stageCurtain.style.left = '0';
@@ -7295,9 +7377,9 @@ function goToLobby() {
                 sb.classList.add('visible');
             }
 
-            window.onmousemove = null; window.onmouseup = null;
+            window.onmousemove = null; window.onmouseup = null; window.onpointermove = null; window.onpointerup = null;
             const doc = document.getElementById('game-document');
-            if (doc) doc.onmousedown = null;
+            if (doc) { doc.onmousedown = null; doc.onpointerdown = null; } doc.onpointerdown = null;
 
             setTimeout(() => {
                 if (sb) sb.classList.remove('visible');
@@ -7393,9 +7475,9 @@ function goToLobby() {
             }
 
             const sc = document.getElementById('signature-canvas');
-            sc.onmousedown = sc.onmousemove = sc.onmouseup = sc.onmouseleave = null;
+            sc.onmousedown = sc.onmousemove = sc.onmouseup = sc.onmouseleave = null; sc.onpointerdown = sc.onpointermove = sc.onpointerup = sc.onpointercancel = sc.onpointerleave = null;
             const doc = document.getElementById('game-document');
-            doc.onmousedown = null; window.onmousemove = null; window.onmouseup = null;
+            doc.onmousedown = null; doc.onpointerdown = null; window.onmousemove = null; window.onmouseup = null; window.onpointermove = null; window.onpointerup = null;
             doc.style.display = 'none';
             doc.style.top = '10vh'; doc.style.opacity = '1';
             doc.style.left = ''; doc.style.right = '5vw';
@@ -7455,9 +7537,9 @@ function goToLobby() {
             clearTimeout(gameState.lizardTimer); // ★ 거래 거절 시 도마뱀 타이머 해제
             
             hideLighter();
-            window.onmousedown = null; window.onmousemove = null; window.onmouseup = null;
+            window.onmousedown = null; window.onmousemove = null; window.onmouseup = null; window.onpointermove = null; window.onpointerup = null; window.onpointermove = null; window.onpointerup = null;
             const doc = document.getElementById('game-document');
-            doc.onmousedown = null;
+            doc.onmousedown = null; doc.onpointerdown = null;
             
             // ★ 장부 방문 체크 업데이트
             if (gameState.currentGuestData) {
@@ -7650,9 +7732,9 @@ function goToLobby() {
             if (!guest) return; 
 
             // 서류, 라이터 등 UI 강제 회수
-            window.onmousedown = null; window.onmousemove = null; window.onmouseup = null;
+            window.onmousedown = null; window.onmousemove = null; window.onmouseup = null; window.onpointermove = null; window.onpointerup = null; window.onpointermove = null; window.onpointerup = null;
             const doc = document.getElementById('game-document');
-            if (doc) { doc.onmousedown = null; doc.style.display = 'none'; }
+            if (doc) { doc.onmousedown = null; doc.onpointerdown = null; doc.style.display = 'none'; }
             hideLighter();
             const deskItemP = document.getElementById('desk-item');
             if (deskItemP) deskItemP.classList.remove('show');
@@ -8251,6 +8333,10 @@ function startTutorial() {
                 <button class="refresh-btn refresh-btn-no" onclick="cancelSkipTutorial()">계속 듣기</button>
             </div>
         </div>
+    </div>
+    <div id="rotate-overlay">
+        <div class="rotate-icon">📱</div>
+        <div class="rotate-text">화면을 가로로<br>돌려주세요</div>
     </div>
 </body>
 </html>
