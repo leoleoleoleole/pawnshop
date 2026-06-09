@@ -36,15 +36,18 @@
 
         /* ── 게임 무대 래퍼: 컨테이너 단위(cqw/cqh)의 기준 ── */
         #stage {
-            position: relative;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
             /* 화면비와 무관하게 항상 16:9를 유지하며 화면 안에 꽉 맞춤 (남는 쪽은 검은 여백) */
             width: min(100vw, 177.78vh);
             height: min(100vh, 56.25vw);
             overflow: hidden;
+            contain: layout paint size style;   /* 자식이 무대 경계 밖으로 그려지지 않도록 강제 */
             container-type: size;
             container-name: stage;
             background: #000;
-            flex-shrink: 0;
+            z-index: 0;
         }
         /* 동적 뷰포트 높이 지원 브라우저(안드로이드 크롬 등): 주소창 영역까지 고려해 실제 보이는 높이 사용 */
         @supports (height: 100dvh) {
