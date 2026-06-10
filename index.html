@@ -3367,66 +3367,79 @@ function exitToLobby() {
             const envEl = document.getElementById('envelope');
             if (envEl) { envEl.style.transition = 'opacity 0.4s ease'; envEl.style.opacity = '0'; }
 
-            setTimeout(() => {
-                if (stageCurtain) {
-                    stageCurtain.classList.remove('open');   
-                }
-            }, 300);
+            // ── 변경 전 300ms에서 0ms(즉시)로 타이밍을 변경합니다 ──
+setTimeout(() => {
+    if (stageCurtain) {
+        stageCurtain.classList.remove('open');   
+    }
+}, 0); // 기존 300을 0으로 수정하여 즉시 커튼이 닫히도록 만듭니다.
 
-            setTimeout(() => {
-                if (lobbyCanvas) { lobbyCanvas.style.display = 'block'; lobbyCanvas.style.transform = ''; lobbyCanvas.style.filter = ''; lobbyCanvas.style.transition = ''; lobbyCanvas.classList.remove('zoom-out'); }
-                { const ow = document.querySelector('.owner'); if (ow) { ow.classList.remove('swapping-out','swapping-in','is-alt'); } }
-                worldView = 0; setWorldTransition(false); applyWorldTransform(0);
+// ── 커튼이 완벽히 화면을 가리는 700ms 시점에 메인 화면으로 스왑합니다 ──
+setTimeout(() => {
+    if (lobbyCanvas) { 
+        lobbyCanvas.style.display = 'block'; 
+        lobbyCanvas.style.transform = ''; 
+        lobbyCanvas.style.filter = ''; 
+        lobbyCanvas.style.transition = ''; 
+        lobbyCanvas.classList.remove('zoom-out'); 
+    }
+    { 
+        const ow = document.querySelector('.owner'); 
+        if (ow) { ow.classList.remove('swapping-out','swapping-in','is-alt'); } 
+    }
+    worldView = 0; 
+    setWorldTransition(false); 
+    applyWorldTransform(0);
 
-                try { resetGameTurn(); } catch(e){}
-                if (envEl) { envEl.classList.remove('visible'); envEl.style.transition=''; envEl.style.transform=''; envEl.style.opacity=''; }
-                if (docEl) {
-                    docEl.style.display='none'; docEl.style.top='10cqh'; docEl.style.left=''; docEl.style.right='5cqw';
-                    docEl.style.transform=''; docEl.style.transformOrigin=''; docEl.style.transition=''; docEl.style.opacity='1';
-                    docEl.style.clipPath='none'; docEl.style.visibility='visible'; docEl.onmousedown=null; docEl.onpointerdown=null;
-                }
-                if (money) { money.style.transition=''; money.style.transform='translateX(-50%)'; money.style.opacity='1'; }
-                if (deskItem) { deskItem.style.transition=''; deskItem.style.opacity=''; deskItem.style.transform=''; deskItem.classList.remove('show'); }
-                window.onmousemove = null; window.onmouseup = null; window.onpointermove = null; window.onpointerup = null;
-                updateObtainedCounter();
+    try { resetGameTurn(); } catch(e){}
+    if (envEl) { envEl.classList.remove('visible'); envEl.style.transition=''; envEl.style.transform=''; envEl.style.opacity=''; }
+    if (docEl) {
+        docEl.style.display='none'; docEl.style.top='10cqh'; docEl.style.left=''; docEl.style.right='5cqw';
+        docEl.style.transform=''; docEl.style.transformOrigin=''; docEl.style.transition=''; docEl.style.opacity='1';
+        docEl.style.clipPath='none'; docEl.style.visibility='visible'; docEl.onmousedown=null; docEl.onpointerdown=null;
+    }
+    if (money) { money.style.transition=''; money.style.transform='translateX(-50%)'; money.style.opacity='1'; }
+    if (deskItem) { deskItem.style.transition=''; deskItem.style.opacity=''; deskItem.style.transform=''; deskItem.classList.remove('show'); }
+    window.onmousemove = null; window.onmouseup = null; window.onpointermove = null; window.onpointerup = null;
+    updateObtainedCounter();
 
-                stageCurtain.style.position = 'fixed';
-                stageCurtain.style.top = '0'; stageCurtain.style.left = '0';
-                stageCurtain.style.width = '100cqw'; stageCurtain.style.height = '100cqh';
-                stageCurtain.style.zIndex = '9000';
-                document.body.appendChild(stageCurtain);   
-                gameCanvas.style.display = 'none';
-                gameCanvas.classList.remove('appearing');
+    // 최상위 레이어에서 화면을 자연스럽게 열어주는 연출 유지
+    stageCurtain.style.position = 'fixed';
+    stageCurtain.style.top = '0'; stageCurtain.style.left = '0';
+    stageCurtain.style.width = '100cqw'; stageCurtain.style.height = '100cqh';
+    stageCurtain.style.zIndex = '9000';
+    document.body.appendChild(stageCurtain);   
+    gameCanvas.style.display = 'none';
+    gameCanvas.classList.remove('appearing');
 
-                stageCurtain.classList.remove('open');
-                stageCurtain.style.transformOrigin = 'left';
-                stageCurtain.style.transition = 'none';
-                stageCurtain.style.transform = 'translateX(0) scaleX(1)';
-                void stageCurtain.offsetWidth;
-                stageCurtain.style.transition = 'transform 0.7s cubic-bezier(0.4, 0, 0.2, 1)';
-                stageCurtain.style.transform = 'translateX(-100cqw) scaleX(0)';
+    stageCurtain.classList.remove('open');
+    stageCurtain.style.transformOrigin = 'left';
+    stageCurtain.style.transition = 'none';
+    stageCurtain.style.transform = 'translateX(0) scaleX(1)';
+    void stageCurtain.offsetWidth; // 리플로우 강제 유도
+    stageCurtain.style.transition = 'transform 0.7s cubic-bezier(0.4, 0, 0.2, 1)';
+    stageCurtain.style.transform = 'translateX(-100cqw) scaleX(0)'; // 부드럽게 왼쪽으로 퇴장
 
-               // (750ms 타이머 안쪽)
-                setTimeout(() => {
-                    stageCurtain.style.transition = 'none';
-                    stageCurtain.removeAttribute('style');
-                    stageCurtain.classList.remove('open');
-                    gameCanvas.insertBefore(stageCurtain, gameCanvas.firstChild);
-                    if (desk)   { desk.style.transition=''; desk.classList.remove('tucked'); }
-                    if (rope)   { rope.style.transition=''; rope.style.top='-50cqh'; }
-                    if (counter){ counter.style.transition=''; counter.classList.remove('tucked'); }
-                    enteringGame = false;
+    // 내부 정리용 최종 타이머 (750ms 뒤에 커튼 엘리먼트 제자리 복귀)
+    setTimeout(() => {
+        stageCurtain.style.transition = 'none';
+        stageCurtain.removeAttribute('style');
+        stageCurtain.classList.remove('open');
+        gameCanvas.insertBefore(stageCurtain, gameCanvas.firstChild);
+        if (desk)   { desk.style.transition=''; desk.classList.remove('tucked'); }
+        if (rope)   { rope.style.transition=''; rope.style.top='-50cqh'; }
+        if (counter){ counter.style.transition=''; counter.classList.remove('tucked'); }
+        enteringGame = false;
 
-                    // ★ 텍스트를 "방문 확인 명단"으로 원복 후 로비에 표시
-                    if (ledgerBtn) { 
-                        ledgerBtn.classList.remove('game-pos', 'visible'); 
-                        ledgerBtn.classList.add('lobby-visible'); 
-                        ledgerBtn.style.opacity = ''; 
-                        ledgerBtn.style.pointerEvents = '';
-                    }
-                }, 750);
-            }, 700);
+        if (ledgerBtn) { 
+            ledgerBtn.classList.remove('game-pos', 'visible'); 
+            ledgerBtn.classList.add('lobby-visible'); 
+            ledgerBtn.style.opacity = ''; 
+            ledgerBtn.style.pointerEvents = '';
         }
+    }, 750);
+}, 700); // 700ms 동기화 타이밍 유지
+}
         // 브라우저 닫기/주소창 새로고침에도 확인
         window.addEventListener('beforeunload', function(e) {
             if (!refreshConfirmed) {
@@ -6393,66 +6406,71 @@ function renderLobbyItems() {
         }
 
         // 오늘 감정 완료 처리: 감정 금액을 계좌에 추가 및 일별/최종 결산 연동
-        function completeAppraisal() {
-            gameState.appraisedToday = true;
+function completeAppraisal() {
+    gameState.appraisedToday = true;
+    // 감정으로 얻은 금액을 계좌에 추가
+    const gain = calcAppraisalGain();
+    if (gain) {
+        gameState.money += gain;
+        updateMoneyCounter();
+    }
 
-            // 감정으로 얻은 금액을 계좌에 추가
-            const gain = calcAppraisalGain();
-            if (gain) {
-                gameState.money += gain;
-                updateMoneyCounter();
-            }
-
-            if (gameState.day >= gameState.totalDays) {
-                // 7일차: 그날 결산 보고서도 다른 날과 동일하게 표시하되, 닫으면 최종 정산으로 이어짐
-                gameState.readyToFinalize = true;
-                showSettlementModal(gain);
-            } else {
-                showSettlementModal(gain);
-            }
-        }
+    if (gameState.day >= gameState.totalDays) {
+        // ▼ [수정됨] 7일차에는 일일 결산을 띄우지 않고 곧바로 'q' 눌렀을 때 나오는 최종 정산 의식으로 진입
+        gameState.readyToFinalize = true;
+        startFinalCeremony();
+    } else {
+        showSettlementModal(gain);
+    }
+}
 
        // ── 일일 정산 수입금 산출 ──
-        function calcAppraisalGain() {
-            const todayDeals = gameState.obtainedCount || 0;
-            if (todayDeals === 0) return 0;
-            let totalGain = 0;
-            const todaysItems = gameState.purchasedItems.filter(e => (e.day || 1) === gameState.day);
-            
-            todaysItems.forEach(entry => {
-                // 이미 판정된 항목은 sellPrice 재계산 안 함
-                if (entry.judged && entry.sellPrice !== undefined) {
-                    totalGain += entry.sellPrice;
-                    return;
-                }
-                const isReal = entry.item.authentic;
-                const judgedReal = entry.judgmentResult;
-                
-                let itemProfit = 0;
-                if ((isReal && judgedReal) || (!isReal && !judgedReal)) {
-                    if (isReal) {
-                        // 비둘기 성경: 감정가 0 고정
-                        if (entry.item.owner === 'pigeon') {
-                            itemProfit = 0;
-                        } else {
-                            // 진품 정답: 5천만~1억, 맨 앞자리만
-                            const raw = Math.floor(Math.random() * 50000000) + 50000000;
-                            itemProfit = roundToLeadingDigit(raw);
-                        }
-                    } else {
-                        // 가품 정답: 0~1천만, 맨 앞자리만
-                        const raw = Math.floor(Math.random() * 10000000);
-                        itemProfit = raw === 0 ? 0 : roundToLeadingDigit(raw);
-                    }
-                } else {
-                    itemProfit = 0; // 판정 오류
-                }
-                
-                entry.sellPrice = itemProfit;
-                totalGain += itemProfit;
-            });
-            return totalGain;
+function calcAppraisalGain() {
+    const todayDeals = gameState.obtainedCount || 0;
+    if (todayDeals === 0) return 0;
+
+    let totalGain = 0;
+    const todaysItems = gameState.purchasedItems.filter(e => (e.day || 1) === gameState.day);
+
+    todaysItems.forEach(entry => {
+        // 이미 판정된 항목은 sellPrice 재계산 안 함
+        if (entry.judged && entry.sellPrice !== undefined) {
+            totalGain += entry.sellPrice;
+            return;
         }
+
+        const isReal = entry.item.authentic;
+        const judgedReal = entry.judgmentResult;
+        let itemProfit = 0;
+
+        if ((isReal && judgedReal) || (!isReal && !judgedReal)) {
+            // ▼ [수정됨] 가짜 코인(coin_fake)일 경우 수익이 딱 100원이 되도록 매입가 + 100원으로 책정
+            if (!isReal && entry.item.baseImg === 'coin') {
+                itemProfit = (entry.buyPrice || 0) + 100;
+            } else if (isReal) {
+                // 비둘기 성경: 감정가 0 고정
+                if (entry.item.owner === 'pigeon') {
+                    itemProfit = 0;
+                } else {
+                    // 진품 정답: 5천만~1억, 맨 앞자리만
+                    const raw = Math.floor(Math.random() * 50000000) + 50000000;
+                    itemProfit = roundToLeadingDigit(raw);
+                }
+            } else {
+                // 가품 정답: 0~1천만, 맨 앞자리만
+                const raw = Math.floor(Math.random() * 10000000);
+                itemProfit = raw === 0 ? 0 : roundToLeadingDigit(raw);
+            }
+        } else {
+            itemProfit = 0; // 판정 오류
+        }
+
+        entry.sellPrice = itemProfit;
+        totalGain += itemProfit;
+    });
+
+    return totalGain;
+}
 
 // ── 영수증식 일일 결산 보고서 ──
 function showSettlementModal(gain) {
@@ -8055,22 +8073,25 @@ if (crocStole && guest) {
 
 
         // ── 일일 결산 보고서 모달 닫기 ──
-        // ── 일일 결산 보고서 모달 닫기 ──
-        function closeSettlementModal(isFinal) {
-            const modal = document.getElementById('settlement-modal');
-            if (modal) modal.style.display = 'none';
-            document.body.classList.remove('modal-open');
-            // 이 날의 결산 보고서 수령 기록
-            if (!gameState.receivedReports.includes(gameState.day)) {
-                gameState.receivedReports.push(gameState.day);
-            }
-            // 7일차(마지막 날): 로비로 가지 않고 최종 정산 의식(커튼→전체화면 주간 결산)으로 진입
-            if (isFinal || gameState.day >= gameState.totalDays) {
-                startFinalCeremony();
-                return;
-            }
-            goToLobby();
-        }
+function closeSettlementModal(isFinal) {
+    const modal = document.getElementById('settlement-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.classList.remove('modal-open');
+
+    // 이 날의 결산 보고서 수령 기록
+    if (!gameState.receivedReports.includes(gameState.day)) {
+        gameState.receivedReports.push(gameState.day);
+    }
+
+    // 7일차(마지막 날): 로비로 가지 않고 최종 정산 의식(커튼→전체화면 주간 결산)으로 진입
+    if (isFinal || gameState.day >= gameState.totalDays) {
+        startFinalCeremony();
+        return;
+    }
+    
+    // ▼ [수정됨] 존재하지 않던 goToLobby() 대신 로비 복귀를 처리하는 올바른 함수(exitToLobby) 호출
+    exitToLobby();
+}
 
         // ════════════════════════════════════════════
         // 7일차 종료 후 최종 정산 의식
