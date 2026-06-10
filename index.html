@@ -3835,6 +3835,17 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             gameState.originalDailyQueue = bookedGuests;
             gameState.dailyGuestsQueue  = [...bookedGuests];
 
+            // ── 하루 예약 손님 중 최소 2명은 반드시 진품을 가져오도록 강제 ──
+            //   (진/가품 변형이 존재하는 손님만 대상; 무조건 진품인 스트리머 등은 제외)
+            const realCapableIds = ['goat','crocodile','cat','mouse','lizard','monkey'];
+            const realCandidates = bookedGuests.filter(g => realCapableIds.includes(g.id));
+            // 무작위로 섞어 앞에서 2명에게 진품 강제
+            for (let i = realCandidates.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [realCandidates[i], realCandidates[j]] = [realCandidates[j], realCandidates[i]];
+            }
+            realCandidates.slice(0, 2).forEach(g => { g.forceReal = true; });
+
             // ── 불시 손님: 까마귀 (20% 확률, 거래 1건 이상 후) ──
             const crowGuest = guests.find(g => g.id === 'crow');
             if (crowGuest && Math.random() < 0.20) {
@@ -4860,11 +4871,21 @@ function generateGuest() {
             } else if (guest.id === 'streamer' || guest.id === 'lizard' || guest.id === 'pigeon' || guest.id === 'miners' || guest.id === 'pig') {
                 // 고유 아이템만 사용 (공용 물건 제외)
                 validItems = items.filter(item => item.owner === guest.id);
+                // 진품 강제 손님이면 진품만 후보로
+                if (guest.forceReal) {
+                    const realsOnly = validItems.filter(i => i.authentic);
+                    if (realsOnly.length > 0) validItems = realsOnly;
+                }
                 do {
                     itemData = validItems[Math.floor(Math.random() * validItems.length)];
                 } while (validItems.length > 1 && itemData.id === gameState.lastItem);
             } else {
                 validItems = items.filter(item => item.owner === guest.id || item.owner === 'common');
+                // 진품 강제 손님이면 진품만 후보로
+                if (guest.forceReal) {
+                    const realsOnly = validItems.filter(i => i.authentic);
+                    if (realsOnly.length > 0) validItems = realsOnly;
+                }
                 do {
                     itemData = validItems[Math.floor(Math.random() * validItems.length)];
                 } while (validItems.length > 1 && itemData.id === gameState.lastItem);
@@ -5562,16 +5583,14 @@ function generateGuest() {
         function pigAccept() {
             const sb = document.getElementById('speech-bubble');
             if (sb) { sb.innerHTML = ''; sb.style.pointerEvents = 'none'; sb.classList.remove('visible'); }
-            const isGood = Math.random() < 0.5;
+            // 진/가품은 이미 책상에 표시된 이미지대로 확정되어 있으므로 변경하지 않는다.
+            // (예전에는 여기서 authentic을 false로 덮어써 이미지와 판정이 어긋나는 버그가 있었음)
             gameState.itemPrice = 10000000;
-            if (!isGood && gameState.currentItem) gameState.currentItem.authentic = false;
 
             // 수락 대화 표시 후 서류 등장
             showGuestDialogue('accept', () => {
                 setTimeout(() => {
-                    showFloatingText(isGood
-                        ? '돼지가 사랑하는 당신을 위해 물건을 헐값에 팝니다.'
-                        : '돼지가 사랑하는 당신을 위해 물건을 헐값에 팝니다.', isGood ? '#a0d8ff' : '#ffd700');
+                    showFloatingText('돼지가 사랑하는 당신을 위해 물건을 헐값에 팝니다.', '#a0d8ff');
                     const doc = document.getElementById('game-document');
                     if (doc) { doc.style.display = 'flex'; doc.style.visibility = 'visible'; initSignatureCanvas(); initTearHandler(); }
                     // 10억 취소선 + 1천만 표시
@@ -6466,11 +6485,11 @@ function renderLobbyItems() {
             modal.style.display = 'flex';
             document.body.classList.add('modal-open');
 
-            // 7일차(마지막 날): 버튼을 "최종 정산"으로 바꿔 주간 결산 의식으로 이어지게 함
+            // 7일차(마지막 날): 닫으면 로비로 → 주인장을 클릭해 최종 정산 진행
             const sBtn = document.getElementById('settlement-next-btn');
             if (sBtn) {
                 if (gameState.day >= gameState.totalDays) {
-                    sBtn.innerText = '최종 정산 →';
+                    sBtn.innerText = '확인 (주인장에게 정산 요청)';
                     sBtn.onclick = function() { closeSettlementModal(true); };
                 } else {
                     sBtn.innerText = '다음 날로';
@@ -7865,10 +7884,9 @@ function goToLobby() {
             if (!gameState.receivedReports.includes(gameState.day)) {
                 gameState.receivedReports.push(gameState.day);
             }
-            // 7일차(마지막 날): 로비로 가지 않고 최종 정산 의식(커튼→전체화면 주간 결산)으로 진입
+            // 7일차(마지막 날): readyToFinalize 상태로 로비로 돌아가, 주인장을 클릭해 '정산하기'로 최종 정산을 진행
             if (isFinal || gameState.day >= gameState.totalDays) {
-                startFinalCeremony();
-                return;
+                gameState.readyToFinalize = true;
             }
             goToLobby();
         }
@@ -7973,7 +7991,7 @@ function goToLobby() {
                         <span style="font-size:2cqw;color:#c8880a">₩${finalMoney.toLocaleString()}</span>
                     </div>
                     <div style="text-align:center;margin-top:1.2cqh;font-size:1.3cqw;font-weight:bold;color:${success?'#2b7a1a':'#a32020'}">
-                        ${success ? '목표 달성! 10억을 모았습니다' : '목표 미달성... 10억에 도달하지 못했습니다.'}
+                        ${success ? '목표 달성! 10억을 모았습니다 🎉' : '목표 미달성... 10억에 도달하지 못했습니다.'}
                     </div>
                     <div style="text-align:center;margin-top:1.5cqh">
                         <button id="weekly-next-btn" style="padding:1cqh 4cqw;font-size:1.4cqw;font-weight:bold;background:#3a2a08;color:#fcd53f;border:0.2cqw solid #cba328;border-radius:0.5cqw;cursor:pointer;font-family:Gaegu,serif">다음으로 넘어가기 →</button>
@@ -8043,19 +8061,16 @@ function goToLobby() {
             if (old) old.remove();
             const overlay = document.createElement('div');
             overlay.id = 'restart-screen';
-            overlay.style.cssText = 'position:absolute;inset:0;width:100cqw;height:100cqh;z-index:6200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3cqh;background:radial-gradient(ellipse at center, #2a1808 0%, #0a0502 100%);font-family:Gaegu,serif;';
+            overlay.style.cssText = 'position:absolute;inset:0;width:100cqw;height:100cqh;z-index:5700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3cqh;background:radial-gradient(ellipse at center, #2a1808 0%, #0a0502 100%);font-family:Gaegu,serif;';
             overlay.innerHTML = `
                 <div style="font-size:2.5cqw;font-weight:bold;color:${cleared?'#fcd53f':'#e8d5b0'};text-shadow:0 0.3cqw 1cqw rgba(0,0,0,0.8);text-align:center">
-                    ${cleared ? '축하합니다! 전당포 운영에 성공했습니다!' : '아쉽지만 목표를 달성하지 못했습니다.'}
+                    ${cleared ? '🎉 축하합니다! 전당포 운영에 성공했습니다!' : '아쉽지만 목표를 달성하지 못했습니다.'}
                 </div>
                 <div style="font-size:1.3cqw;color:#c9a86a">최종 보유 금액: ₩${gameState.money.toLocaleString()}</div>
-                <button id="end-restart-btn" style="position:relative;z-index:6210;padding:1.2cqh 5cqw;font-size:1.6cqw;font-weight:bold;background:#3a2a08;color:#fcd53f;border:0.2cqw solid #cba328;border-radius:0.6cqw;cursor:pointer;font-family:Gaegu,serif;pointer-events:auto">다시 시작하기</button>`;
+                <button id="restart-btn" style="padding:1.2cqh 5cqw;font-size:1.6cqw;font-weight:bold;background:#3a2a08;color:#fcd53f;border:0.2cqw solid #cba328;border-radius:0.6cqw;cursor:pointer;font-family:Gaegu,serif">다시 시작하기</button>`;
             const stage = document.getElementById('stage') || document.body;
             stage.appendChild(overlay);
-            // 새로 만든 버튼을 overlay 내부에서 직접 참조 (id 중복 회피)
-            const rb = overlay.querySelector('#end-restart-btn');
-            rb.onclick = function(e) {
-                e.stopPropagation();
+            document.getElementById('restart-btn').onclick = function() {
                 overlay.remove();
                 returnToLobbyAfterEnd();
             };
@@ -8063,18 +8078,6 @@ function goToLobby() {
 
         // 엔딩 종료 후 로비로 복귀 (게임 상태 초기화하여 새 게임 준비)
         function returnToLobbyAfterEnd() {
-            // 엔딩 관련 오버레이 잔여물 제거
-            ['ending-seq','weekly-report','restart-screen'].forEach(id => {
-                const el = document.getElementById(id); if (el) el.remove();
-            });
-            // 커튼 원위치
-            const curtain = document.getElementById('curtain');
-            if (curtain) {
-                curtain.style.display = 'none';
-                curtain.style.transform = 'translateX(-100cqw) scaleX(0)';
-                const txt = curtain.querySelector('.curtain-text');
-                if (txt) txt.style.display = '';
-            }
             // 새 게임 상태로 초기화
             gameState.day = 1;
             gameState.money = 200000000;
