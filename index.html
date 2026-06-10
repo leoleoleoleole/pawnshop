@@ -3060,7 +3060,9 @@ function renderDocScrollItems() {
                 : item.authentic
                     ? item.baseImg + '_real.jpg'   // 진품: real 이미지 + 흑백
                     : item.baseImg + '_fake.jpg';  // 가품: fake 이미지 + 흑백
-            contentHtml += `<div style="width:100%;height:18cqh;background-image:url('${hiddenImg}');background-size:contain;background-position:center;background-repeat:no-repeat;margin-bottom:1.5cqh;filter:grayscale(100%)"></div>
+            // 돼지 꽃은 발광 차이로 구별하므로 흑백 필터 제외
+            const grayFilter = (item.owner === 'pig' || item.owner === 'pigeon' || item.owner === 'streamer') ? 'none' : 'grayscale(100%)';
+            contentHtml += `<div style="width:100%;height:18cqh;background-image:url('${hiddenImg}');background-size:contain;background-position:center;background-repeat:no-repeat;margin-bottom:1.5cqh;filter:${grayFilter}"></div>
                 <button id="btn-appraise-${idx}" onclick="startAutoAppraise(${idx})" style="padding:1.2cqh 0;font-size:1.3cqw;font-weight:bold;background:#3a2a08;color:#fcd53f;border:0.15cqw solid #cba328;border-radius:0.5cqw;cursor:pointer;transition:0.2s">감정 시작</button>`;
         }
 
@@ -4966,8 +4968,8 @@ function generateGuest() {
                     ? `${itemData.baseImg}_real.jpg`
                     : `${itemData.baseImg}_fake.jpg`;
             deskItem.style.backgroundImage = `url('${displayImg}')`;
-            // 비둘기 성경은 흑백 제외
-            deskItem.style.filter = (itemData.owner === 'pigeon' || itemData.owner === 'streamer') ? 'none' : '';
+            // 비둘기 성경/스트리머 기념품, 그리고 돼지 꽃은 흑백 제외 (꽃은 빛나는 발광 차이로 진가품 구별)
+            deskItem.style.filter = (itemData.owner === 'pigeon' || itemData.owner === 'streamer' || itemData.owner === 'pig') ? 'none' : '';
 
             document.querySelector('.doc-header').innerText = "물품 매입 계약서";
 
