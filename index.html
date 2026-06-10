@@ -7896,8 +7896,34 @@ function goToLobby() {
         }
 
         function startFinalCeremony() {
-            // 커튼이 닫혔다 열리면서 전체화면 주간 결산 보고서 공개
-            curtainTransition(() => { buildWeeklyReport(); });
+            const curtain = document.getElementById('curtain');
+            if (curtain) {
+                const txt = curtain.querySelector('.curtain-text');
+                if (txt) txt.style.display = 'none';
+                curtain.style.display = 'flex';
+                curtain.style.zIndex = '6000';
+                curtain.style.transformOrigin = 'right center';
+                curtain.style.transform = 'translateX(-100cqw) scaleX(0)';
+                curtain.style.transition = 'none';
+                curtain.style.opacity = '1';
+                void curtain.offsetWidth;
+                // 커튼 닫힘 (화면을 덮음)
+                curtain.style.transition = 'transform 1.0s cubic-bezier(0.4,0,0.2,1)';
+                curtain.style.transform = 'translateX(0) scaleX(1)';
+            }
+            // 커튼이 덮인 사이 주간 결산 화면을 만들고, 커튼을 다시 열며 공개
+            setTimeout(() => {
+                buildWeeklyReport();
+                if (curtain) {
+                    curtain.style.transition = 'transform 1.0s cubic-bezier(0.4,0,0.2,1)';
+                    curtain.style.transformOrigin = 'right center';
+                    curtain.style.transform = 'translateX(100cqw) scaleX(0)';   // 오른쪽으로 열림
+                    setTimeout(() => {
+                        curtain.style.display = 'none';
+                        curtain.style.transform = 'translateX(-100cqw) scaleX(0)';
+                    }, 1050);
+                }
+            }, 1200);
         }
 
         // 전체 화면을 꽉 채우는 주간 결산 보고서
@@ -7957,55 +7983,20 @@ function goToLobby() {
             stage.appendChild(overlay);
 
             document.getElementById('weekly-next-btn').onclick = function() {
-                if (success) {
-                    // 커튼이 닫혔다 열리면서 엔딩 그림 등장
-                    curtainTransition(() => {
-                        overlay.remove();
-                        showEndingSequence();
-                    });
-                } else {
-                    overlay.remove();
-                    showRestartScreen();
-                }
+                overlay.remove();
+                if (success) showEndingSequence();
+                else showRestartScreen();
             };
         }
 
-        // 커튼을 닫았다(덮음) → onCovered 실행 → 다시 여는 공통 연출
-        function curtainTransition(onCovered) {
-            const curtain = document.getElementById('curtain');
-            if (!curtain) { if (onCovered) onCovered(); return; }
-            const txt = curtain.querySelector('.curtain-text');
-            if (txt) txt.style.display = 'none';
-            curtain.style.display = 'flex';
-            curtain.style.zIndex = '6000';
-            curtain.style.transformOrigin = 'right center';
-            curtain.style.transform = 'translateX(-100cqw) scaleX(0)';
-            curtain.style.transition = 'none';
-            curtain.style.opacity = '1';
-            void curtain.offsetWidth;
-            // 닫힘
-            curtain.style.transition = 'transform 1.0s cubic-bezier(0.4,0,0.2,1)';
-            curtain.style.transform = 'translateX(0) scaleX(1)';
-            setTimeout(() => {
-                if (onCovered) onCovered();
-                // 열림
-                curtain.style.transition = 'transform 1.0s cubic-bezier(0.4,0,0.2,1)';
-                curtain.style.transformOrigin = 'right center';
-                curtain.style.transform = 'translateX(100cqw) scaleX(0)';
-                setTimeout(() => {
-                    curtain.style.display = 'none';
-                    curtain.style.transform = 'translateX(-100cqw) scaleX(0)';
-                }, 1050);
-            }, 1150);
-        }
-
-        // 성공 엔딩: 업로드된 이미지들을 순서대로 표시
+        // 성공 엔딩: 업로드된 이미지들을 순서대로 페이드인
         function showEndingSequence() {
             const old = document.getElementById('ending-seq');
             if (old) old.remove();
             const overlay = document.createElement('div');
             overlay.id = 'ending-seq';
             overlay.style.cssText = 'position:absolute;inset:0;width:100cqw;height:100cqh;z-index:5600;background:#000;cursor:pointer;overflow:hidden;';
+            // 패널(이미지) 레이어
             const panelWrap = document.createElement('div');
             panelWrap.style.cssText = 'position:absolute;inset:0;';
             overlay.appendChild(panelWrap);
@@ -8020,72 +8011,29 @@ function goToLobby() {
             const seq = ['end1.jpg','end2.jpg','end3.jpg','end4.jpg','end5.jpg'];
             const imgs = seq.map(src => {
                 const d = document.createElement('div');
-                // 마지막(end5)은 페이드 없이 즉시 표시
-                const isLast = (src === 'end5.jpg');
-                d.style.cssText = `position:absolute;inset:0;background-image:url('${src}');background-size:contain;background-position:center;background-repeat:no-repeat;opacity:0;transition:opacity ${isLast?'0s':'1.2s'} ease;`;
-                d.dataset.src = src;
+                d.style.cssText = `position:absolute;inset:0;background-image:url('${src}');background-size:contain;background-position:center;background-repeat:no-repeat;opacity:0;transition:opacity 1.2s ease;`;
                 panelWrap.appendChild(d);
                 return d;
             });
 
             let idx = -1;
             let busy = false;
-            let restartBubbleShown = false;
-
-            // end2 화면에서 띄우는 "다시 시작하기" 말풍선 (로비처럼)
-            function showRestartBubble() {
-                if (document.getElementById('ending-restart-bubble')) return;
-                restartBubbleShown = true;
-                const bub = document.createElement('div');
-                bub.id = 'ending-restart-bubble';
-                bub.style.cssText = 'position:absolute;top:38cqh;left:52cqw;z-index:30;background:#fff8e8;color:#2a1808;font-family:Gaegu,serif;font-size:1.4cqw;font-weight:bold;padding:1.2cqh 2cqw;border-radius:1cqw;border:0.2cqw solid #c9a86a;box-shadow:0 0.4cqw 1.2cqw rgba(0,0,0,0.6);cursor:pointer;animation:tutBubblePop 0.3s cubic-bezier(0.34,1.56,0.64,1);';
-                bub.innerText = '다시 시작하기';
-                bub.onclick = (e) => {
-                    e.stopPropagation();
-                    overlay.remove();
-                    returnToLobbyAfterEnd();
-                };
-                overlay.appendChild(bub);
-            }
-            function hideRestartBubble() {
-                const b = document.getElementById('ending-restart-bubble');
-                if (b) b.remove();
-                restartBubbleShown = false;
-            }
-
-            function showStep(i) {
-                const isLast = (i >= imgs.length - 1);
-                hint.style.opacity = '0';
-                imgs[i].style.opacity = '1';
-                if (isLast) {
-                    // 마지막 그림: 한 번에 표시, 이후 힌트만
-                    busy = false;
-                    setTimeout(() => { hint.style.opacity = '1'; }, 200);
-                } else {
-                    busy = true;
-                    setTimeout(() => { busy = false; hint.style.opacity = '1'; }, 1300);
-                }
-            }
-
             function showNext() {
                 if (busy) return;
-                // 현재 end2가 떠 있으면: 다음으로 넘어가지 않고 다시 시작 말풍선 토글
-                if (idx >= 0 && imgs[idx].dataset.src === 'end2.jpg') {
-                    if (!restartBubbleShown) { showRestartBubble(); return; }
-                    else { hideRestartBubble(); }   // 다시 클릭하면 닫고 계속 진행
-                }
                 idx++;
                 if (idx >= imgs.length) {
-                    // 모든 그림 끝 → 재시작 화면
+                    // 엔딩 종료 → 재시작 화면
                     overlay.remove();
                     showRestartScreen(true);
                     return;
                 }
-                showStep(idx);
+                busy = true;
+                hint.style.opacity = '0';
+                imgs[idx].style.opacity = '1';
+                setTimeout(() => { busy = false; hint.style.opacity = '1'; }, 1300);
             }
-
             // 첫 이미지 자동 표시
-            setTimeout(() => { idx = 0; showStep(0); }, 300);
+            setTimeout(showNext, 300);
             overlay.onclick = showNext;
         }
 
@@ -8095,16 +8043,19 @@ function goToLobby() {
             if (old) old.remove();
             const overlay = document.createElement('div');
             overlay.id = 'restart-screen';
-            overlay.style.cssText = 'position:absolute;inset:0;width:100cqw;height:100cqh;z-index:5700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3cqh;background:radial-gradient(ellipse at center, #2a1808 0%, #0a0502 100%);font-family:Gaegu,serif;';
+            overlay.style.cssText = 'position:absolute;inset:0;width:100cqw;height:100cqh;z-index:6200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3cqh;background:radial-gradient(ellipse at center, #2a1808 0%, #0a0502 100%);font-family:Gaegu,serif;';
             overlay.innerHTML = `
                 <div style="font-size:2.5cqw;font-weight:bold;color:${cleared?'#fcd53f':'#e8d5b0'};text-shadow:0 0.3cqw 1cqw rgba(0,0,0,0.8);text-align:center">
                     ${cleared ? '축하합니다! 전당포 운영에 성공했습니다!' : '아쉽지만 목표를 달성하지 못했습니다.'}
                 </div>
                 <div style="font-size:1.3cqw;color:#c9a86a">최종 보유 금액: ₩${gameState.money.toLocaleString()}</div>
-                <button id="restart-btn" style="padding:1.2cqh 5cqw;font-size:1.6cqw;font-weight:bold;background:#3a2a08;color:#fcd53f;border:0.2cqw solid #cba328;border-radius:0.6cqw;cursor:pointer;font-family:Gaegu,serif">다시 시작하기</button>`;
+                <button id="end-restart-btn" style="position:relative;z-index:6210;padding:1.2cqh 5cqw;font-size:1.6cqw;font-weight:bold;background:#3a2a08;color:#fcd53f;border:0.2cqw solid #cba328;border-radius:0.6cqw;cursor:pointer;font-family:Gaegu,serif;pointer-events:auto">다시 시작하기</button>`;
             const stage = document.getElementById('stage') || document.body;
             stage.appendChild(overlay);
-            document.getElementById('restart-btn').onclick = function() {
+            // 새로 만든 버튼을 overlay 내부에서 직접 참조 (id 중복 회피)
+            const rb = overlay.querySelector('#end-restart-btn');
+            rb.onclick = function(e) {
+                e.stopPropagation();
                 overlay.remove();
                 returnToLobbyAfterEnd();
             };
@@ -8112,6 +8063,18 @@ function goToLobby() {
 
         // 엔딩 종료 후 로비로 복귀 (게임 상태 초기화하여 새 게임 준비)
         function returnToLobbyAfterEnd() {
+            // 엔딩 관련 오버레이 잔여물 제거
+            ['ending-seq','weekly-report','restart-screen'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.remove();
+            });
+            // 커튼 원위치
+            const curtain = document.getElementById('curtain');
+            if (curtain) {
+                curtain.style.display = 'none';
+                curtain.style.transform = 'translateX(-100cqw) scaleX(0)';
+                const txt = curtain.querySelector('.curtain-text');
+                if (txt) txt.style.display = '';
+            }
             // 새 게임 상태로 초기화
             gameState.day = 1;
             gameState.money = 200000000;
