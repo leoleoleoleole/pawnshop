@@ -772,6 +772,10 @@
             background-size: 78%;
             top: -8cqh;
         }
+        /* 악어는 이미지가 아래로 치우쳐 위로 올림 (악어1/악어2 동일 위치 유지) */
+        .game-guest.guest-crocodile {
+            top: -6cqh;
+        }
         
         .guest-entering {
             animation: guestEnterChild 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
@@ -4819,6 +4823,7 @@ function generateGuest() {
             const container = document.getElementById('game-guest-container');
             container.innerHTML = '';
             stopTremble();
+            gameState._crocWillSteal = false;   // 새 손님 등장 시 악어 강탈 예정 플래그 초기화
 
             if (gameState.dailyGuestsQueue.length === 0) {
                 finishAllDeals();
@@ -4931,6 +4936,7 @@ function generateGuest() {
             guestDiv.className = 'game-guest guest-entering';
             if (guest.id === 'lizard') guestDiv.classList.add('guest-lizard');
             if (guest.streamer) guestDiv.classList.add('guest-streamer');
+            if (guest.id === 'crocodile') guestDiv.classList.add('guest-crocodile');
             guestDiv.style.backgroundImage = `url('${guest.frames[0]}')`;
             container.appendChild(guestDiv);
 
@@ -7371,6 +7377,19 @@ function goToLobby() {
                 }
             }
 
+            // 악어 거래를 거절(불태우기)하는 경우: 50% 확률로 강탈 이벤트를 미리 판정하고,
+            //   강탈 예정이면 불 붙이자마자 즉시 crocodile2(위협)로 교체
+            if (!tutorial.active && gameState.lastGuest === 'crocodile') {
+                gameState._crocWillSteal = (Math.random() < 0.5);
+                if (gameState._crocWillSteal) {
+                    const cg = document.querySelector('.game-guest');
+                    if (cg && !cg.dataset.crocReact) {
+                        cg.dataset.crocReact = 'true';
+                        spinGuest(cg, 'crocodile2.jpg');   // 위치는 guest-crocodile 클래스로 유지
+                    }
+                }
+            }
+
             const anim = document.getElementById('lighter-animation');
 
             // ★ 서류를 즉시 위로 올림 (라이터 누르자마자)
@@ -7770,11 +7789,12 @@ function goToLobby() {
             const guest = document.querySelector('.game-guest');
             const isStreamer = (gameState.lastGuest === 'streamer');
 
-            // ── 악어: 거래 거절 시 50% 확률로 현재 소지금의 20%를 강탈 ──
-            //   강탈 이벤트 발생 시 crocodile2.jpg 로 회전 교체 (다른 손님 이미지 교체와 동일한 방식)
+            // ── 악어: 거래 거절 시 강탈 이벤트 (불태우기 시작 시 igniteLighter에서 미리 판정됨) ──
+            //   강탈 예정이면 이미 crocodile2로 교체되어 있으므로 여기서는 금액 차감/대사만 처리
             let crocStole = false;
-            if (!tutorial.active && gameState.lastGuest === 'crocodile' && Math.random() < 0.5) {
+            if (!tutorial.active && gameState.lastGuest === 'crocodile' && gameState._crocWillSteal) {
                 crocStole = true;
+                gameState._crocWillSteal = false;
                 const stolen = Math.floor(gameState.money * 0.2);
                 gameState.money = Math.max(0, gameState.money - stolen);
                 updateMoneyCounter();
@@ -7786,11 +7806,7 @@ function goToLobby() {
                 // 강탈 알림
                 showFloatingText(`악어가 당신의 ₩${stolen.toLocaleString()}원을 강탈해 갔습니다...`, '#ff6b6b');
 
-                // 강탈 시 악어를 crocodile2 이미지로 회전 교체 + 살짝 위로 올림
-                if (guest) {
-                    spinGuest(guest, 'crocodile2.jpg');
-                    guest.style.top = '-6cqh';
-                }
+                // (이미지는 igniteLighter에서 crocodile2로 교체됨 — 중복 교체하지 않음)
 
                 // 강탈 전용 대사 말풍선
                 const sb = document.getElementById('speech-bubble');
