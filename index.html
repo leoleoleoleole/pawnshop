@@ -772,10 +772,6 @@
             background-size: 78%;
             top: -8cqh;
         }
-        /* 악어는 이미지가 아래로 치우쳐 위로 올림 (악어1/악어2 동일 위치 유지) */
-        .game-guest.guest-crocodile {
-            top: -6cqh;
-        }
         
         .guest-entering {
             animation: guestEnterChild 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
@@ -3060,9 +3056,7 @@ function renderDocScrollItems() {
                 : item.authentic
                     ? item.baseImg + '_real.jpg'   // 진품: real 이미지 + 흑백
                     : item.baseImg + '_fake.jpg';  // 가품: fake 이미지 + 흑백
-            // 돼지 꽃은 발광 차이로 구별하므로 흑백 필터 제외
-            const grayFilter = (item.owner === 'pig' || item.owner === 'pigeon' || item.owner === 'streamer') ? 'none' : 'grayscale(100%)';
-            contentHtml += `<div style="width:100%;height:18cqh;background-image:url('${hiddenImg}');background-size:contain;background-position:center;background-repeat:no-repeat;margin-bottom:1.5cqh;filter:${grayFilter}"></div>
+            contentHtml += `<div style="width:100%;height:18cqh;background-image:url('${hiddenImg}');background-size:contain;background-position:center;background-repeat:no-repeat;margin-bottom:1.5cqh;filter:grayscale(100%)"></div>
                 <button id="btn-appraise-${idx}" onclick="startAutoAppraise(${idx})" style="padding:1.2cqh 0;font-size:1.3cqw;font-weight:bold;background:#3a2a08;color:#fcd53f;border:0.15cqw solid #cba328;border-radius:0.5cqw;cursor:pointer;transition:0.2s">감정 시작</button>`;
         }
 
@@ -3840,17 +3834,6 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
 
             gameState.originalDailyQueue = bookedGuests;
             gameState.dailyGuestsQueue  = [...bookedGuests];
-
-            // ── 하루 예약 손님 중 최소 2명은 반드시 진품을 가져오도록 강제 ──
-            //   (진/가품 변형이 존재하는 손님만 대상; 무조건 진품인 스트리머 등은 제외)
-            const realCapableIds = ['goat','crocodile','cat','mouse','lizard','monkey'];
-            const realCandidates = bookedGuests.filter(g => realCapableIds.includes(g.id));
-            // 무작위로 섞어 앞에서 2명에게 진품 강제
-            for (let i = realCandidates.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [realCandidates[i], realCandidates[j]] = [realCandidates[j], realCandidates[i]];
-            }
-            realCandidates.slice(0, 2).forEach(g => { g.forceReal = true; });
 
             // ── 불시 손님: 까마귀 (20% 확률, 거래 1건 이상 후) ──
             const crowGuest = guests.find(g => g.id === 'crow');
@@ -4825,7 +4808,6 @@ function generateGuest() {
             const container = document.getElementById('game-guest-container');
             container.innerHTML = '';
             stopTremble();
-            gameState._crocWillSteal = false;   // 새 손님 등장 시 악어 강탈 예정 플래그 초기화
 
             if (gameState.dailyGuestsQueue.length === 0) {
                 finishAllDeals();
@@ -4878,21 +4860,11 @@ function generateGuest() {
             } else if (guest.id === 'streamer' || guest.id === 'lizard' || guest.id === 'pigeon' || guest.id === 'miners' || guest.id === 'pig') {
                 // 고유 아이템만 사용 (공용 물건 제외)
                 validItems = items.filter(item => item.owner === guest.id);
-                // 진품 강제 손님이면 진품만 후보로
-                if (guest.forceReal) {
-                    const realsOnly = validItems.filter(i => i.authentic);
-                    if (realsOnly.length > 0) validItems = realsOnly;
-                }
                 do {
                     itemData = validItems[Math.floor(Math.random() * validItems.length)];
                 } while (validItems.length > 1 && itemData.id === gameState.lastItem);
             } else {
                 validItems = items.filter(item => item.owner === guest.id || item.owner === 'common');
-                // 진품 강제 손님이면 진품만 후보로
-                if (guest.forceReal) {
-                    const realsOnly = validItems.filter(i => i.authentic);
-                    if (realsOnly.length > 0) validItems = realsOnly;
-                }
                 do {
                     itemData = validItems[Math.floor(Math.random() * validItems.length)];
                 } while (validItems.length > 1 && itemData.id === gameState.lastItem);
@@ -4938,7 +4910,6 @@ function generateGuest() {
             guestDiv.className = 'game-guest guest-entering';
             if (guest.id === 'lizard') guestDiv.classList.add('guest-lizard');
             if (guest.streamer) guestDiv.classList.add('guest-streamer');
-            if (guest.id === 'crocodile') guestDiv.classList.add('guest-crocodile');
             guestDiv.style.backgroundImage = `url('${guest.frames[0]}')`;
             container.appendChild(guestDiv);
 
@@ -4968,8 +4939,8 @@ function generateGuest() {
                     ? `${itemData.baseImg}_real.jpg`
                     : `${itemData.baseImg}_fake.jpg`;
             deskItem.style.backgroundImage = `url('${displayImg}')`;
-            // 비둘기 성경/스트리머 기념품, 그리고 돼지 꽃은 흑백 제외 (꽃은 빛나는 발광 차이로 진가품 구별)
-            deskItem.style.filter = (itemData.owner === 'pigeon' || itemData.owner === 'streamer' || itemData.owner === 'pig') ? 'none' : '';
+            // 비둘기 성경은 흑백 제외
+            deskItem.style.filter = (itemData.owner === 'pigeon' || itemData.owner === 'streamer') ? 'none' : '';
 
             document.querySelector('.doc-header').innerText = "물품 매입 계약서";
 
@@ -5591,14 +5562,16 @@ function generateGuest() {
         function pigAccept() {
             const sb = document.getElementById('speech-bubble');
             if (sb) { sb.innerHTML = ''; sb.style.pointerEvents = 'none'; sb.classList.remove('visible'); }
-            // 진/가품은 이미 책상에 표시된 이미지대로 확정되어 있으므로 변경하지 않는다.
-            // (예전에는 여기서 authentic을 false로 덮어써 이미지와 판정이 어긋나는 버그가 있었음)
+            const isGood = Math.random() < 0.5;
             gameState.itemPrice = 10000000;
+            if (!isGood && gameState.currentItem) gameState.currentItem.authentic = false;
 
             // 수락 대화 표시 후 서류 등장
             showGuestDialogue('accept', () => {
                 setTimeout(() => {
-                    showFloatingText('돼지가 사랑하는 당신을 위해 물건을 헐값에 팝니다.', '#a0d8ff');
+                    showFloatingText(isGood
+                        ? '돼지가 사랑하는 당신을 위해 물건을 헐값에 팝니다.'
+                        : '돼지가 사랑하는 당신을 위해 물건을 헐값에 팝니다.', isGood ? '#a0d8ff' : '#ffd700');
                     const doc = document.getElementById('game-document');
                     if (doc) { doc.style.display = 'flex'; doc.style.visibility = 'visible'; initSignatureCanvas(); initTearHandler(); }
                     // 10억 취소선 + 1천만 표시
@@ -6493,11 +6466,11 @@ function renderLobbyItems() {
             modal.style.display = 'flex';
             document.body.classList.add('modal-open');
 
-            // 7일차(마지막 날): 닫으면 로비로 → 주인장을 클릭해 최종 정산 진행
+            // 7일차(마지막 날): 버튼을 "최종 정산"으로 바꿔 주간 결산 의식으로 이어지게 함
             const sBtn = document.getElementById('settlement-next-btn');
             if (sBtn) {
                 if (gameState.day >= gameState.totalDays) {
-                    sBtn.innerText = '확인 (주인장에게 정산 요청)';
+                    sBtn.innerText = '최종 정산 →';
                     sBtn.onclick = function() { closeSettlementModal(true); };
                 } else {
                     sBtn.innerText = '다음 날로';
@@ -7379,19 +7352,6 @@ function goToLobby() {
                 }
             }
 
-            // 악어 거래를 거절(불태우기)하는 경우: 50% 확률로 강탈 이벤트를 미리 판정하고,
-            //   강탈 예정이면 불 붙이자마자 즉시 crocodile2(위협)로 교체
-            if (!tutorial.active && gameState.lastGuest === 'crocodile') {
-                gameState._crocWillSteal = (Math.random() < 0.5);
-                if (gameState._crocWillSteal) {
-                    const cg = document.querySelector('.game-guest');
-                    if (cg && !cg.dataset.crocReact) {
-                        cg.dataset.crocReact = 'true';
-                        spinGuest(cg, 'crocodile2.jpg');   // 위치는 guest-crocodile 클래스로 유지
-                    }
-                }
-            }
-
             const anim = document.getElementById('lighter-animation');
 
             // ★ 서류를 즉시 위로 올림 (라이터 누르자마자)
@@ -7791,12 +7751,11 @@ function goToLobby() {
             const guest = document.querySelector('.game-guest');
             const isStreamer = (gameState.lastGuest === 'streamer');
 
-            // ── 악어: 거래 거절 시 강탈 이벤트 (불태우기 시작 시 igniteLighter에서 미리 판정됨) ──
-            //   강탈 예정이면 이미 crocodile2로 교체되어 있으므로 여기서는 금액 차감/대사만 처리
+            // ── 악어: 거래 거절 시 50% 확률로 현재 소지금의 20%를 강탈 ──
+            //   강탈 이벤트 발생 시 crocodile2.jpg 로 회전 교체 (다른 손님 이미지 교체와 동일한 방식)
             let crocStole = false;
-            if (!tutorial.active && gameState.lastGuest === 'crocodile' && gameState._crocWillSteal) {
+            if (!tutorial.active && gameState.lastGuest === 'crocodile' && Math.random() < 0.5) {
                 crocStole = true;
-                gameState._crocWillSteal = false;
                 const stolen = Math.floor(gameState.money * 0.2);
                 gameState.money = Math.max(0, gameState.money - stolen);
                 updateMoneyCounter();
@@ -7808,7 +7767,11 @@ function goToLobby() {
                 // 강탈 알림
                 showFloatingText(`악어가 당신의 ₩${stolen.toLocaleString()}원을 강탈해 갔습니다...`, '#ff6b6b');
 
-                // (이미지는 igniteLighter에서 crocodile2로 교체됨 — 중복 교체하지 않음)
+                // 강탈 시 악어를 crocodile2 이미지로 회전 교체 + 살짝 위로 올림
+                if (guest) {
+                    spinGuest(guest, 'crocodile2.jpg');
+                    guest.style.top = '-6cqh';
+                }
 
                 // 강탈 전용 대사 말풍선
                 const sb = document.getElementById('speech-bubble');
@@ -7902,9 +7865,10 @@ function goToLobby() {
             if (!gameState.receivedReports.includes(gameState.day)) {
                 gameState.receivedReports.push(gameState.day);
             }
-            // 7일차(마지막 날): readyToFinalize 상태로 로비로 돌아가, 주인장을 클릭해 '정산하기'로 최종 정산을 진행
+            // 7일차(마지막 날): 로비로 가지 않고 최종 정산 의식(커튼→전체화면 주간 결산)으로 진입
             if (isFinal || gameState.day >= gameState.totalDays) {
-                gameState.readyToFinalize = true;
+                startFinalCeremony();
+                return;
             }
             goToLobby();
         }
@@ -7932,34 +7896,37 @@ function goToLobby() {
         }
 
         function startFinalCeremony() {
+            // 커튼이 닫혔다 (나온 방향인) 왼쪽으로 다시 들어가며 전체화면 주간 결산 공개
+            curtainTransition(() => { buildWeeklyReport(); });
+        }
+
+        // 커튼을 닫았다(덮음) → onCovered 실행 → 나온 방향(왼쪽)으로 다시 들어가며 공개
+        function curtainTransition(onCovered) {
             const curtain = document.getElementById('curtain');
-            if (curtain) {
-                const txt = curtain.querySelector('.curtain-text');
-                if (txt) txt.style.display = 'none';
-                curtain.style.display = 'flex';
-                curtain.style.zIndex = '6000';
+            if (!curtain) { if (onCovered) onCovered(); return; }
+            const txt = curtain.querySelector('.curtain-text');
+            if (txt) txt.style.display = 'none';
+            curtain.style.display = 'flex';
+            curtain.style.zIndex = '6300';   // 엔딩/결산 오버레이보다 위에서 덮음
+            curtain.style.transformOrigin = 'right center';
+            curtain.style.transform = 'translateX(-100cqw) scaleX(0)';
+            curtain.style.transition = 'none';
+            curtain.style.opacity = '1';
+            void curtain.offsetWidth;
+            // 닫힘 (왼쪽에서 펼쳐져 화면을 덮음)
+            curtain.style.transition = 'transform 1.0s cubic-bezier(0.4,0,0.2,1)';
+            curtain.style.transform = 'translateX(0) scaleX(1)';
+            setTimeout(() => {
+                if (onCovered) onCovered();
+                // 열림: 나온 방향과 동일하게 왼쪽으로 접혀 들어감
+                curtain.style.transition = 'transform 1.0s cubic-bezier(0.4,0,0.2,1)';
                 curtain.style.transformOrigin = 'right center';
                 curtain.style.transform = 'translateX(-100cqw) scaleX(0)';
-                curtain.style.transition = 'none';
-                curtain.style.opacity = '1';
-                void curtain.offsetWidth;
-                // 커튼 닫힘 (화면을 덮음)
-                curtain.style.transition = 'transform 1.0s cubic-bezier(0.4,0,0.2,1)';
-                curtain.style.transform = 'translateX(0) scaleX(1)';
-            }
-            // 커튼이 덮인 사이 주간 결산 화면을 만들고, 커튼을 다시 열며 공개
-            setTimeout(() => {
-                buildWeeklyReport();
-                if (curtain) {
-                    curtain.style.transition = 'transform 1.0s cubic-bezier(0.4,0,0.2,1)';
-                    curtain.style.transformOrigin = 'right center';
-                    curtain.style.transform = 'translateX(100cqw) scaleX(0)';   // 오른쪽으로 열림
-                    setTimeout(() => {
-                        curtain.style.display = 'none';
-                        curtain.style.transform = 'translateX(-100cqw) scaleX(0)';
-                    }, 1050);
-                }
-            }, 1200);
+                setTimeout(() => {
+                    curtain.style.display = 'none';
+                    curtain.style.transform = 'translateX(-100cqw) scaleX(0)';
+                }, 1050);
+            }, 1150);
         }
 
         // 전체 화면을 꽉 채우는 주간 결산 보고서
@@ -8009,7 +7976,7 @@ function goToLobby() {
                         <span style="font-size:2cqw;color:#c8880a">₩${finalMoney.toLocaleString()}</span>
                     </div>
                     <div style="text-align:center;margin-top:1.2cqh;font-size:1.3cqw;font-weight:bold;color:${success?'#2b7a1a':'#a32020'}">
-                        ${success ? '목표 달성! 10억을 모았습니다 🎉' : '목표 미달성... 10억에 도달하지 못했습니다.'}
+                        ${success ? '목표 달성! 10억을 모았습니다' : '목표 미달성... 10억에 도달하지 못했습니다.'}
                     </div>
                     <div style="text-align:center;margin-top:1.5cqh">
                         <button id="weekly-next-btn" style="padding:1cqh 4cqw;font-size:1.4cqw;font-weight:bold;background:#3a2a08;color:#fcd53f;border:0.2cqw solid #cba328;border-radius:0.5cqw;cursor:pointer;font-family:Gaegu,serif">다음으로 넘어가기 →</button>
@@ -8019,58 +7986,62 @@ function goToLobby() {
             stage.appendChild(overlay);
 
             document.getElementById('weekly-next-btn').onclick = function() {
-                overlay.remove();
-                if (success) showEndingSequence();
-                else showRestartScreen();
+                if (success) {
+                    curtainTransition(() => {
+                        overlay.remove();
+                        showEndingSequence();
+                    });
+                } else {
+                    overlay.remove();
+                    showRestartScreen();
+                }
             };
         }
 
-        // 성공 엔딩: 업로드된 이미지들을 순서대로 페이드인
+        // 성공 엔딩: 업로드된 이미지들을 한 번에 겹쳐서 하나의 장면으로 표시
         function showEndingSequence() {
             const old = document.getElementById('ending-seq');
             if (old) old.remove();
+            // 다른 모든 UI 위를 덮는 최상위 오버레이 (검은 배경으로 뒤 오브젝트 완전 차단)
             const overlay = document.createElement('div');
             overlay.id = 'ending-seq';
-            overlay.style.cssText = 'position:absolute;inset:0;width:100cqw;height:100cqh;z-index:5600;background:#000;cursor:pointer;overflow:hidden;';
-            // 패널(이미지) 레이어
-            const panelWrap = document.createElement('div');
-            panelWrap.style.cssText = 'position:absolute;inset:0;';
-            overlay.appendChild(panelWrap);
-            const hint = document.createElement('div');
-            hint.style.cssText = 'position:absolute;right:4cqw;bottom:4cqh;color:#f5e8c8;font-family:Gaegu,serif;font-size:1.6cqw;font-weight:bold;opacity:0;transition:opacity 0.5s;text-shadow:0 0.2cqw 0.6cqw rgba(0,0,0,0.9);';
-            hint.innerText = '클릭하여 계속 ▶';
-            overlay.appendChild(hint);
+            overlay.style.cssText = 'position:absolute;inset:0;width:100cqw;height:100cqh;z-index:6200;background:#000;overflow:hidden;';
+
+            // 엔딩 이미지들을 뒤에서부터 겹쳐 한 장면으로 (end1 가장 뒤, end5 가장 앞) — 동시에 표시
+            const seq = ['end1.jpg','end2.jpg','end3.jpg','end4.jpg','end5.jpg'];
+            seq.forEach((src, i) => {
+                const d = document.createElement('div');
+                d.className = 'ending-layer';
+                d.dataset.src = src;
+                d.style.cssText = `position:absolute;inset:0;background-image:url('${src}');background-size:contain;background-position:center;background-repeat:no-repeat;z-index:${i+1};`;
+                overlay.appendChild(d);
+            });
+
+            // end2 클릭 시 뜨는 "다시 시작하기" 말풍선 (로비처럼)
+            const bub = document.createElement('div');
+            bub.id = 'ending-restart-bubble';
+            bub.style.cssText = 'position:absolute;top:30cqh;left:55cqw;z-index:50;background:#fff8e8;color:#2a1808;font-family:Gaegu,serif;font-size:1.5cqw;font-weight:bold;padding:1.4cqh 2.4cqw;border-radius:1cqw;border:0.2cqw solid #c9a86a;box-shadow:0 0.4cqw 1.2cqw rgba(0,0,0,0.6);cursor:pointer;display:none;';
+            bub.innerText = '다시 시작하기';
+            bub.onclick = (e) => {
+                e.stopPropagation();
+                overlay.remove();
+                returnToLobbyAfterEnd();
+            };
+            overlay.appendChild(bub);
+
             const stage = document.getElementById('stage') || document.body;
             stage.appendChild(overlay);
 
-            // 엔딩 이미지 순서: end1 → end2 → end3 → end4 → end5
-            const seq = ['end1.jpg','end2.jpg','end3.jpg','end4.jpg','end5.jpg'];
-            const imgs = seq.map(src => {
-                const d = document.createElement('div');
-                d.style.cssText = `position:absolute;inset:0;background-image:url('${src}');background-size:contain;background-position:center;background-repeat:no-repeat;opacity:0;transition:opacity 1.2s ease;`;
-                panelWrap.appendChild(d);
-                return d;
-            });
-
-            let idx = -1;
-            let busy = false;
-            function showNext() {
-                if (busy) return;
-                idx++;
-                if (idx >= imgs.length) {
-                    // 엔딩 종료 → 재시작 화면
-                    overlay.remove();
-                    showRestartScreen(true);
-                    return;
+            // 화면(end2 등) 클릭 시 "다시 시작하기" 말풍선 토글 — 이미지를 한 장씩 넘기지 않음
+            overlay.onclick = () => {
+                const b = document.getElementById('ending-restart-bubble');
+                if (b.style.display === 'none') {
+                    b.style.display = 'block';
+                    b.style.animation = 'tutBubblePop 0.3s cubic-bezier(0.34,1.56,0.64,1)';
+                } else {
+                    b.style.display = 'none';
                 }
-                busy = true;
-                hint.style.opacity = '0';
-                imgs[idx].style.opacity = '1';
-                setTimeout(() => { busy = false; hint.style.opacity = '1'; }, 1300);
-            }
-            // 첫 이미지 자동 표시
-            setTimeout(showNext, 300);
-            overlay.onclick = showNext;
+            };
         }
 
         // 실패/엔딩 종료 후: 다시 시작하기 화면
@@ -8079,16 +8050,18 @@ function goToLobby() {
             if (old) old.remove();
             const overlay = document.createElement('div');
             overlay.id = 'restart-screen';
-            overlay.style.cssText = 'position:absolute;inset:0;width:100cqw;height:100cqh;z-index:5700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3cqh;background:radial-gradient(ellipse at center, #2a1808 0%, #0a0502 100%);font-family:Gaegu,serif;';
+            overlay.style.cssText = 'position:absolute;inset:0;width:100cqw;height:100cqh;z-index:6300;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3cqh;background:radial-gradient(ellipse at center, #2a1808 0%, #0a0502 100%);font-family:Gaegu,serif;';
             overlay.innerHTML = `
                 <div style="font-size:2.5cqw;font-weight:bold;color:${cleared?'#fcd53f':'#e8d5b0'};text-shadow:0 0.3cqw 1cqw rgba(0,0,0,0.8);text-align:center">
-                    ${cleared ? '🎉 축하합니다! 전당포 운영에 성공했습니다!' : '아쉽지만 목표를 달성하지 못했습니다.'}
+                    ${cleared ? '축하합니다! 전당포 운영에 성공했습니다!' : '아쉽지만 목표를 달성하지 못했습니다.'}
                 </div>
                 <div style="font-size:1.3cqw;color:#c9a86a">최종 보유 금액: ₩${gameState.money.toLocaleString()}</div>
-                <button id="restart-btn" style="padding:1.2cqh 5cqw;font-size:1.6cqw;font-weight:bold;background:#3a2a08;color:#fcd53f;border:0.2cqw solid #cba328;border-radius:0.6cqw;cursor:pointer;font-family:Gaegu,serif">다시 시작하기</button>`;
+                <button id="end-restart-btn" style="position:relative;z-index:6310;padding:1.2cqh 5cqw;font-size:1.6cqw;font-weight:bold;background:#3a2a08;color:#fcd53f;border:0.2cqw solid #cba328;border-radius:0.6cqw;cursor:pointer;font-family:Gaegu,serif;pointer-events:auto">다시 시작하기</button>`;
             const stage = document.getElementById('stage') || document.body;
             stage.appendChild(overlay);
-            document.getElementById('restart-btn').onclick = function() {
+            const rb = overlay.querySelector('#end-restart-btn');
+            rb.onclick = function(e) {
+                e.stopPropagation();
                 overlay.remove();
                 returnToLobbyAfterEnd();
             };
@@ -8096,6 +8069,18 @@ function goToLobby() {
 
         // 엔딩 종료 후 로비로 복귀 (게임 상태 초기화하여 새 게임 준비)
         function returnToLobbyAfterEnd() {
+            // 엔딩 관련 오버레이 잔여물 제거
+            ['ending-seq','weekly-report','restart-screen'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.remove();
+            });
+            // 커튼 원위치
+            const curtain = document.getElementById('curtain');
+            if (curtain) {
+                curtain.style.display = 'none';
+                curtain.style.transform = 'translateX(-100cqw) scaleX(0)';
+                const txt = curtain.querySelector('.curtain-text');
+                if (txt) txt.style.display = '';
+            }
             // 새 게임 상태로 초기화
             gameState.day = 1;
             gameState.money = 200000000;
