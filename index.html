@@ -3236,31 +3236,40 @@ function startAutoAppraise(idx) {
         card.style.transform = 'scale(1.03)';
         overlay.style.opacity = '0';
 
-        // 전체 화면이 환하게 빛났다가 서서히 사라지는 연출 추가
-        const stageEl = document.getElementById('stage') || document.body;
+        // 1. 카드 전체를 덮는 하얀색 오버레이 생성 (서서히 하얗게 됨)
         const flashOverlay = document.createElement('div');
-        flashOverlay.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; background:#ffffff; z-index:999999; opacity:1; transition:opacity 1.5s ease; pointer-events:none;';
-        stageEl.appendChild(flashOverlay);
-        
+        flashOverlay.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; background:#ffffff; z-index:999999; opacity:0; transition:opacity 0.6s ease; pointer-events:none; border-radius:inherit;';
+        card.appendChild(flashOverlay);
+
         requestAnimationFrame(() => {
-            flashOverlay.style.opacity = '0';
+            flashOverlay.style.opacity = '1';
         });
-        setTimeout(() => {
-            flashOverlay.remove();
-        }, 1600);
 
         setTimeout(() => {
+            // 2. 카운트다운 오버레이 제거 및 감정 결과 내용 교체
             overlay.remove();
-            // getCardContentHtml 은 위 renderDocScrollItems 에 포함된 로직입니다.
             card.innerHTML = getCardContentHtml(idx, entry);
+            
+            // 3. 내용이 교체되면서 날아간 오버레이를 다시 붙이고, 이번엔 서서히 투명해지도록 설정
+            flashOverlay.style.transition = 'opacity 1.5s ease';
+            flashOverlay.style.opacity = '1';
+            card.appendChild(flashOverlay);
+            
+            requestAnimationFrame(() => {
+                flashOverlay.style.opacity = '0';
+            });
             
             setTimeout(() => {
                 card.style.transform = 'scale(1)';
             }, 500);
 
-            if (tutorial.active) {
-                setTimeout(() => tutEvent('judged'), 1000);
-            }
+            setTimeout(() => {
+                flashOverlay.remove();
+                if (tutorial.active) {
+                    setTimeout(() => tutEvent('judged'), 1000);
+                }
+            }, 1500);
+
         }, 600);
     }, 3000);
 }
