@@ -1170,7 +1170,6 @@
     background-repeat: no-repeat;
     background-position: center bottom;
     background-size: contain;
-    display: none;
     pointer-events: none;
     transition: transform 0.5s cubic-bezier(0.34,1.3,0.64,1), opacity 0.4s ease;
     transform: translateY(2cqh);
@@ -1181,10 +1180,18 @@
             drop-shadow(0 0.4cqw 0.8cqw rgba(0,0,0,0.6));
 }
         #desk-item.show {
-            display: block;
             opacity: 1;
             transform: translateY(0);
             animation: deskItemEnter 0.6s cubic-bezier(0.34, 1.3, 0.64, 1) forwards;
+        }
+        
+        @keyframes summarySlideDown {
+            from { opacity: 0; transform: translateY(-1.5cqh); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .summary-anim-row {
+            opacity: 0;
+            animation: summarySlideDown 0.5s ease forwards;
         }
         @keyframes deskItemEnter {
             0%   { opacity: 0; transform: translateY(4cqh) scale(0.92); }
@@ -2458,13 +2465,7 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
     position: relative;
     flex-shrink: 0; /* 카드가 찌그러지지 않게 방어 */
 }
-.h-doc-card.judging {
-    animation: shakeCard 0.5s ease-in-out infinite alternate;
-}
-@keyframes shakeCard {
-    from { transform: translateY(0); }
-    to { transform: translateY(-0.5cqh); }
-}
+
 
 /* ── 튜토리얼 스킵 버튼 ── */
 #skip-tutorial-btn {
@@ -3074,12 +3075,8 @@ function renderDocScrollItems() {
         return;
     }
 
-    dayItems.forEach(({ entry, idx }) => {
+    function getCardContentHtml(idx, entry) {
         const item = entry.item;
-        const card = document.createElement('div');
-        card.className = 'h-doc-card';
-        card.id = `doc-card-${idx}`;
-
         let contentHtml = `
             <div style="font-size:1.5cqw;font-weight:bold;border-bottom:0.15cqw solid rgba(90,50,10,0.5);padding-bottom:1cqh;margin-bottom:1.5cqh;text-align:center">계약서 #${idx+1}</div>
             <div style="font-size:1.2cqw;margin-bottom:1cqh"><b>품명:</b> ${item.name}</div>
@@ -3096,13 +3093,19 @@ function renderDocScrollItems() {
             const hiddenImg = (item.owner === 'pigeon' || item.owner === 'streamer')
                 ? item.baseImg + '.jpg'
                 : item.authentic
-                    ? item.baseImg + '_real.jpg'   // 진품: real 이미지 + 흑백
-                    : item.baseImg + '_fake.jpg';  // 가품: fake 이미지 + 흑백
+                    ? item.baseImg + '_real.jpg'
+                    : item.baseImg + '_fake.jpg';
             contentHtml += `<div style="width:100%;height:18cqh;background-image:url('${hiddenImg}');background-size:contain;background-position:center;background-repeat:no-repeat;margin-bottom:1.5cqh;filter:grayscale(100%)"></div>
                 <button id="btn-appraise-${idx}" onclick="startAutoAppraise(${idx})" style="padding:1.2cqh 0;font-size:1.3cqw;font-weight:bold;background:#3a2a08;color:#fcd53f;border:0.15cqw solid #cba328;border-radius:0.5cqw;cursor:pointer;transition:0.2s">감정 시작</button>`;
         }
+        return contentHtml;
+    }
 
-        card.innerHTML = contentHtml;
+    dayItems.forEach(({ entry, idx }) => {
+        const card = document.createElement('div');
+        card.className = 'h-doc-card';
+        card.id = `doc-card-${idx}`;
+        card.innerHTML = getCardContentHtml(idx, entry);
         container.appendChild(card);
     });
 
@@ -3175,66 +3178,100 @@ function startAutoAppraise(idx) {
     
     if (!btn || !card) return;
 
-    btn.style.background = "#555";
-    btn.style.color = "#ccc";
-    btn.style.borderColor = "#444";
-    btn.disabled = true;
-    
-    const dots = [".", "..", "..."]; 
-    let dotIndex = 0;
-    btn.innerText = `⏳ 감정 분석 중${dots[dotIndex]}`;
-    
-    const loadingInterval = setInterval(() => {
-        dotIndex++;
-        btn.innerText = `⏳ 감정 분석 중${dots[dotIndex % 3]}`;
-    }, 400);
-    
-    card.classList.add('judging');
+    btn.style.display = "none";
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.75);
+        border-radius: inherit;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    `;
+    const countText = document.createElement('div');
+    countText.style.cssText = `
+        font-size: 8cqw;
+        font-weight: bold;
+        color: #fcd53f;
+        text-shadow: 0 0 2cqw rgba(255,255,255,0.8);
+        font-family: 'Georgia', serif;
+        transition: transform 0.2s ease;
+    `;
+    countText.innerText = "3";
+    overlay.appendChild(countText);
+    card.appendChild(overlay);
+
+    requestAnimationFrame(() => {
+        overlay.style.opacity = '1';
+    });
+
+    let count = 3;
+    const countInterval = setInterval(() => {
+        count--;
+        if (count > 0) {
+            countText.style.transform = 'scale(0.5)';
+            setTimeout(() => {
+                countText.innerText = count;
+                countText.style.transform = 'scale(1)';
+            }, 100);
+        } else {
+            clearInterval(countInterval);
+            countText.innerText = "감정 완료";
+        }
+    }, 1000);
 
     setTimeout(() => {
-        clearInterval(loadingInterval);
-        
         const entry = gameState.purchasedItems[idx];
         entry.judged = true;
         entry.judgmentResult = entry.item.authentic;
-
         if (!gameState.unlockedEncyclopedia) gameState.unlockedEncyclopedia = {};
         gameState.unlockedEncyclopedia[entry.item.baseImg] = true;
 
-        card.classList.remove('judging');
+        card.style.transition = 'transform 0.6s ease';
+        card.style.transform = 'scale(1.03)';
+        overlay.style.opacity = '0';
 
-        // 전체 화면이 환하게 빛나는 이펙트 추가 (화이트 플래시)
-        const flash = document.createElement('div');
-        flash.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:#ffffff;z-index:999999;opacity:1;transition:opacity 0.8s ease;pointer-events:none;';
-        document.body.appendChild(flash);
-        
+        // 1. 카드 전체를 덮는 하얀색 오버레이 생성 (서서히 하얗게 됨)
+        const flashOverlay = document.createElement('div');
+        flashOverlay.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; background:#ffffff; z-index:999999; opacity:0; transition:opacity 0.6s ease; pointer-events:none; border-radius:inherit;';
+        card.appendChild(flashOverlay);
+
         requestAnimationFrame(() => {
-            flash.style.opacity = '0';
+            flashOverlay.style.opacity = '1';
         });
-        setTimeout(() => { flash.remove(); }, 800);
 
-        card.style.transition = 'opacity 0.4s ease';
-        card.style.opacity = '0';
         setTimeout(() => {
-            const container = document.getElementById('h-doc-container');
-            const prevScroll = container ? container.scrollLeft : 0;
-            renderDocScrollItems();
-            if (container) container.scrollLeft = prevScroll;
-            const newCard = document.getElementById(`doc-card-${idx}`);
-            if (newCard) {
-                newCard.style.opacity = '0';
-                newCard.style.transition = 'opacity 0.4s ease';
-                requestAnimationFrame(() => { newCard.style.opacity = '1'; });
-            }
-        }, 400);
-        
-        if (tutorial.active) {
+            // 2. 카운트다운 오버레이 제거 및 감정 결과 내용 교체
+            overlay.remove();
+            card.innerHTML = getCardContentHtml(idx, entry);
+            
+            // 3. 내용이 교체되면서 날아간 오버레이를 다시 붙이고, 이번엔 서서히 투명해지도록 설정
+            flashOverlay.style.transition = 'opacity 1.5s ease';
+            flashOverlay.style.opacity = '1';
+            card.appendChild(flashOverlay);
+            
+            requestAnimationFrame(() => {
+                flashOverlay.style.opacity = '0';
+            });
+            
             setTimeout(() => {
-                tutEvent('judged');
-            }, 2000);
-        }
+                card.style.transform = 'scale(1)';
+            }, 500);
 
-    }, 2500);
+            setTimeout(() => {
+                flashOverlay.remove();
+                if (tutorial.active) {
+                    setTimeout(() => tutEvent('judged'), 1000);
+                }
+            }, 1500);
+
+        }, 600);
+    }, 3000);
 }
         /* --- 우클릭 / 더블클릭 / 텍스트 선택 차단 --- */
         document.addEventListener('contextmenu', e => e.preventDefault());
@@ -5253,7 +5290,7 @@ function generateGuest() {
                 return;
             }
             const target = eligible[Math.floor(Math.random() * eligible.length)];
-            const price = roundToLeadingDigit(Math.floor(Math.random() * 99000000 + 1000000)); // 1천~1억 사이, 앞자리만
+            const price = roundToLeadingDigit(Math.floor((Math.random() * 10 + 1) * 10000000)); // 1천~1억, 앞자리만
             gameState.crowTargetItem = { entry: target, price };
 
             if (doc) { doc.style.display = 'none'; }
@@ -5367,15 +5404,16 @@ function generateGuest() {
             }
             requestAnimationFrame(() => showCatGauge());
 
-            const btnGood = `<button onclick="catReply(true)" style="padding:0.5cqw 2cqw;font-size:1.1cqw;background:#3a2a08;color:#fcd53f;border:0.12cqw solid #cba328;border-radius:0.4cqw;cursor:pointer">${q.good}</button>`;
-            const btnBad = `<button onclick="catReply(false)" style="padding:0.5cqw 2cqw;font-size:1.1cqw;background:#2a0808;color:#ff6b6b;border:0.12cqw solid #a32828;border-radius:0.4cqw;cursor:pointer">${q.bad}</button>`;
-            const buttons = Math.random() < 0.5 ? [btnGood, btnBad] : [btnBad, btnGood];
+            const catBtns = [
+                `<button onclick="catReply(true)" style="padding:0.5cqw 2cqw;font-size:1.1cqw;background:#3a2a08;color:#fcd53f;border:0.12cqw solid #cba328;border-radius:0.4cqw;cursor:pointer">${q.good}</button>`,
+                `<button onclick="catReply(false)" style="padding:0.5cqw 2cqw;font-size:1.1cqw;background:#2a0808;color:#ff6b6b;border:0.12cqw solid #a32828;border-radius:0.4cqw;cursor:pointer">${q.bad}</button>`
+            ];
+            if (Math.random() < 0.5) catBtns.reverse();
 
             sb.innerHTML = `<div style="font-size:1.2cqw;font-weight:bold;text-align:center;line-height:1.6">
                 ${q.q}<br>
                 <div style="margin-top:1cqh;display:flex;gap:2cqw;justify-content:center">
-                    ${buttons[0]}
-                    ${buttons[1]}
+                    ${catBtns.join(' ')}
                 </div>
             </div>`;
             sb.style.pointerEvents = 'auto';
@@ -6533,6 +6571,45 @@ function renderLobbyItems() {
             const startMoney = gameState.money - gain + todayExpense + todayStolen;
 
 // 책 속 결산 보고서와 동일한 서류 카드 스타일 (세로 축소 및 스크롤 최적화)
+            let summaryHtml = '';
+            let delayIndex = 1;
+
+            summaryHtml += `<div class="summary-anim-row" style="animation-delay: ${delayIndex * 0.5}s; display:flex;justify-content:space-between;margin-bottom:0.4cqh">
+                <span style="color:#5a3a1a">기존 소지금</span>
+                <span style="color:#5a3a1a;font-weight:bold">₩${startMoney.toLocaleString()}</span>
+            </div>`;
+            delayIndex++;
+
+            summaryHtml += `<div class="summary-anim-row" style="animation-delay: ${delayIndex * 0.5}s; display:flex;justify-content:space-between;margin-bottom:0.4cqh">
+                <span style="color:#5a3a1a">매입 지출</span>
+                <span style="color:#a32020;font-weight:bold">−₩${todayExpense.toLocaleString()}</span>
+            </div>`;
+            delayIndex++;
+
+            if (todayStolen > 0) {
+                summaryHtml += `<div class="summary-anim-row" style="animation-delay: ${delayIndex * 0.5}s; display:flex;justify-content:space-between;margin-bottom:0.4cqh">
+                    <span style="color:#5a3a1a">악어 강탈 피해</span>
+                    <span style="color:#a32020;font-weight:bold">−₩${todayStolen.toLocaleString()}</span>
+                </div>`;
+                delayIndex++;
+            }
+
+            summaryHtml += `<div class="summary-anim-row" style="animation-delay: ${delayIndex * 0.5}s; display:flex;justify-content:space-between;margin-bottom:0.4cqh">
+                <span style="color:#5a3a1a">감정 수입</span>
+                <span style="color:#2b7a1a;font-weight:bold">+₩${gain.toLocaleString()}</span>
+            </div>`;
+            delayIndex++;
+
+            let finalMoneyHtml = `<div class="summary-anim-row" style="animation-delay: ${delayIndex * 0.5}s; margin:0.4cqh 1.2cqw 1cqh;padding:0.9cqh 1cqw;background:rgba(200,136,10,0.1);border:0.12cqw solid rgba(200,136,10,0.4);border-radius:0.3cqw;display:flex;justify-content:space-between;font-size:1.15cqw;font-weight:bold">
+                <span style="color:#2a1808">최종 금액</span>
+                <span style="color:#c8880a">₩${gameState.money.toLocaleString()}</span>
+            </div>`;
+            delayIndex++;
+
+            let netProfitHtml = `<div class="summary-anim-row" style="animation-delay: ${delayIndex * 0.5}s; padding:0 1.5cqw 0.6cqh;text-align:right;font-size:0.85cqw;color:${pColor};font-weight:bold">
+                당일 순이익 ${isProfit?'+':'−'}₩${Math.abs(netProfit).toLocaleString()}
+            </div>`;
+
             content.innerHTML = `
                 <div style="text-align:center;padding:1.5cqh 1cqw 1cqh;border-bottom:0.18cqw solid rgba(90,58,26,0.35);background:rgba(255,255,255,0.15)">
                     <div style="font-size:1.4cqw;font-weight:bold;letter-spacing:0.08em;color:#2a1808">결 산 보 고 서</div>
@@ -6546,30 +6623,11 @@ function renderLobbyItems() {
                     <div style="flex-grow:1;overflow-y:auto;">${itemRows}</div>
                 </div>
                 <div style="padding:0.6cqh 1.5cqw;border-top:0.1cqw solid rgba(90,58,26,0.2);font-size:0.9cqw">
-                    <div style="display:flex;justify-content:space-between;margin-bottom:0.4cqh">
-                        <span style="color:#5a3a1a">기존 소지금</span>
-                        <span style="color:#5a3a1a;font-weight:bold">₩${startMoney.toLocaleString()}</span>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;margin-bottom:0.4cqh">
-                        <span style="color:#5a3a1a">매입 지출</span>
-                        <span style="color:#a32020;font-weight:bold">−₩${todayExpense.toLocaleString()}</span>
-                    </div>
-                    ${todayStolen > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:0.4cqh">
-                        <span style="color:#5a3a1a">악어 강탈 피해</span>
-                        <span style="color:#a32020;font-weight:bold">−₩${todayStolen.toLocaleString()}</span>
-                    </div>` : ``}
-                    <div style="display:flex;justify-content:space-between;margin-bottom:0.4cqh">
-                        <span style="color:#5a3a1a">감정 수입</span>
-                        <span style="color:#2b7a1a;font-weight:bold">+₩${gain.toLocaleString()}</span>
-                    </div>
+                    ${summaryHtml}
                 </div>
-                <div style="margin:0.4cqh 1.2cqw 1cqh;padding:0.9cqh 1cqw;background:rgba(200,136,10,0.1);border:0.12cqw solid rgba(200,136,10,0.4);border-radius:0.3cqw;display:flex;justify-content:space-between;font-size:1.15cqw;font-weight:bold">
-                    <span style="color:#2a1808">최종 금액</span>
-                    <span style="color:#c8880a">₩${gameState.money.toLocaleString()}</span>
-                </div>
-                <div style="padding:0 1.5cqw 0.6cqh;text-align:right;font-size:0.85cqw;color:${pColor};font-weight:bold">
-                    당일 순이익 ${isProfit?'+':'−'}₩${Math.abs(netProfit).toLocaleString()}
-                </div>`;
+                ${finalMoneyHtml}
+                ${netProfitHtml}
+            `;
 
             modal.style.display = 'flex';
             document.body.classList.add('modal-open');
