@@ -786,9 +786,8 @@
         }
         
         @keyframes guestEnterChild {
-            0%   { opacity: 0; transform: translateY(12cqh) scale(0.97); }
-            70%  { opacity: 1; transform: translateY(-1.2cqh) scale(1.015); }
-            100% { opacity: 1; transform: translateY(0) scale(1); }
+            from { opacity: 0; transform: translateY(10cqh); }
+            to { opacity: 1; transform: translateY(0); }
         }
         @keyframes guestExitChild {
             from { opacity: 1; transform: translateY(0); }
@@ -2580,77 +2579,6 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
         #cutscene-skip-label { position: relative; z-index: 1; pointer-events: none; white-space: nowrap; }
         #cutscene-skip-btn.holding { color: #fff; border-color: #fcd53f; }
         @keyframes cutHintPulse { 0%,100%{transform:translateX(0);} 50%{transform:translateX(0.6cqw);} }
-        /* ════════ UI 품질 개선 공통 스타일 ════════ */
-
-        /* [1] 대화 선택 버튼 공통 (까마귀/고양이/돼지 등) */
-        .choice-btn-yes, .choice-btn-no {
-            padding: 0.5cqw 2cqw; font-size: 1.1cqw; font-weight: bold;
-            border-radius: 0.4cqw; cursor: pointer; font-family: 'Gaegu', serif;
-            transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
-        }
-        .choice-btn-yes { background: #3a2a08; color: #fcd53f; border: 0.12cqw solid #cba328; }
-        .choice-btn-no  { background: #2a0808; color: #ff6b6b; border: 0.12cqw solid #a32828; }
-        .choice-btn-yes:hover { filter: brightness(1.25); transform: translateY(-0.15cqw); box-shadow: 0 0.3cqw 0.8cqw rgba(252,213,63,0.25); }
-        .choice-btn-no:hover  { filter: brightness(1.25); transform: translateY(-0.15cqw); box-shadow: 0 0.3cqw 0.8cqw rgba(255,107,107,0.25); }
-        .choice-btn-yes:active, .choice-btn-no:active { transform: translateY(0) scale(0.97); }
-
-        /* [2] 진품/가품 판정 버튼 hover */
-        #btn-judge-real, #btn-judge-fake {
-            transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
-        }
-        #btn-judge-real:hover { filter: brightness(1.18); transform: translateY(-0.15cqw); box-shadow: 0 0.3cqw 1cqw rgba(74,138,58,0.45); }
-        #btn-judge-fake:hover { filter: brightness(1.18); transform: translateY(-0.15cqw); box-shadow: 0 0.3cqw 1cqw rgba(170,51,51,0.45); }
-        #btn-judge-real:active, #btn-judge-fake:active { transform: scale(0.96); }
-
-        /* [9] 돋보기 버튼 hover */
-        #btn-reveal { transition: transform 0.15s ease, filter 0.15s ease; }
-        #btn-reveal:hover { filter: brightness(1.2); transform: translateY(-0.15cqw); }
-        #btn-reveal:active { transform: scale(0.97); }
-
-        /* [6] 밧줄 hover: 잡아당길 수 있다는 신호 */
-        .rope { cursor: grab; }
-        .rope:hover { transform: translateY(0.8cqh); }
-        .rope:active { cursor: grabbing; }
-        /* 이미 당겨진 상태에서는 hover로 들썩이지 않게 고정 */
-        #game-rope.pulled:hover,
-        #lobby-rope.pulled:hover { transform: translateY(30cqh); }
-
-        /* [7] 책상 물건 등장: 기존 deskItemEnter 애니메이션 사용 (이미 구현됨) */
-
-        /* [10] 감정 완료 시 카드가 빛나는 효과 */
-        @keyframes appraiseGlow {
-            0%   { box-shadow: 0 0 0 rgba(255,225,120,0); filter: brightness(1); }
-            30%  { box-shadow: 0 0 2.5cqw 0.6cqw rgba(255,225,120,0.9); filter: brightness(1.25); }
-            100% { box-shadow: 0 0 0 rgba(255,225,120,0); filter: brightness(1); }
-        }
-        .h-doc-card.appraise-revealed { animation: appraiseGlow 1.2s ease-out; }
-
-        /* [14] 감정 카드: 완료 배지 + 미감정 강조 */
-        .h-doc-card { position: relative; }
-        .h-doc-card .judged-badge {
-            position: absolute; top: 0.8cqh; right: 0.8cqw;
-            background: #2b7a1a; color: #fff; font-family: 'Gaegu', serif;
-            font-size: 0.95cqw; font-weight: bold;
-            padding: 0.25cqh 0.8cqw; border-radius: 0.4cqw;
-            box-shadow: 0 0.15cqw 0.5cqw rgba(0,0,0,0.4);
-            pointer-events: none; z-index: 5;
-        }
-        .h-doc-card.pending-card {
-            outline: 0.18cqw solid rgba(252,213,63,0.65);
-            outline-offset: -0.18cqw;
-            animation: pendingPulse 2.2s ease-in-out infinite;
-        }
-        @keyframes pendingPulse {
-            0%, 100% { outline-color: rgba(252,213,63,0.35); }
-            50%      { outline-color: rgba(252,213,63,0.85); }
-        }
-
-        /* [18] 결산 모달 등장 애니메이션 */
-        @keyframes settlementPop {
-            0%   { transform: translateY(-6cqh) scale(0.94); opacity: 0; }
-            100% { transform: translateY(0) scale(1); opacity: 1; }
-        }
-        #settlement-modal.anim-in > div { animation: settlementPop 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
     </style>
 </head>
 <body tabindex="0">
@@ -2691,8 +2619,8 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
             <div id="appraisal-box" style="display:none; margin-top: 1.5cqw; text-align: center; background: rgba(0,0,0,0.05); padding: 1.5cqw; border: 0.15cqw dashed rgba(60,30,0,0.5); border-radius: 0.5cqw;">
                 <button id="btn-reveal" onclick="revealItem()" style="padding: 0.8cqw 2cqw; font-size: 1.2cqw; font-family: 'Georgia', serif; font-weight: bold; background: #3a2a08; color: #fcd53f; border: 0.15cqw solid #cba328; border-radius: 0.5cqw; cursor: pointer; margin-bottom: 1cqw;">돋보기로 자세히 보기</button>
                 <div style="display: flex; gap: 1cqw; justify-content: center;">
-                    <button id="btn-judge-real" onclick="judgeItem(true)" style="padding: 0.8cqw 1.5cqw; font-size: 1.1cqw; font-weight: bold; background: #4a8a3a; color: white; border: 0.15cqw solid #2a5a1a; border-radius: 0.5cqw; cursor: pointer;">✓ 진품 판정</button>
-                    <button id="btn-judge-fake" onclick="judgeItem(false)" style="padding: 0.8cqw 1.5cqw; font-size: 1.1cqw; font-weight: bold; background: #a33; color: white; border: 0.15cqw solid #631010; border-radius: 0.5cqw; cursor: pointer;">✗ 가품 판정</button>
+                    <button id="btn-judge-real" onclick="judgeItem(true)" style="padding: 0.8cqw 1.5cqw; font-size: 1.1cqw; font-weight: bold; background: #4a8a3a; color: white; border: 0.15cqw solid #2a5a1a; border-radius: 0.5cqw; cursor: pointer;">O 진품 판정</button>
+                    <button id="btn-judge-fake" onclick="judgeItem(false)" style="padding: 0.8cqw 1.5cqw; font-size: 1.1cqw; font-weight: bold; background: #a33; color: white; border: 0.15cqw solid #631010; border-radius: 0.5cqw; cursor: pointer;">X 가품 판정</button>
                 </div>
             </div>
             <div id="judgment-result" style="display:none; margin-top: 1.5cqw; font-size: 1.5cqw; font-weight: bold; text-align: center; color: #2c1a0e; background: rgba(255,255,255,0.4); padding: 1cqw; border-radius: 0.5cqw; border: 0.15cqw solid rgba(60,30,0,0.6);"></div>
@@ -3172,21 +3100,12 @@ function renderDocScrollItems() {
         }
         return contentHtml;
     }
-    // startAutoAppraise(전역)에서도 쓸 수 있도록 전역 노출
-    window.getCardContentHtml = getCardContentHtml;
 
     dayItems.forEach(({ entry, idx }) => {
         const card = document.createElement('div');
-        card.className = 'h-doc-card' + (entry.judged ? '' : ' pending-card');
+        card.className = 'h-doc-card';
         card.id = `doc-card-${idx}`;
         card.innerHTML = getCardContentHtml(idx, entry);
-        // 감정 완료 카드엔 우상단 배지 표시
-        if (entry.judged) {
-            const badge = document.createElement('div');
-            badge.className = 'judged-badge';
-            badge.innerText = '✔ 감정 완료';
-            card.appendChild(badge);
-        }
         container.appendChild(card);
     });
 
@@ -3302,7 +3221,7 @@ function startAutoAppraise(idx) {
             }, 100);
         } else {
             clearInterval(countInterval);
-            countText.innerText = "감정 완료";
+            countText.innerText = "";   // 문구 없이 바로 결과 공개 연출로 전환
         }
     }, 1000);
 
@@ -3334,15 +3253,6 @@ function startAutoAppraise(idx) {
             overlay.remove();
             // getCardContentHtml 은 위 renderDocScrollItems 에 포함된 로직입니다.
             card.innerHTML = getCardContentHtml(idx, entry);
-            // 미감정 강조 해제 + 완료 배지 부착
-            card.classList.remove('pending-card');
-            const badge = document.createElement('div');
-            badge.className = 'judged-badge';
-            badge.innerText = '✔ 감정 완료';
-            card.appendChild(badge);
-            // 감정 완료 카드 발광 효과
-            card.classList.add('appraise-revealed');
-            setTimeout(() => card.classList.remove('appraise-revealed'), 1200);
             
             setTimeout(() => {
                 card.style.transform = 'scale(1)';
@@ -5378,8 +5288,8 @@ function generateGuest() {
             sb.innerHTML = `<div style="font-size:1.2cqw;font-weight:bold;text-align:center;line-height:1.6">
                 "네 보관함의 <span style="color:#fcd53f">[${target.item.name}]</span>을<br>₩${price.toLocaleString()}에 팔겠냐?"<br>
                 <div style="margin-top:1cqh;display:flex;gap:2cqw;justify-content:center">
-                    <button onclick="crowSell()" class="choice-btn-yes">팔기</button>
-                    <button onclick="crowRefuse()" class="choice-btn-no">거절</button>
+                    <button onclick="crowSell()" style="padding:0.5cqw 2cqw;font-size:1.1cqw;background:#3a2a08;color:#fcd53f;border:0.12cqw solid #cba328;border-radius:0.4cqw;cursor:pointer">팔기</button>
+                    <button onclick="crowRefuse()" style="padding:0.5cqw 2cqw;font-size:1.1cqw;background:#2a0808;color:#ff6b6b;border:0.12cqw solid #a32828;border-radius:0.4cqw;cursor:pointer">거절</button>
                 </div>
             </div>`;
             sb.style.pointerEvents = 'auto';
@@ -5486,8 +5396,8 @@ function generateGuest() {
             requestAnimationFrame(() => showCatGauge());
 
             const catBtns = [
-                `<button onclick="catReply(true)" class="choice-btn-yes">${q.good}</button>`,
-                `<button onclick="catReply(false)" class="choice-btn-no">${q.bad}</button>`
+                `<button onclick="catReply(true)" style="padding:0.5cqw 2cqw;font-size:1.1cqw;background:#3a2a08;color:#fcd53f;border:0.12cqw solid #cba328;border-radius:0.4cqw;cursor:pointer">${q.good}</button>`,
+                `<button onclick="catReply(false)" style="padding:0.5cqw 2cqw;font-size:1.1cqw;background:#2a0808;color:#ff6b6b;border:0.12cqw solid #a32828;border-radius:0.4cqw;cursor:pointer">${q.bad}</button>`
             ];
             if (Math.random() < 0.5) catBtns.reverse();
 
@@ -5774,8 +5684,8 @@ function generateGuest() {
             sb.innerHTML = `<div style="font-size:1.2cqw;font-weight:bold;text-align:center;line-height:1.6">
                 "${opener}<br>당신을,, 사랑합니다!!"<br>
                 <div style="margin-top:1cqh;display:flex;gap:2cqw;justify-content:center">
-                    <button onclick="pigAccept()" class="choice-btn-yes">수락</button>
-                    <button onclick="pigReject()" class="choice-btn-no">거절</button>
+                    <button onclick="pigAccept()" style="padding:0.5cqw 2cqw;font-size:1.1cqw;background:#3a2a08;color:#fcd53f;border:0.12cqw solid #cba328;border-radius:0.4cqw;cursor:pointer">수락</button>
+                    <button onclick="pigReject()" style="padding:0.5cqw 2cqw;font-size:1.1cqw;background:#2a0808;color:#ff6b6b;border:0.12cqw solid #a32828;border-radius:0.4cqw;cursor:pointer">거절</button>
                 </div>
             </div>`;
             sb.style.pointerEvents = 'auto';
@@ -6711,10 +6621,6 @@ function renderLobbyItems() {
             `;
 
             modal.style.display = 'flex';
-            // 등장 애니메이션 (settlementPop)
-            modal.classList.remove('anim-in');
-            void modal.offsetWidth;
-            modal.classList.add('anim-in');
             document.body.classList.add('modal-open');
 
             // 7일차(마지막 날): 버튼을 "최종 정산"으로 바꿔 주간 결산 의식으로 이어지게 함
