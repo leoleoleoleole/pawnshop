@@ -2578,6 +2578,34 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
         #cutscene-skip-label { position: relative; z-index: 1; pointer-events: none; white-space: nowrap; }
         #cutscene-skip-btn.holding { color: #fff; border-color: #fcd53f; }
         @keyframes cutHintPulse { 0%,100%{transform:translateX(0);} 50%{transform:translateX(0.6cqw);} }
+        /* ── 이어하기 모달 ── */
+        #continue-modal {
+            display: none; position: fixed; inset: 0; z-index: 99999;
+            background: rgba(0,0,0,0.82);
+            align-items: center; justify-content: center;
+            font-family: 'Gaegu', serif;
+        }
+        #continue-modal.show { display: flex; }
+        #continue-box {
+            background: radial-gradient(ellipse at center, #2a1808 0%, #140a03 100%);
+            border: 0.2cqw solid #c9a86a; border-radius: 1cqw;
+            padding: 4cqh 4cqw; text-align: center;
+            box-shadow: 0 1cqw 4cqw rgba(0,0,0,0.8); max-width: 80cqw;
+        }
+        #continue-title {
+            font-size: 2.2cqw; font-weight: bold; color: #fcd53f;
+            margin-bottom: 1.5cqh; text-shadow: 0 0.2cqw 0.6cqw rgba(0,0,0,0.8);
+        }
+        #continue-desc { font-size: 1.2cqw; color: #d8b87a; margin-bottom: 3cqh; line-height: 1.6; }
+        #continue-btns { display: flex; gap: 2cqw; justify-content: center; }
+        #continue-btns button {
+            padding: 1.2cqh 3cqw; font-size: 1.4cqw; font-weight: bold;
+            border-radius: 0.6cqw; cursor: pointer; font-family: 'Gaegu', serif;
+            transition: transform 0.15s ease, filter 0.15s ease;
+        }
+        #continue-btns button:hover { transform: translateY(-0.2cqw); filter: brightness(1.1); }
+        #continue-yes { background: #3a2a08; color: #fcd53f; border: 0.2cqw solid #cba328; }
+        #continue-no  { background: rgba(255,255,255,0.08); color: #d8b87a; border: 0.2cqw solid #7a5a2a; }
     </style>
 </head>
 <body tabindex="0">
@@ -2600,6 +2628,18 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
     <div id="ledger-btn-label">방문 명단</div>
     <div id="curtain">
         <div class="curtain-text">화면을 클릭하여 입장</div>
+    </div>
+
+    <!-- 이어하기 모달 (저장된 게임이 있을 때) -->
+    <div id="continue-modal">
+        <div id="continue-box">
+            <div id="continue-title">이어서 하시겠습니까?</div>
+            <div id="continue-desc"></div>
+            <div id="continue-btns">
+                <button id="continue-yes">이어하기</button>
+                <button id="continue-no">새 게임</button>
+            </div>
+        </div>
     </div>
     
     <!-- 어두운 화면에서 서서히 밝아지는 오버레이 -->
@@ -3507,40 +3547,80 @@ function exitToLobby() {
             if (_curtainOpened) return;   // 광클 중복 실행 방지
             _curtainOpened = true;
 
-            // ★ 첫 입장이면 튜토리얼을 '즉시' 활성화(active=true)하여,
-            //   커튼이 사라지는 동안 주인장을 광클해도 게임 시작 말풍선이 뜨지 않게 함.
-            //   실제 안내 UI는 커튼이 다 열린 뒤 startTutorial()에서 렌더링.
+            // 저장된 게임이 있으면 커튼만 열고 이어하기 여부를 먼저 묻는다
+            if (hasSaveData()) {
+                _openCurtainVisual();
+                setTimeout(() => _showContinuePrompt(), 700);
+                return;
+            }
+            _startFreshFromCurtain();
+        });
+
+        // 커튼 여는 시각 연출만 분리
+        function _openCurtainVisual() {
+            curtain.style.transition = 'transform 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
+            curtain.style.transform = 'translateX(-100cqw) scaleX(0)';
+            setTimeout(() => {
+                darkOverlay.style.transition = 'opacity 0.6s ease-out';
+                darkOverlay.style.opacity = '0';
+                setTimeout(() => {
+                    darkOverlay.style.display = 'none';
+                    curtain.style.display = 'none';
+                    const ledgerBtn = document.getElementById('ledger-btn');
+                    if (ledgerBtn) ledgerBtn.classList.add('lobby-visible');
+                }, 600);
+            }, 300);
+        }
+
+        // 새 게임 시작 (튜토리얼/컷씬 포함)
+        function _startFreshFromCurtain() {
             if (!localStorage_getTutorialDone()) {
                 tutorial.active = true;
                 tutorial.step = 0;
                 tutorial.sub = 0;
                 tutorial.waiting = false;
-                // ★ 커튼이 열리기 전에 컷씬을 미리 시작해 화면을 덮어둠
-                //   → 커튼이 열려도 로비가 잠깐 보이지 않음
                 startCutscene();
             }
+            _openCurtainVisual();
+        }
 
-            curtain.style.transition = 'transform 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
-            curtain.style.transform = 'translateX(-100cqw) scaleX(0)';
-            
-            setTimeout(() => {
-                darkOverlay.style.transition = 'opacity 0.6s ease-out';
-                darkOverlay.style.opacity = '0';
-                
-              // (600ms 타이머 안쪽)
-                setTimeout(() => {
-                    darkOverlay.style.display = 'none';
-                    curtain.style.display = 'none';
-                    
-                    // ★ 커튼이 열리면 로비용 명단 버튼 표시
-                    const ledgerBtn = document.getElementById('ledger-btn');
-                    if (ledgerBtn) {
-                        ledgerBtn.classList.add('lobby-visible');
-                    }
-                    // 컷씬은 이미 커튼 클릭 시 시작됨(위)
-                }, 600);
-            }, 300);
-        });
+        // 이어하기 안내 모달 표시
+        function _showContinuePrompt() {
+            let info = '';
+            try {
+                const d = JSON.parse(localStorage.getItem(SAVE_KEY));
+                if (d) {
+                    const dayTxt = d.day ? `${d.day}일차` : '';
+                    const moneyTxt = (typeof d.money === 'number') ? `₩${d.money.toLocaleString()}` : '';
+                    info = `${dayTxt} · 보유 금액 ${moneyTxt}`;
+                }
+            } catch (e) {}
+            const m = document.getElementById('continue-modal');
+            const desc = document.getElementById('continue-desc');
+            if (desc) desc.innerText = info ? `저장된 기록: ${info}` : '';
+            if (m) m.classList.add('show');
+        }
+
+        // 이어하기 / 새 게임 버튼
+        (function bindContinueButtons() {
+            const yes = document.getElementById('continue-yes');
+            const no  = document.getElementById('continue-no');
+            if (yes) yes.onclick = function() {
+                document.getElementById('continue-modal').classList.remove('show');
+                if (loadGame()) {
+                    _tutorialDone = true;
+                    tutorial.active = false;
+                    if (typeof goToLobby === 'function') goToLobby();
+                } else {
+                    _startFreshFromCurtain();
+                }
+            };
+            if (no) no.onclick = function() {
+                document.getElementById('continue-modal').classList.remove('show');
+                clearSave();
+                _startFreshFromCurtain();
+            };
+        })();
 
         /* --- 기존 기능 스크립트 --- */
         // 종소리: 업로드한 음원(bell.mp3) 사용
@@ -3806,6 +3886,78 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
     receivedReports: [],         // 결산 보고서를 받은 일차 목록
     crocStolen: [],              // 악어 강탈 기록 [{day, amount}]
 };
+
+        // ════════════════════════════════════════════════
+        // ── 저장 / 불러오기 시스템 (localStorage 기반) ──
+        //   원리: 게임 진행 상황(gameState의 순수 데이터 필드)을 JSON 문자열로
+        //   직렬화하여 브라우저의 localStorage에 저장한다. localStorage는 도메인별
+        //   영구 저장소라 새로고침/브라우저 재시작 후에도 값이 유지된다.
+        //   함수·DOM·캔버스 컨텍스트 등은 직렬화 불가하므로 저장 대상에서 제외한다.
+        // ════════════════════════════════════════════════
+        const SAVE_KEY = 'jeondangpo_save_v1';
+
+        function _collectSaveData() {
+            const g = gameState;
+            return {
+                _v: 1, savedAt: Date.now(),
+                money: g.money, day: g.day, totalDays: g.totalDays,
+                gameStarted: g.gameStarted,
+                purchasedItems: g.purchasedItems,
+                crowSales: g.crowSales || [],
+                crocStolen: g.crocStolen || [],
+                receivedReports: g.receivedReports || [],
+                obtainedCount: g.obtainedCount,
+                needsAppraisal: g.needsAppraisal,
+                appraisedToday: g.appraisedToday,
+                readyToFinalize: g.readyToFinalize,
+                dailyGuestsQueue: g.dailyGuestsQueue,
+                originalDailyQueue: g.originalDailyQueue,
+                catAffinity: g.catAffinity, catVisitCount: g.catVisitCount,
+                catHasVisited: g.catHasVisited, catBanned: g.catBanned || false,
+                pigeonBible: g.pigeonBible, pigeonBought: g.pigeonBought || false,
+                pigeonBibleUsedToday: g.pigeonBibleUsedToday,
+                pigeonRejectedToday: g.pigeonRejectedToday,
+                streamerBroadcasted: g.streamerBroadcasted,
+                surpriseProbability: g.surpriseProbability,
+                unlockedEncyclopedia: g.unlockedEncyclopedia || {}
+            };
+        }
+
+        // 게임 저장
+        function saveGame(silent) {
+            try {
+                localStorage.setItem(SAVE_KEY, JSON.stringify(_collectSaveData()));
+                if (!silent && typeof showFloatingText === 'function') showFloatingText('게임을 저장했습니다.', '#7ee87e');
+                return true;
+            } catch (e) {
+                if (!silent && typeof showFloatingText === 'function') showFloatingText('저장에 실패했습니다.', '#ff6b6b');
+                return false;
+            }
+        }
+        // 저장 데이터 존재 여부
+        function hasSaveData() { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } }
+        // 게임 불러오기
+        function loadGame() {
+            try {
+                const raw = localStorage.getItem(SAVE_KEY);
+                if (!raw) return false;
+                const data = JSON.parse(raw);
+                Object.keys(data).forEach(k => {
+                    if (k === '_v' || k === 'savedAt') return;
+                    gameState[k] = data[k];
+                });
+                gameState.currentItem = null;
+                gameState.currentGuestData = null;
+                gameState.ropeUsed = false;
+                gameState.earlyClose = false;
+                if (typeof updateMoneyCounter === 'function') updateMoneyCounter();
+                if (typeof updateDayIndicator === 'function') updateDayIndicator();
+                return true;
+            } catch (e) { return false; }
+        }
+        // 저장 삭제
+        function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
+
        // 손님 목록: 상황별 대사(등장, 수락, 거절) 3개씩 무작위 출력
        // ── 도감 사전용 공식 진품 마스터 텍스트 데이터 (사진 제외, 정밀 지식 수록) ──
 // ── 📘 사전(Dictionary) 데이터: 물품 상세 정보 (처음엔 ???, 판정 성공 시 해금) ──
@@ -3973,7 +4125,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
         // 캐릭터별 한 줄 설명
         const guestDescriptions = {
             goat:       "노련한 사업가 염소.\n· 공용 물건 (진품/가품 섞임)\n· 제시가 3천만~5천만\n· 감정 후 손익 따져 매입",
-            crocodile:  "거칠고 강압적인 악어.\n· 4천만 고정가 강요\n· 거절 시 50%로 소지금 20% 강탈\n· 거절은 신중히",
+            crocodile:  "거칠고 강압적인 악어.\n· 4천만 고정가 강요\n· 거절 시 50%로 소지금 10% 강탈\n· 거절은 신중히",
             cat:        "도도한 단골 고양이.\n· 방문할수록 호감도 상승\n· 호감 높으면 값 깎아줌\n· 거절하면 호감도 -10",
             mouse:      "붙어다니는 쥐 & 뱀 커플.\n· 시시덕대느라 정신없음\n· '방해하기' → 50% 도망 / 50% 반값",
             pig:        "감성적인 돼지.\n· 보석 장미 들고 고백\n· 받아주면 헐값(1천만)\n· 거절하면 도망",
@@ -5892,9 +6044,9 @@ function rejectItem() {
 
             const guest = document.querySelector('.game-guest');
 
-            // ── 악어: 거래 거절 시 50% 확률로 현재 소지금의 20%를 뜯김 ──
+            // ── 악어: 거래 거절 시 50% 확률로 현재 소지금의 10%를 뜯김 ──
             if (gameState.lastGuest === 'crocodile' && Math.random() < 0.5) {
-                const stolen = Math.floor(gameState.money * 0.2); // 소지금의 20% 계산
+                const stolen = Math.floor(gameState.money * 0.1); // 소지금의 10% 계산
                 gameState.money = Math.max(0, gameState.money - stolen);
                 
                 // 돈 차감 UI 업데이트
@@ -7879,11 +8031,11 @@ function goToLobby() {
                 showSnakePairLines('데이트나 하러 갈래 자기?', '좋은 생각이야.');
             }
 
-            // ── 악어: 거래 거절 시 50% 확률로 현재 소지금의 20%를 강탈 ──
+            // ── 악어: 거래 거절 시 50% 확률로 현재 소지금의 10%를 강탈 ──
             let crocStole = false;
             if (!tutorial.active && gameState.lastGuest === 'crocodile' && Math.random() < 0.5) {
                 crocStole = true;
-                const stolen = Math.floor(gameState.money * 0.2);
+                const stolen = Math.floor(gameState.money * 0.1);   // 소지금의 10%
                 gameState.money = Math.max(0, gameState.money - stolen);
                 updateMoneyCounter();
 
@@ -7995,9 +8147,12 @@ function goToLobby() {
             }
             // 7일차(마지막 날): 로비로 가지 않고 최종 정산 의식(커튼→전체화면 주간 결산)으로 진입
             if (isFinal || gameState.day >= gameState.totalDays) {
+                clearSave();   // 게임이 끝나므로 저장 삭제
                 startFinalCeremony();
                 return;
             }
+            // 하루가 끝나는 시점에 자동 저장 후 로비로
+            saveGame(true);
             goToLobby();
         }
 
@@ -9039,7 +9194,7 @@ function startTutorial() {
     </div>
     <div id="rotate-overlay">
         <div class="rotate-icon">📱</div>
-        <div class="rotate-text"> 가로로<br>돌려주세요</div>
+        <div class="rotate-text">화면을 가로로<br>돌려주세요</div>
     </div>
 </body>
 </html>
