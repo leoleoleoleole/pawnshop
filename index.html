@@ -3250,21 +3250,23 @@ function startAutoAppraise(idx) {
             overlay.remove();
             card.innerHTML = getCardContentHtml(idx, entry);
             
-            // 3. 내용이 교체되면서 날아간 오버레이를 다시 붙이고, 이번엔 서서히 투명해지도록 설정
-            flashOverlay.style.transition = 'opacity 1.5s ease';
-            flashOverlay.style.opacity = '1';
-            card.appendChild(flashOverlay);
+            // 3. 내용 교체 후 새로운 페이드아웃 전용 오버레이 생성
+            const flashOut = document.createElement('div');
+            flashOut.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; background:#ffffff; z-index:999999; opacity:1; transition:opacity 1.5s ease; pointer-events:none; border-radius:inherit;';
+            card.appendChild(flashOut);
             
-            requestAnimationFrame(() => {
-                flashOverlay.style.opacity = '0';
-            });
+            // 브라우저가 opacity: 1을 인식하도록 강제 리플로우(Reflow) 발생
+            flashOut.offsetHeight;
+            
+            // 그 다음 opacity: 0으로 변경하여 서서히 사라지는 애니메이션(transition) 트리거
+            flashOut.style.opacity = '0';
             
             setTimeout(() => {
                 card.style.transform = 'scale(1)';
             }, 500);
 
             setTimeout(() => {
-                flashOverlay.remove();
+                flashOut.remove();
                 if (tutorial.active) {
                     setTimeout(() => tutEvent('judged'), 1000);
                 }
