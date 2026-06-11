@@ -3241,36 +3241,38 @@ function startAutoAppraise(idx) {
         flashOverlay.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; background:#ffffff; z-index:999999; opacity:0; transition:opacity 0.6s ease; pointer-events:none; border-radius:inherit;';
         card.appendChild(flashOverlay);
 
+        // 하얗게 변하는 애니메이션 시작
         requestAnimationFrame(() => {
             flashOverlay.style.opacity = '1';
         });
 
+        // 0.6초 뒤 (완전히 하얗게 된 시점)
         setTimeout(() => {
-            // 2. 카운트다운 오버레이 제거 및 감정 결과 내용 교체
+            // 기존 내용과 오버레이 제거하고 새 감정 결과로 교체
             overlay.remove();
             card.innerHTML = getCardContentHtml(idx, entry);
             
-            // 3. 내용 교체 후 새로운 페이드아웃 전용 오버레이 생성
+            // 새 내용 위에 덮을 '사라지기 전용' 하얀 오버레이 다시 덮기
             const flashOut = document.createElement('div');
             flashOut.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; background:#ffffff; z-index:999999; opacity:1; transition:opacity 1.5s ease; pointer-events:none; border-radius:inherit;';
             card.appendChild(flashOut);
             
-            // 브라우저가 opacity: 1을 인식하도록 강제 리플로우(Reflow) 발생
-            flashOut.offsetHeight;
-            
-            // 그 다음 opacity: 0으로 변경하여 서서히 사라지는 애니메이션(transition) 트리거
-            flashOut.style.opacity = '0';
+            // 브라우저 렌더링 사이클을 확실히 분리하기 위해 setTimeout 사용
+            setTimeout(() => {
+                flashOut.style.opacity = '0'; // 서서히 투명해지도록 트리거
+            }, 50);
             
             setTimeout(() => {
                 card.style.transform = 'scale(1)';
             }, 500);
 
+            // 1.5초(페이드아웃 시간) + 50ms 후 완전히 제거
             setTimeout(() => {
-                flashOut.remove();
+                if(flashOut.parentNode) flashOut.remove();
                 if (tutorial.active) {
                     setTimeout(() => tutEvent('judged'), 1000);
                 }
-            }, 1500);
+            }, 1600);
 
         }, 600);
     }, 3000);
