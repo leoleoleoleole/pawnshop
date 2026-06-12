@@ -3331,14 +3331,14 @@ function startAutoAppraise(idx) {
     `;
     const countText = document.createElement('div');
     countText.style.cssText = `
-        font-size: 8cqw;
+        font-size: 2.6cqw;
         font-weight: bold;
         color: #fcd53f;
-        text-shadow: 0 0 2cqw rgba(255,255,255,0.8);
-        font-family: 'Georgia', serif;
-        transition: transform 0.2s ease;
+        text-shadow: 0 0 1.5cqw rgba(255,255,255,0.6);
+        font-family: 'Gaegu', serif;
+        letter-spacing: 0.1cqw;
     `;
-    countText.innerText = "3";
+    countText.innerText = "감정중.";
     overlay.appendChild(countText);
     card.appendChild(overlay);
 
@@ -3346,18 +3346,14 @@ function startAutoAppraise(idx) {
         overlay.style.opacity = '1';
     });
 
-    let count = 3;
+    // "감정중." → "감정중.." → "감정중..." 1초 간격으로 점이 늘어남
+    let dots = 1;
     const countInterval = setInterval(() => {
-        count--;
-        if (count > 0) {
-            countText.style.transform = 'scale(0.5)';
-            setTimeout(() => {
-                countText.innerText = count;
-                countText.style.transform = 'scale(1)';
-            }, 100);
+        dots++;
+        if (dots <= 3) {
+            countText.innerText = "감정중" + ".".repeat(dots);
         } else {
             clearInterval(countInterval);
-            countText.innerText = "";   // 문구 없이 바로 결과 공개 연출로 전환
         }
     }, 1000);
 
@@ -3368,44 +3364,36 @@ function startAutoAppraise(idx) {
         if (!gameState.unlockedEncyclopedia) gameState.unlockedEncyclopedia = {};
         gameState.unlockedEncyclopedia[entry.item.baseImg] = true;
 
-        card.style.transition = 'transform 0.6s ease';
-        card.style.transform = 'scale(1.03)';
-        overlay.style.opacity = '0';
-
-        // 전체 화면이 환하게 빛났다가 서서히 사라지는 연출 추가
+        // ① 화면 전체 플래시를 먼저 띄움 (가장 밝은 상태)
         const stageEl = document.getElementById('stage') || document.body;
         const flashOverlay = document.createElement('div');
         flashOverlay.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; background:radial-gradient(ellipse at center, #fff8e0 0%, #f5e2a8 100%); z-index:999999; opacity:1; transition:opacity 1.5s ease; pointer-events:none;';
         stageEl.appendChild(flashOverlay);
-        
+
+        // ② 플래시가 화면을 완전히 덮은 동안(같은 프레임에) 카드를 결과 상태로 교체 + 발광 시작
+        //    → 플래시가 걷힐 때 이미 빛나고 있는 결과 카드가 자연스럽게 드러남
+        overlay.remove();
+        card.innerHTML = getCardContentHtml(idx, entry);
+        card.classList.remove('pending-card');
+        const badge = document.createElement('div');
+        badge.className = 'judged-badge';
+        badge.innerText = '✔ 감정 완료';
+        card.appendChild(badge);
+        card.style.transition = 'transform 0.6s ease';
+        card.style.transform = 'scale(1.03)';
+        card.classList.add('appraise-revealed');
+        setTimeout(() => card.classList.remove('appraise-revealed'), 1400);
+        setTimeout(() => { card.style.transform = 'scale(1)'; }, 700);
+
+        // ③ 다음 프레임부터 플래시가 서서히 걷힘
         requestAnimationFrame(() => {
             flashOverlay.style.opacity = '0';
         });
-        setTimeout(() => {
-            flashOverlay.remove();
-        }, 1600);
+        setTimeout(() => { flashOverlay.remove(); }, 1600);
 
-        setTimeout(() => {
-            overlay.remove();
-            // getCardContentHtml 은 위 renderDocScrollItems 에 포함된 로직입니다.
-            card.innerHTML = getCardContentHtml(idx, entry);
-            // 미감정 강조 해제 + 완료 배지 부착 + 발광 효과
-            card.classList.remove('pending-card');
-            const badge = document.createElement('div');
-            badge.className = 'judged-badge';
-            badge.innerText = '✔ 감정 완료';
-            card.appendChild(badge);
-            card.classList.add('appraise-revealed');
-            setTimeout(() => card.classList.remove('appraise-revealed'), 1200);
-            
-            setTimeout(() => {
-                card.style.transform = 'scale(1)';
-            }, 500);
-
-            if (tutorial.active) {
-                setTimeout(() => tutEvent('judged'), 1000);
-            }
-        }, 600);
+        if (tutorial.active) {
+            setTimeout(() => tutEvent('judged'), 1200);
+        }
     }, 3000);
 }
         /* --- 우클릭 / 더블클릭 / 텍스트 선택 차단 --- */
