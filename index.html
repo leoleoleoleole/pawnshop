@@ -1904,6 +1904,21 @@
             display: none; pointer-events: none;
         }
         #money-display.visible { display: block; }
+        /* 잔액 변동 사유 표시 (잔액칸 바로 아래) */
+        #money-reason {
+            position: absolute; top: 13.2cqh; left: 2cqw; z-index: 9500;
+            font-family: 'Gaegu', serif; font-size: 1.05cqw; font-weight: bold;
+            padding: 0.3cqw 1cqw; border-radius: 0.5cqw;
+            background-color: rgba(0,0,0,0.6);
+            text-shadow: 0 0.1cqw 0.4cqw rgba(0,0,0,0.9);
+            pointer-events: none; opacity: 0;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            transform: translateY(-0.6cqh);
+            white-space: nowrap;
+        }
+        #money-reason.show { opacity: 1; transform: translateY(0); }
+        #money-reason.gain { color: #8ef08e; border: 0.1cqw solid rgba(126,232,126,0.5); }
+        #money-reason.loss { color: #ff8a8a; border: 0.1cqw solid rgba(255,122,122,0.5); }
         #end-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 2000; display: none; justify-content: center; align-items: center; flex-direction: column; color: #fcd53f; font-size: 8cqw; font-weight: bold;
         }
@@ -2599,16 +2614,16 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
         }
         /* ════════ UI 품질 개선 공통 스타일 (복원) ════════ */
 
-        /* [1] 대화 선택 버튼 공통 (까마귀/고양이/돼지 등) */
+        /* [1] 대화 선택 버튼 공통 (까마귀/고양이/돼지 등) — 말풍선(크림색)과 어울리는 톤 */
         .choice-btn-yes, .choice-btn-no {
             padding: 0.5cqw 2cqw; font-size: 1.1cqw; font-weight: bold;
             border-radius: 0.4cqw; cursor: pointer; font-family: 'Gaegu', serif;
             transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
         }
-        .choice-btn-yes { background: #3a2a08; color: #fcd53f; border: 0.12cqw solid #cba328; }
-        .choice-btn-no  { background: #2a0808; color: #ff6b6b; border: 0.12cqw solid #a32828; }
-        .choice-btn-yes:hover { filter: brightness(1.25); transform: translateY(-0.15cqw); box-shadow: 0 0.3cqw 0.8cqw rgba(252,213,63,0.25); }
-        .choice-btn-no:hover  { filter: brightness(1.25); transform: translateY(-0.15cqw); box-shadow: 0 0.3cqw 0.8cqw rgba(255,107,107,0.25); }
+        .choice-btn-yes { background: #f3e6c8; color: #4a3008; border: 0.14cqw solid #b89a5a; }
+        .choice-btn-no  { background: #f2ddd5; color: #8a3020; border: 0.14cqw solid #c08070; }
+        .choice-btn-yes:hover { background: #ecd9a8; transform: translateY(-0.15cqw); box-shadow: 0 0.25cqw 0.7cqw rgba(120,90,30,0.3); }
+        .choice-btn-no:hover  { background: #eccfc2; transform: translateY(-0.15cqw); box-shadow: 0 0.25cqw 0.7cqw rgba(150,70,50,0.3); }
         .choice-btn-yes:active, .choice-btn-no:active { transform: translateY(0) scale(0.97); }
 
         /* [2] 진품/가품 판정 버튼 hover */
@@ -2699,6 +2714,7 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
     <button id="skip-tutorial-btn"><span id="skip-hold-fill"></span><span id="skip-btn-label">튜토리얼 스킵 ⏭</span></button>
     <div id="day-indicator">1일차</div>
     <div id="money-display">₩100,000,000</div>
+    <div id="money-reason"></div>
     <div id="obtained-counter">거래 횟수: 0</div>
     
     <div id="ledger-btn" onclick="showLedgerModal()" title="방문 명단">
@@ -3346,16 +3362,12 @@ function startAutoAppraise(idx) {
         overlay.style.opacity = '1';
     });
 
-    // "감정중." → "감정중.." → "감정중..." 1초 간격으로 점이 늘어남
+    // "감정중." → "감정중.." → "감정중..." 점이 계속 반복됨
     let dots = 1;
     const countInterval = setInterval(() => {
-        dots++;
-        if (dots <= 3) {
-            countText.innerText = "감정중" + ".".repeat(dots);
-        } else {
-            clearInterval(countInterval);
-        }
-    }, 1000);
+        dots = (dots % 3) + 1;            // 1→2→3→1→2→3...
+        countText.innerText = "감정중" + ".".repeat(dots);
+    }, 600);
 
     setTimeout(() => {
         const entry = gameState.purchasedItems[idx];
@@ -3363,6 +3375,7 @@ function startAutoAppraise(idx) {
         entry.judgmentResult = entry.item.authentic;
         if (!gameState.unlockedEncyclopedia) gameState.unlockedEncyclopedia = {};
         gameState.unlockedEncyclopedia[entry.item.baseImg] = true;
+        clearInterval(countInterval);   // '감정중' 반복 정지
 
         // ① 화면 전체 플래시를 먼저 띄움 (가장 밝은 상태)
         const stageEl = document.getElementById('stage') || document.body;
@@ -5363,7 +5376,7 @@ function generateGuest() {
                 // 기부금 지급
                 const donate = 30000000;
                 gameState.money += donate;
-                updateMoneyCounter();
+                updateMoneyCounter('비둘기 기부');
                 showFloatingText('비둘기는 신자인 당신을 위해 매일 기부를 하러 찾아 올 것입니다.', '#a0d8ff');
                 // 50% 확률로 다음 손님 도망 → 다음 턴에 알림
                 if (Math.random() < 0.5 && gameState.dailyGuestsQueue.length > 0) {
@@ -5553,7 +5566,7 @@ function generateGuest() {
                 buyPrice: entry.buyPrice || 0
             });
             gameState.money += price;
-            updateMoneyCounter();
+            updateMoneyCounter('까마귀에게 판매');
             showFloatingText(`까마귀에게 팔았습니다! +₩${price.toLocaleString()}`, '#fcd53f');
             const sb = document.getElementById('speech-bubble');
             if (sb) { sb.classList.remove('visible'); sb.style.pointerEvents = 'none'; }
@@ -6194,7 +6207,7 @@ function rejectItem() {
                 gameState.money = Math.max(0, gameState.money - stolen);
                 
                 // 돈 차감 UI 업데이트
-                updateMoneyCounter();
+                updateMoneyCounter('악어에게 강탈당함');
                 
                 // 차감액을 실시간 텍스트로 작게 띄우기 (위로 쓱 사라지는 애니메이션)
                 const stolenText = `−₩${stolen.toLocaleString()}`;
@@ -6340,7 +6353,8 @@ function rejectItem() {
         function closeAppraiseNotice() { document.getElementById('appraise-notice').classList.remove('show'); }
         let _lastShownMoney = null;   // 직전 표시 금액 (변동 감지용)
         let _moneyAnimTimer = null;
-        function updateMoneyCounter() {
+        let _moneyReasonTimer = null;
+        function updateMoneyCounter(reason) {
             const target = gameState.money;
             const mc = document.getElementById('money-counter');
             const md = document.getElementById('money-display');
@@ -6370,6 +6384,19 @@ function rejectItem() {
                     md.style.color = '';
                     md.style.borderColor = '';
                 }, 900);
+            }
+
+            // ── 잔액칸 아래에 변동 사유 + 증감액 표시 ──
+            const mr = document.getElementById('money-reason');
+            if (mr) {
+                const sign = diff > 0 ? '+' : '−';
+                const amountTxt = `${sign}₩${Math.abs(diff).toLocaleString()}`;
+                mr.innerText = reason ? `${reason}  ${amountTxt}` : amountTxt;
+                mr.classList.remove('gain', 'loss', 'show');
+                void mr.offsetWidth;
+                mr.classList.add(diff > 0 ? 'gain' : 'loss', 'show');
+                if (_moneyReasonTimer) clearTimeout(_moneyReasonTimer);
+                _moneyReasonTimer = setTimeout(() => { mr.classList.remove('show'); }, 2600);
             }
 
             // 숫자가 빠르게 굴러가는 카운트업/다운 (0.6초)
@@ -6735,7 +6762,7 @@ function renderLobbyItems() {
             const gain = calcAppraisalGain();
             if (gain) {
                 gameState.money += gain;
-                updateMoneyCounter();
+                updateMoneyCounter('감정 수익 입금');
             }
 
             if (gameState.day >= gameState.totalDays) {
@@ -8157,7 +8184,7 @@ function goToLobby() {
                     day: gameState.day
                 });
                 gameState.money -= actualPrice;
-                updateMoneyCounter();
+                updateMoneyCounter('물건 매입');
 
                 // 소지금 소진 체크 (조기 마감)
                 if (gameState.money <= 0 && !gameState.earlyClose) {
@@ -8270,7 +8297,7 @@ function goToLobby() {
                 crocStole = true;
                 const stolen = Math.floor(gameState.money * 0.1);   // 소지금의 10%
                 gameState.money = Math.max(0, gameState.money - stolen);
-                updateMoneyCounter();
+                updateMoneyCounter('악어에게 강탈당함');
 
                 // 결산 보고서에 반영할 강탈 기록 저장
                 if (!gameState.crocStolen) gameState.crocStolen = [];
