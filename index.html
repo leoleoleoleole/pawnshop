@@ -3357,7 +3357,7 @@ function startAutoAppraise(idx) {
             }, 100);
         } else {
             clearInterval(countInterval);
-            countText.innerText = "감정 완료";
+            countText.innerText = "";   // 문구 없이 바로 결과 공개 연출로 전환
         }
     }, 1000);
 
@@ -4250,7 +4250,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
         // 캐릭터별 한 줄 설명
         const guestDescriptions = {
             goat:       "노련한 사업가 염소.\n· 공용 물건 (진품/가품 섞임)\n· 제시가 3천만~5천만\n· 감정 후 손익 따져 매입",
-            crocodile:  "거칠고 강압적인 악어.\n· 4천만 고정가 강요\n· 거절 시 50%로 소지금 20% 강탈\n· 거절은 신중히",
+            crocodile:  "거칠고 강압적인 악어.\n· 4천만 고정가 강요\n· 거절 시 50%로 소지금 10% 강탈\n· 거절은 신중히",
             cat:        "도도한 단골 고양이.\n· 방문할수록 호감도 상승\n· 호감 높으면 값 깎아줌\n· 거절하면 호감도 -10",
             mouse:      "붙어다니는 쥐 & 뱀 커플.\n· 시시덕대느라 정신없음\n· '방해하기' → 50% 도망 / 50% 반값",
             pig:        "감성적인 돼지.\n· 보석 장미 들고 고백\n· 받아주면 헐값(1천만)\n· 거절하면 도망",
@@ -6200,9 +6200,9 @@ function rejectItem() {
 
             const guest = document.querySelector('.game-guest');
 
-            // ── 악어: 거래 거절 시 50% 확률로 현재 소지금의 20%를 뜯김 ──
+            // ── 악어: 거래 거절 시 50% 확률로 현재 소지금의 10%를 뜯김 ──
             if (gameState.lastGuest === 'crocodile' && Math.random() < 0.5) {
-                const stolen = Math.floor(gameState.money * 0.2); // 소지금의 20% 계산
+                const stolen = Math.floor(gameState.money * 0.1); // 소지금의 10% 계산
                 gameState.money = Math.max(0, gameState.money - stolen);
                 
                 // 돈 차감 UI 업데이트
@@ -6972,11 +6972,11 @@ function renderLobbyItems() {
             modal.classList.add('anim-in');
             document.body.classList.add('modal-open');
 
-            // 7일차(마지막 날): 버튼을 "최종 정산"으로 바꿔 주간 결산 의식으로 이어지게 함
+            // 7일차(마지막 날): 닫으면 로비로 → 주인장을 클릭해 '정산하기'로 정산 진행
             const sBtn = document.getElementById('settlement-next-btn');
             if (sBtn) {
                 if (gameState.day >= gameState.totalDays) {
-                    sBtn.innerText = '최종 정산 →';
+                    sBtn.innerText = '정산하러 가기';
                     sBtn.onclick = function() { closeSettlementModal(true); };
                 } else {
                     sBtn.innerText = '다음 날로';
@@ -8276,11 +8276,11 @@ function goToLobby() {
                 showSnakePairLines('데이트나 하러 갈래 자기?', '좋은 생각이야.');
             }
 
-            // ── 악어: 거래 거절 시 50% 확률로 현재 소지금의 20%를 강탈 ──
+            // ── 악어: 거래 거절 시 50% 확률로 현재 소지금의 10%를 강탈 ──
             let crocStole = false;
             if (!tutorial.active && gameState.lastGuest === 'crocodile' && Math.random() < 0.5) {
                 crocStole = true;
-                const stolen = Math.floor(gameState.money * 0.2);
+                const stolen = Math.floor(gameState.money * 0.1);   // 소지금의 10%
                 gameState.money = Math.max(0, gameState.money - stolen);
                 updateMoneyCounter();
 
@@ -8390,10 +8390,11 @@ function goToLobby() {
             if (!gameState.receivedReports.includes(gameState.day)) {
                 gameState.receivedReports.push(gameState.day);
             }
-            // 7일차(마지막 날): 로비로 가지 않고 최종 정산 의식(커튼→전체화면 주간 결산)으로 진입
+            // 7일차(마지막 날): readyToFinalize 상태로 로비로 → 주인장을 클릭해 '정산하기'로 정산 진행
             if (isFinal || gameState.day >= gameState.totalDays) {
-                clearSave();   // 게임이 끝나므로 저장 삭제
-                startFinalCeremony();
+                clearSave();   // 게임이 끝나가므로 저장 삭제
+                gameState.readyToFinalize = true;
+                goToLobby();
                 return;
             }
             // 하루가 끝나는 시점에 자동 저장 후 로비로
