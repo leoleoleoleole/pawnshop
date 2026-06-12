@@ -417,18 +417,44 @@
             position: absolute;
             z-index: 200;
             display: none;
-            padding: 1.1cqw 2.2cqw;
-            background: #fff8e8;
+            padding: 1.2cqw 2.6cqw;
+            background:
+                linear-gradient(165deg, #fffdf4 0%, #fbf3dc 45%, #f3e6c4 100%);
             color: #3a2410;
-            font-family: 'Georgia', serif;
-            font-size: 1.5cqw;
+            font-family: 'Gaegu', 'Georgia', serif;
+            font-size: 1.6cqw;
             font-weight: bold;
-            border-radius: 1.2cqw;
-            border: 0.2cqw solid #c9a86a;
-            box-shadow: 0 0.6cqw 1.8cqw rgba(0,0,0,0.5);
+            letter-spacing: 0.05cqw;
+            border-radius: 1.4cqw;
+            border: 0.22cqw solid #b8923e;
+            box-shadow:
+                inset 0 0 0 0.18cqw rgba(255,252,240,0.9),
+                inset 0 -0.5cqw 1cqw rgba(184,146,62,0.18),
+                0 0.7cqw 2cqw rgba(0,0,0,0.55),
+                0 0 1.4cqw rgba(252,213,63,0.25);
             cursor: pointer;
             white-space: nowrap;
             user-select: none;
+            transition: transform 0.18s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.18s ease, background 0.18s ease;
+        }
+        /* 은은한 금빛 숨쉬기 */
+        #owner-bubble.show, #appraiser-bubble.show {
+            display: block;
+            animation:
+                bubblePop 0.32s cubic-bezier(0.34,1.56,0.64,1) forwards,
+                bubbleGlow 2.6s ease-in-out 0.4s infinite;
+        }
+        @keyframes bubbleGlow {
+            0%, 100% { box-shadow:
+                inset 0 0 0 0.18cqw rgba(255,252,240,0.9),
+                inset 0 -0.5cqw 1cqw rgba(184,146,62,0.18),
+                0 0.7cqw 2cqw rgba(0,0,0,0.55),
+                0 0 1.2cqw rgba(252,213,63,0.2); }
+            50% { box-shadow:
+                inset 0 0 0 0.18cqw rgba(255,252,240,0.9),
+                inset 0 -0.5cqw 1cqw rgba(184,146,62,0.18),
+                0 0.7cqw 2cqw rgba(0,0,0,0.55),
+                0 0 2.2cqw rgba(252,213,63,0.5); }
         }
         /* 주인장 오른쪽 위 (일러스트 간섭 없음) */
         #owner-bubble {
@@ -438,36 +464,42 @@
         #appraiser-bubble {
             bottom: 72cqh; left: 57cqw; transform: scale(0.7);
         }
-        #owner-bubble.show, #appraiser-bubble.show {
-            display: block;
-            animation: bubblePop 0.32s cubic-bezier(0.34,1.56,0.64,1) forwards;
-        }
         @keyframes bubblePop {
             from { transform: scale(0.7); opacity: 0; }
             to   { transform: scale(1);   opacity: 1; }
         }
-        /* 말풍선 꼬리 (왼쪽 아래 → 캐릭터를 가리킴) */
-        #owner-bubble::after {
+        /* 말풍선 꼬리: 테두리(금색) + 안쪽(크림) 이중 구조 */
+        #owner-bubble::before, #appraiser-bubble::before {
             content: '';
             position: absolute;
-            left: 50%; transform: translateX(-50%);
-            bottom: -1.3cqw;
-            border-left: 1.1cqw solid transparent;
-            border-right: 1.1cqw solid transparent;
-            border-top: 1.5cqw solid #fff8e8;
-            filter: drop-shadow(-0.1cqw 0.2cqw 0.2cqw rgba(0,0,0,0.25));
+            bottom: -1.65cqw;
+            border-left: 1.3cqw solid transparent;
+            border-right: 1.3cqw solid transparent;
+            border-top: 1.8cqw solid #b8923e;
         }
-        #appraiser-bubble::after {
+        #owner-bubble::after, #appraiser-bubble::after {
             content: '';
             position: absolute;
-            right: 2.5cqw; left: auto;
-            bottom: -1.3cqw;
-            border-left: 1.1cqw solid transparent;
-            border-right: 1.1cqw solid transparent;
-            border-top: 1.5cqw solid #fff8e8;
-            filter: drop-shadow(-0.1cqw 0.2cqw 0.2cqw rgba(0,0,0,0.25));
+            bottom: -1.15cqw;
+            border-left: 1.05cqw solid transparent;
+            border-right: 1.05cqw solid transparent;
+            border-top: 1.5cqw solid #faf2da;
         }
-        #owner-bubble:hover, #appraiser-bubble:hover { background: #fffdf6; }
+        #owner-bubble::before { left: 50%; transform: translateX(-50%); }
+        #owner-bubble::after  { left: 50%; transform: translateX(-50%); }
+        #appraiser-bubble::before { right: 2.3cqw; left: auto; }
+        #appraiser-bubble::after  { right: 2.55cqw; left: auto; }
+        /* hover: 살짝 떠오르며 더 환하게 */
+        #owner-bubble:hover, #appraiser-bubble:hover {
+            background: linear-gradient(165deg, #fffef9 0%, #fdf8e8 45%, #f7ecd0 100%);
+            transform: scale(1.04) translateY(-0.3cqh);
+            box-shadow:
+                inset 0 0 0 0.18cqw rgba(255,252,240,0.95),
+                inset 0 -0.5cqw 1cqw rgba(184,146,62,0.15),
+                0 1cqw 2.4cqw rgba(0,0,0,0.55),
+                0 0 2.6cqw rgba(252,213,63,0.55);
+        }
+        #owner-bubble:active, #appraiser-bubble:active { transform: scale(0.97); }
 
         /* 로비가 빠르게 어두워지며 아주 살짝 확대 */
         #canvas {
@@ -920,16 +952,7 @@
             font-size: 1.4cqw; font-weight: bold; text-align: center;
             margin-bottom: 1.4cqh;
         }
-        .streamer-btns { display: flex; gap: 1cqw; justify-content: center; }
-        .streamer-btns button {
-            font-family: 'Georgia', serif; font-size: 1.1cqw; font-weight: bold;
-            padding: 0.6cqh 1.8cqw; border-radius: 0.8cqw; cursor: pointer;
-            border: 0.18cqw solid #2a1a08;
-        }
-        .streamer-btns .streamer-yes { background: #4a8a3a; color: #fff; }
-        .streamer-btns .streamer-yes:hover { background: #5aa346; }
-        .streamer-btns .streamer-no { background: #a33; color: #fff; }
-        .streamer-btns .streamer-no:hover { background: #c44; }
+        .streamer-btns { display: flex; flex-direction: column; gap: 0.9cqh; align-items: center; }
         /* 말풍선 꼬리 (왼쪽 아래에서 손님 쪽으로) */
         #speech-bubble::before {
             content: '';
@@ -2616,7 +2639,8 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
 
         /* [1] 대화 선택 버튼 공통 (까마귀/고양이/돼지 등) — 말풍선(크림색)과 어울리는 톤 */
         .choice-btn-yes, .choice-btn-no {
-            padding: 0.5cqw 2cqw; font-size: 1.1cqw; font-weight: bold;
+            width: 88%; min-width: 12cqw;
+            padding: 0.6cqw 1cqw; font-size: 1.1cqw; font-weight: bold;
             border-radius: 0.4cqw; cursor: pointer; font-family: 'Gaegu', serif;
             transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
         }
@@ -2708,6 +2732,81 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
         #continue-btns button:hover { transform: translateY(-0.2cqw); filter: brightness(1.1); }
         #continue-yes { background: #3a2a08; color: #fcd53f; border: 0.2cqw solid #cba328; }
         #continue-no  { background: rgba(255,255,255,0.08); color: #d8b87a; border: 0.2cqw solid #7a5a2a; }
+        /* ════════ 돋보기 (물건 자세히 보기) ════════ */
+        /* 게임 화면 왼쪽, 방문명단(game-pos) 위 */
+        #magnifier-btn {
+            position: absolute;
+            bottom: 38cqh; left: 4.8cqw;
+            width: 4.5cqw; height: 4.5cqw;
+            z-index: 9500;
+            cursor: pointer;
+            display: none;
+            align-items: center; justify-content: center;
+            background: radial-gradient(circle at 35% 30%, #6a5018 0%, #3a2a08 72%);
+            border: 0.2cqw solid #cba328;
+            border-radius: 50%;
+            box-shadow: 0 0.4cqw 1cqw rgba(0,0,0,0.6), inset 0 0.15cqw 0.4cqw rgba(255,224,122,0.35);
+            transition: transform 0.18s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.18s ease, filter 0.18s ease;
+            user-select: none;
+        }
+        #magnifier-btn.game-visible { display: flex; }
+        #magnifier-btn:hover { transform: translateY(-0.3cqh) scale(1.06); filter: brightness(1.2); }
+        #magnifier-btn.active {
+            background: radial-gradient(circle at 35% 30%, #8a6a20 0%, #5a4310 70%);
+            box-shadow: 0 0 1.6cqw rgba(252,213,63,0.8), inset 0 0.15cqw 0.4cqw rgba(255,224,122,0.5);
+        }
+        #magnifier-btn-label {
+            position: absolute;
+            bottom: 34.5cqh; left: 3.8cqw;
+            width: 7cqw;
+            z-index: 9500;
+            text-align: center;
+            font-family: 'Georgia', serif;
+            font-size: 1cqw; font-weight: bold;
+            letter-spacing: 0.1cqw;
+            color: #fcd53f;
+            text-shadow: 0 0.15cqw 0.4cqw #000, 0 0 0.6cqw rgba(0,0,0,0.9);
+            pointer-events: none;
+            display: none;
+            user-select: none;
+        }
+        #magnifier-btn-label.game-visible { display: block; }
+        /* 움직이는 렌즈 */
+        #magnifier-lens {
+            position: absolute;
+            width: 16cqw; height: 16cqw;
+            border-radius: 50%;
+            border: 0.35cqw solid #cba328;
+            box-shadow:
+                0 0 0 0.18cqw #3a2a08,
+                0 0.8cqw 2.4cqw rgba(0,0,0,0.65),
+                inset 0 0 1.6cqw rgba(255,255,255,0.18);
+            background: rgba(245,240,225,0.07);
+            backdrop-filter: blur(0.05cqw);
+            overflow: hidden;
+            z-index: 99990;
+            display: none;
+            pointer-events: none;
+        }
+        #magnifier-lens .lens-content {
+            position: absolute; top: 0; left: 0;
+            transform-origin: 0 0;
+            background-repeat: no-repeat;
+            background-position: center bottom;
+            background-size: contain;
+            pointer-events: none;
+        }
+        /* 렌즈 빛 반사 */
+        #magnifier-lens::after {
+            content: '';
+            position: absolute;
+            top: 8%; left: 14%;
+            width: 30%; height: 18%;
+            border-radius: 50%;
+            background: linear-gradient(160deg, rgba(255,255,255,0.55), rgba(255,255,255,0));
+            transform: rotate(-25deg);
+            pointer-events: none;
+        }
     </style>
 </head>
 <body tabindex="0">
@@ -2888,6 +2987,10 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
         <div id="game-rope" class="rope" onclick="pullGameRope()"></div>
         <div id="game-desk"></div>
         <div id="desk-item"></div>
+        <!-- 돋보기: 물건 자세히 보기 -->
+        <div id="magnifier-btn" onclick="toggleMagnifier()"></div>
+        <div id="magnifier-btn-label">자세히 보기</div>
+        <div id="magnifier-lens"><div class="lens-content"></div></div>
         <div id="game-guest-container"></div>
         <div id="game-document">
             <div class="doc-header"></div>
@@ -3377,14 +3480,7 @@ function startAutoAppraise(idx) {
         gameState.unlockedEncyclopedia[entry.item.baseImg] = true;
         clearInterval(countInterval);   // '감정중' 반복 정지
 
-        // ① 화면 전체 플래시를 먼저 띄움 (가장 밝은 상태)
-        const stageEl = document.getElementById('stage') || document.body;
-        const flashOverlay = document.createElement('div');
-        flashOverlay.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; background:radial-gradient(ellipse at center, #fff8e0 0%, #f5e2a8 100%); z-index:999999; opacity:1; transition:opacity 1.5s ease; pointer-events:none;';
-        stageEl.appendChild(flashOverlay);
-
-        // ② 플래시가 화면을 완전히 덮은 동안(같은 프레임에) 카드를 결과 상태로 교체 + 발광 시작
-        //    → 플래시가 걷힐 때 이미 빛나고 있는 결과 카드가 자연스럽게 드러남
+        // 카드를 결과 상태로 교체하고 발광 효과로 공개 (화면 전체 플래시 없음)
         overlay.remove();
         card.innerHTML = getCardContentHtml(idx, entry);
         card.classList.remove('pending-card');
@@ -3397,12 +3493,6 @@ function startAutoAppraise(idx) {
         card.classList.add('appraise-revealed');
         setTimeout(() => card.classList.remove('appraise-revealed'), 1400);
         setTimeout(() => { card.style.transform = 'scale(1)'; }, 700);
-
-        // ③ 다음 프레임부터 플래시가 서서히 걷힘
-        requestAnimationFrame(() => {
-            flashOverlay.style.opacity = '0';
-        });
-        setTimeout(() => { flashOverlay.remove(); }, 1600);
 
         if (tutorial.active) {
             setTimeout(() => tutEvent('judged'), 1200);
@@ -3525,7 +3615,7 @@ function exitToLobby() {
             const deskItem = document.getElementById('desk-item');
 
             const ledgerBtn = document.getElementById('ledger-btn');
-            if (ledgerBtn) { ledgerBtn.classList.remove('game-pos', 'visible'); } // 거래 버튼 끄기
+            if (ledgerBtn) { ledgerBtn.classList.remove('game-pos', 'visible'); } // 거래 버튼 끄기 hideMagnifierUI();
 
             try { stopFireParticles(); } catch(e){}
             try { stopFlameLoop(); } catch(e){}
@@ -3599,6 +3689,7 @@ function exitToLobby() {
                     // ★ 텍스트를 "방문 확인 명단"으로 원복 후 로비에 표시
                     if (ledgerBtn) { 
                         ledgerBtn.classList.remove('game-pos', 'visible'); 
+                        hideMagnifierUI();
                         ledgerBtn.classList.add('lobby-visible'); 
                         ledgerBtn.style.opacity = ''; 
                         ledgerBtn.style.pointerEvents = '';
@@ -4255,7 +4346,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             cat:        "도도한 단골 고양이.\n· 방문할수록 호감도 상승\n· 호감 높으면 값 깎아줌\n· 거절하면 호감도 -10",
             mouse:      "붙어다니는 쥐 & 뱀 커플.\n· 시시덕대느라 정신없음\n· '방해하기' → 50% 도망 / 50% 반값",
             pig:        "감성적인 돼지.\n· 보석 장미 들고 고백\n· 받아주면 헐값(1천만)\n· 거절하면 도망",
-            crow:       "기회주의 까마귀.\n· 오늘 산 물건만 되사감\n· 1천만~1억 제시\n· 전날 물건은 대상 X",
+            crow:       "기회주의 까마귀.\n· 오늘 산 물건만 되사감\n· 1천만~2억 제시\n· 전날 물건은 대상 X",
             monkey:     "물건 훔쳐 파는 원숭이.\n· 장물에 훔친 흔적\n· 약 40% 가품 섞음\n· 감정 주의",
             miners:     "광산에서 온 광부들.\n· 보석 원석만, 2천만 고정\n· 진짜면 큰 이득 / 돌멩이일 수도",
             pigeon:     "포교하는 비둘기.\n· 0원에 성경 떠넘김\n· 사두면 포교 안 옴\n· 다음 날 기부로 보답",
@@ -4915,6 +5006,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                     ledgerBtn.style.opacity = ''; 
                     ledgerBtn.style.pointerEvents = '';
                 }
+                // 돋보기는 showLighter()에서 라이터와 함께(상호작용 잠금 조건 동일) 표시됨
                 // 튜토리얼: 게임 완전 진입 → 밧줄 안내 표시
                 if (tutorial.active) { tutorial._gameEntered = true; tutRender(); }
             }, 1650);
@@ -5456,8 +5548,8 @@ function generateGuest() {
                 '<div style="color: #d63031; font-weight: bold; text-align: center; font-size: 1.1cqw; margin-bottom: 0.8cqh; animation: pulseText 1s infinite;">🚨 [돌발 상황]불청객 난입</div>' +
                 '<div class="streamer-q">방송해도 되나요?</div>' +
                 '<div class="streamer-btns">' +
-                  '<button class="streamer-yes" onclick="streamerAnswer(true)">네</button>' +
-                  '<button class="streamer-no" onclick="streamerAnswer(false)">아니요</button>' +
+                  '<button class="choice-btn-yes" onclick="streamerAnswer(true)">네</button>' +
+                  '<button class="choice-btn-no" onclick="streamerAnswer(false)">아니요</button>' +
                 '</div>';
             sb.style.pointerEvents = 'auto'; 
             sb.classList.add('visible');
@@ -5539,13 +5631,13 @@ function generateGuest() {
                 return;
             }
             const target = eligible[Math.floor(Math.random() * eligible.length)];
-            const price = roundToLeadingDigit(Math.floor((Math.random() * 10 + 1) * 10000000)); // 1천~1억, 앞자리만
+            const price = roundToLeadingDigit(Math.floor((Math.random() * 19 + 1) * 10000000)); // 1천만~2억, 앞자리만
             gameState.crowTargetItem = { entry: target, price };
 
             if (doc) { doc.style.display = 'none'; }
             sb.innerHTML = `<div style="font-size:1.2cqw;font-weight:bold;text-align:center;line-height:1.6">
                 "네 보관함의 <span style="color:#fcd53f">[${target.item.name}]</span>을<br>₩${price.toLocaleString()}에 팔겠냐?"<br>
-                <div style="margin-top:1cqh;display:flex;gap:2cqw;justify-content:center">
+                <div style="margin-top:1.2cqh;display:flex;flex-direction:column;gap:0.9cqh;align-items:center">
                     <button onclick="crowSell()" class="choice-btn-yes">팔기</button>
                     <button onclick="crowRefuse()" class="choice-btn-no">거절</button>
                 </div>
@@ -5643,6 +5735,7 @@ function generateGuest() {
             const pool = unused.length > 0 ? unused : catTalkLines;
             const q = pool[Math.floor(Math.random() * pool.length)];
             gameState._catQ = { ...q, maxGain };
+            gameState._catAnswered = false;   // 응답 전엔 라이터(거절) 잠금
             if (!gameState._catUsed) gameState._catUsed = [];
             gameState._catUsed.push(catTalkLines.indexOf(q));
 
@@ -5661,7 +5754,7 @@ function generateGuest() {
 
             sb.innerHTML = `<div style="font-size:1.2cqw;font-weight:bold;text-align:center;line-height:1.6">
                 ${q.q}<br>
-                <div style="margin-top:1cqh;display:flex;gap:2cqw;justify-content:center">
+                <div style="margin-top:1.2cqh;display:flex;flex-direction:column;gap:0.9cqh;align-items:center">
                     ${catBtns.join(' ')}
                 </div>
             </div>`;
@@ -5670,6 +5763,8 @@ function generateGuest() {
         }
 
         function catReply(good) {
+            gameState._catAnswered = true;   // 상호작용 완료 → 라이터 해금
+            showLighter();
             const q = gameState._catQ;
             // 좋은 답변: maxGain 만큼 상승 / 나쁜 답변: gScore/bScore 사용
             const delta = good ? (q.maxGain || q.gScore) : q.bScore;
@@ -5853,6 +5948,7 @@ function generateGuest() {
             }
             let btnEl = document.getElementById('snake-bother-btn');
             if (btnEl) btnEl.remove();
+            gameState._snakeBothered = false;   // 방해하기 전엔 라이터(거절) 잠금
             btnEl = document.createElement('button');
             btnEl.id = 'snake-bother-btn';
             btnEl.innerText = '방해하기';
@@ -5888,6 +5984,8 @@ function generateGuest() {
         }
 
         function snakeBother() {
+            gameState._snakeBothered = true;   // 상호작용 완료 → 라이터 해금
+            showLighter();
             if (_snakeChatTimeout) { clearTimeout(_snakeChatTimeout); _snakeChatTimeout = null; }
             clearInterval(gameState._snakeChatTimer);
             const lineEl = document.getElementById('snake-line-bubble');
@@ -5966,7 +6064,7 @@ function generateGuest() {
 
             sb.innerHTML = `<div style="font-size:1.2cqw;font-weight:bold;text-align:center;line-height:1.6">
                 "${opener}<br>당신을,, 사랑합니다!!"<br>
-                <div style="margin-top:1cqh;display:flex;gap:2cqw;justify-content:center">
+                <div style="margin-top:1.2cqh;display:flex;flex-direction:column;gap:0.9cqh;align-items:center">
                     <button onclick="pigAccept()" class="choice-btn-yes">수락</button>
                     <button onclick="pigReject()" class="choice-btn-no">거절</button>
                 </div>
@@ -7574,6 +7672,7 @@ function goToLobby() {
             const ledgerBtn = document.getElementById('ledger-btn');
             if (ledgerBtn) { 
                 ledgerBtn.classList.remove('game-pos', 'visible');
+                hideMagnifierUI();
                 ledgerBtn.classList.add('lobby-visible'); 
                 ledgerBtn.style.opacity = '';           // 인라인 투명도 초기화
                 ledgerBtn.style.pointerEvents = '';     // 인라인 클릭 차단 초기화
@@ -7672,6 +7771,8 @@ function goToLobby() {
                 const ledgerBtn = document.getElementById('ledger-btn');
                 if (ledgerBtn) { 
                     ledgerBtn.classList.remove('game-pos', 'visible');
+                    hideMagnifierUI();
+                hideMagnifierUI();
                     ledgerBtn.classList.add('lobby-visible'); 
                     ledgerBtn.style.opacity = ''; 
                     ledgerBtn.style.pointerEvents = ''; 
@@ -7809,7 +7910,72 @@ function goToLobby() {
         }
 
        /* ── 라이터 및 명단 기능 ── */
+        function hideMagnifierUI() {
+            if (typeof magnifierOn !== 'undefined' && magnifierOn) toggleMagnifier();
+            const b = document.getElementById('magnifier-btn');
+            const l = document.getElementById('magnifier-btn-label');
+            if (b) b.classList.remove('game-visible');
+            if (l) l.classList.remove('game-visible');
+        }
+
+        // ════════ 돋보기: 책상 위 물건 확대 보기 ════════
+        let magnifierOn = false;
+        const MAG_ZOOM = 2.2;
+        function toggleMagnifier() {
+            magnifierOn = !magnifierOn;
+            const btn = document.getElementById('magnifier-btn');
+            const lens = document.getElementById('magnifier-lens');
+            const stage = document.getElementById('stage') || document.body;
+            if (btn) btn.classList.toggle('active', magnifierOn);
+            if (!lens) return;
+            if (magnifierOn) {
+                lens.style.display = 'block';
+                stage.addEventListener('pointermove', _magnifierMove);
+            } else {
+                lens.style.display = 'none';
+                stage.removeEventListener('pointermove', _magnifierMove);
+            }
+        }
+        function _magnifierMove(e) {
+            const lens = document.getElementById('magnifier-lens');
+            const content = lens ? lens.querySelector('.lens-content') : null;
+            const stage = document.getElementById('stage') || document.body;
+            const di = document.getElementById('desk-item');
+            if (!lens || !content) return;
+
+            const sr = stage.getBoundingClientRect();
+            const lw = lens.offsetWidth, lh = lens.offsetHeight;
+            // 렌즈 중심이 커서를 따라감 (stage 좌표계)
+            const sx = e.clientX - sr.left, sy = e.clientY - sr.top;
+            lens.style.left = (sx - lw / 2) + 'px';
+            lens.style.top  = (sy - lh / 2) + 'px';
+
+            // 책상 물건 위라면 확대상 표시
+            const bg = di ? di.style.backgroundImage : '';
+            const dr = di ? di.getBoundingClientRect() : null;
+            const over = dr && bg && bg !== 'none'
+                && e.clientX >= dr.left && e.clientX <= dr.right
+                && e.clientY >= dr.top  && e.clientY <= dr.bottom;
+            if (over) {
+                // desk-item과 동일 크기의 내용판을 만들어 scale로 확대 (contain 비율 보존)
+                content.style.width = dr.width + 'px';
+                content.style.height = dr.height + 'px';
+                content.style.backgroundImage = bg;
+                // 물건이 흑백 필터를 쓰는 경우 렌즈도 동일하게 (진가품 단서 유지)
+                content.style.filter = di.style.filter || '';
+                const rx = e.clientX - dr.left, ry = e.clientY - dr.top;
+                content.style.transform =
+                    `translate(${lw / 2 - rx * MAG_ZOOM}px, ${lh / 2 - ry * MAG_ZOOM}px) scale(${MAG_ZOOM})`;
+                content.style.opacity = '1';
+            } else {
+                content.style.opacity = '0';
+            }
+        }
+
         function showLighter() {
+            // 상호작용 미완료 시 라이터 표시 안 함 (상호작용 무시 방지)
+            if (gameState.lastGuest === 'cat' && gameState._catAnswered === false) return;
+            if (gameState.lastGuest === 'mouse' && gameState._snakeBothered === false) return;
             const t = document.getElementById('lighter-trigger');
             if (t) t.classList.add('visible');
             const lbl = document.getElementById('lighter-label');
@@ -7818,6 +7984,12 @@ function goToLobby() {
             // ★ 명단 버튼도 라이터와 함께 등장
             const lb = document.getElementById('ledger-btn');
             if (lb && lb.classList.contains('game-pos')) lb.classList.add('visible');
+
+            // ★ 돋보기도 라이터와 함께 등장 (상호작용 잠금 조건 동일)
+            const mb = document.getElementById('magnifier-btn');
+            const ml = document.getElementById('magnifier-btn-label');
+            if (mb) mb.classList.add('game-visible');
+            if (ml) ml.classList.add('game-visible');
         }
         function hideLighter() {
             const t = document.getElementById('lighter-trigger');
@@ -7839,6 +8011,13 @@ function goToLobby() {
             // ★ 명단 버튼도 라이터와 함께 퇴장
             const lb = document.getElementById('ledger-btn');
             if (lb) lb.classList.remove('visible');
+
+            // ★ 돋보기도 라이터와 함께 퇴장 (열려 있으면 닫고 숨김)
+            if (typeof magnifierOn !== 'undefined' && magnifierOn) toggleMagnifier();
+            const mb = document.getElementById('magnifier-btn');
+            const ml = document.getElementById('magnifier-btn-label');
+            if (mb) mb.classList.remove('game-visible');
+            if (ml) ml.classList.remove('game-visible');
         }
         // 새 프레임을 위에 덮어쓰는 방식 — 두 프레임이 동시에 보이지 않아 깜빡임 없음
         function setFireFrame(n) {
