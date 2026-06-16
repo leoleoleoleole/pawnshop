@@ -1401,6 +1401,67 @@
         #catalog-confirm-box .cc-no { background: #3a2718; color: #f3e2c0; }
         #catalog-confirm-box .cc-no:hover { background: #4a3320; }
 
+        /* ── 감정 미완료 경고 모달 ── */
+        #unjudged-alert {
+            position: absolute; inset: 0;
+            z-index: 95;
+            display: none;
+            align-items: center; justify-content: center;
+            background: rgba(20,10,5,0.6);
+            backdrop-filter: blur(0.3cqw);
+        }
+        #unjudged-alert.show { display: flex; }
+        #unjudged-alert-box {
+            position: relative;
+            width: 34cqw;
+            background: linear-gradient(165deg, #fdf6e3 0%, #f3e4c0 100%);
+            border: 0.25cqw solid #b8923e;
+            border-radius: 1.4cqw;
+            padding: 3cqh 2.6cqw 2.6cqh;
+            text-align: center;
+            box-shadow: 0 1.2cqw 3.2cqw rgba(0,0,0,0.6), inset 0 0 2cqw rgba(255,240,200,0.5);
+            animation: bubblePop 0.32s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        /* 상단 돋보기 아이콘 원형 배지 */
+        #unjudged-alert-icon {
+            width: 5cqw; height: 5cqw;
+            margin: -5.5cqh auto 1cqh;
+            background: radial-gradient(circle at 35% 30%, #f6d97a 0%, #cba328 70%);
+            border: 0.22cqw solid #fff7e0;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.6cqw;
+            box-shadow: 0 0.4cqw 1.2cqw rgba(0,0,0,0.45);
+        }
+        #unjudged-alert-box h3 {
+            margin: 0 0 0.8cqh;
+            font-family: 'Gaegu', 'Georgia', serif;
+            font-size: 1.7cqw; font-weight: bold;
+            color: #7a3018;
+            letter-spacing: 0.05cqw;
+        }
+        #unjudged-alert-box p {
+            margin: 0 0 2cqh;
+            font-family: 'Gaegu', 'Georgia', serif;
+            font-size: 1.15cqw; line-height: 1.7;
+            color: #5a3a1a;
+        }
+        #unjudged-alert-box p .uj-count {
+            color: #a32020; font-weight: bold; font-size: 1.4cqw;
+        }
+        #unjudged-alert-box button {
+            font-family: 'Gaegu', 'Georgia', serif;
+            font-size: 1.25cqw; font-weight: bold;
+            padding: 0.9cqh 3cqw;
+            border-radius: 0.7cqw; cursor: pointer;
+            background: linear-gradient(165deg, #3a2a08, #5a4310);
+            color: #fcd53f;
+            border: 0.16cqw solid #cba328;
+            transition: transform 0.15s ease, filter 0.15s ease;
+        }
+        #unjudged-alert-box button:hover { filter: brightness(1.15); transform: translateY(-0.2cqh); }
+        #unjudged-alert-box button:active { transform: translateY(0) scale(0.97); }
+
         /* ── 펼쳐진 책 리더 ── */
         #book-reader {
             position: absolute; inset: 0;
@@ -2947,7 +3008,7 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
             <div id="final-report-content" style="width:90cqw;"></div>
         </div>
         
-        <div id="appraiser-items" style="position: absolute; bottom: 22cqh; left: 42cqw; width: 52cqw; height: 50cqh; z-index: 10; display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: 2cqw; pointer-events: none;"></div>
+        <div id="catalog-items-display" style="position: absolute; bottom: 22cqh; left: 42cqw; width: 52cqw; height: 50cqh; z-index: 10; display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: 2cqw; pointer-events: none;"></div>
         
         <div id="catalog-close" onclick="askCloseCatalog()">✕ 감정 종료 및 퇴장</div>
 
@@ -2958,6 +3019,15 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
                     <button class="cc-yes" onclick="closeCatalog()">나가기</button>
                     <button class="cc-no" onclick="dismissCloseCatalog()">계속 보기</button>
                 </div>
+            </div>
+        </div>
+
+        <div id="unjudged-alert">
+            <div id="unjudged-alert-box">
+                <div id="unjudged-alert-icon">🔍</div>
+                <h3>아직 감정이 끝나지 않았습니다</h3>
+                <p>감정하지 않은 물건이 <span class="uj-count" id="unjudged-alert-count">0</span>개 남아 있습니다.<br>책상 위의 물건을 눌러 진품 여부를 판정해 주세요.</p>
+                <button onclick="dismissUnjudgedAlert()">알겠습니다</button>
             </div>
         </div>
 
@@ -3028,7 +3098,7 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
             <img class="fire-frame" data-frame="8" src="fire8.jpg" alt="">
             <img class="fire-frame" data-frame="9" src="fire9.jpg" alt="">
         </div>
-        <div id="end-screen">YOU WIN!<button id="restart-btn" onclick="restartGame()">RESTART</button></div>
+        <div id="end-screen">YOU WIN!<button id="winscreen-restart-btn" onclick="restartGame()">RESTART</button></div>
     </div><!-- /game-canvas : 모달들은 게임 캔버스 밖(body 직속)에 두어 로비에서도 표시되도록 함 -->
 
     <!-- 로비 복귀 확인 모달 (ESC) -->
@@ -3799,9 +3869,7 @@ function exitToLobby() {
                     curtain.style.display = 'none';
                     const ledgerBtn = document.getElementById('ledger-btn');
                     if (ledgerBtn) ledgerBtn.classList.add('lobby-visible');
-                    if (hasSaveData() && !tutorial.active) {
-                        setTimeout(() => _showContinuePrompt(), 400);
-                    }
+                    // (이어하기 창은 컷씬 종료 후 로비 도착 시점에 startTutorial에서 띄움)
                 }, 600);
             }, 300);
         }
@@ -3831,9 +3899,9 @@ function exitToLobby() {
             }, 950);
         }
 
-        // 새 게임 시작 (튜토리얼/컷씬 포함). 단, 저장이 있으면 컷씬 없이 로비로 → 이어하기 창
+        // 새 게임 시작: 항상 스토리(컷씬)부터 진행. 저장이 있으면 컷씬 후 로비에서 이어하기 창 표시
         function _startFreshFromCurtain() {
-            if (!hasSaveData() && !localStorage_getTutorialDone()) {
+            if (!localStorage_getTutorialDone()) {
                 tutorial.active = true;
                 tutorial.step = 0;
                 tutorial.sub = 0;
@@ -4105,6 +4173,9 @@ function exitToLobby() {
             // ── 비둘기 전도로 손님이 도망간 상태: 커튼을 열지 않고 알림만 띄운 뒤 종을 다시 내림 ──
             if (gameState._pigeonScaredName) {
                 gameState._pigeonScaredName = null;
+                // 도망간 손님도 '응대한 예약 손님'으로 카운트
+                gameState._bookedServedToday = (gameState._bookedServedToday || 0) + 1;
+                updateDayIndicator();
                 setTimeout(() => {
                     showFloatingText('손님이 전도에 질려 도망쳤습니다!', '#ffd700');
                     // 손님을 부르지 않고 종만 다시 내려와 재타격을 유도
@@ -4203,6 +4274,11 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                 todayVisitLog: g.todayVisitLog || [],
                 eaglePendingVisit: g.eaglePendingVisit || null,
                 eagleVisitDone: g.eagleVisitDone || false,
+                _eagleFollowupQueued: g._eagleFollowupQueued || null,
+                _bookedServedToday: g._bookedServedToday || 0,
+                _robberFollowupToday: g._robberFollowupToday || false,
+                _eagleAskAfterThisGuest: g._eagleAskAfterThisGuest || false,
+                _eagleAskRobberAfter: g._eagleAskRobberAfter || false,
                 unlockedEncyclopedia: g.unlockedEncyclopedia || {}
             };
         }
@@ -4439,8 +4515,9 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             // ── 비둘기 거절 시 다음 손님 20% 도망 ──
             if (gameState.pigeonRejectedToday && gameState.dailyGuestsQueue.length > 0) {
                 if (Math.random() < 0.20) {
-                    gameState.dailyGuestsQueue.shift();
-                    setTimeout(() => showFloatingText('비둘기 전도 소문에 손님이 발길을 돌렸습니다.', '#ffd700'), 2000);
+                    const scared = gameState.dailyGuestsQueue.shift();
+                    const scaredName = (guestDisplayNames && guestDisplayNames[scared.id]) || scared.id;
+                    gameState._pigeonScaredName = scaredName;  // 다음 턴 첫 등장 때 알림 연출
                 }
             }
 
@@ -4665,9 +4742,6 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
         }
 
         // ★ 카운터 영문 포맷 고정 함수
-        function updateObtainedCounter() { 
-            document.getElementById('obtained-counter').innerText = `거래 횟수: ${gameState.obtainedCount}`; 
-        }
 
         const guests = [
             { 
@@ -4989,6 +5063,55 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             { id:'art2r', owner:'artist', cat:'미술품', baseImg:'art2', authentic:true,  name:"예술가의 회화 작품", desc:"독창적인 색채와 구도가 살아있는, 진품으로 인정받는 회화 작품." },
             { id:'art2f', owner:'artist', cat:'미술품', baseImg:'art2', authentic:false, name:"예술가의 회화 작품", desc:"원작을 흉내 냈지만 디테일이 떨어지는, 가치가 낮은 모작." }
         ];
+
+        // ════════════ 이미지 프리로드 (GitHub Pages 등 배포 환경에서 교체 시 깜빡임 방지) ════════════
+        const _preloadedImages = [];
+        function preloadAllImages() {
+            const urls = new Set();
+            // 손님 프레임
+            try { guests.forEach(g => (g.frames || []).forEach(f => urls.add(f))); } catch (e) {}
+            // 물건 이미지 (진품/가품 또는 단일)
+            try {
+                items.forEach(it => {
+                    if (it.owner === 'pigeon' || it.owner === 'streamer') {
+                        urls.add(it.baseImg + '.jpg');
+                    } else {
+                        urls.add(it.baseImg + '_real.jpg');
+                        urls.add(it.baseImg + '_fake.jpg');
+                    }
+                });
+            } catch (e) {}
+            // 손님 교체/특수 프레임 + 배경/연출 등 고정 이미지
+            const extra = [
+                'crocodile.jpg','crocodile2.jpg','pig.jpg','pig2.jpg',
+                'steamer1.jpg','steamer2.jpg','steamer3.jpg','lizard1.jpg','lizard2.jpg',
+                'eagle.jpg','wolf.jpg','artist.jpg','cat.jpg','mouse_and_snake.jpg',
+                'monkey.jpg','miners.jpg','pigeon.jpg','crow.jpg','goat.jpg',
+                'owner.jpg','owner2.jpg','judge_woman.jpg',
+                'main_background2.jpg','story_background.jpg','background.jpg',
+                'desk.jpg','desk2.jpg','desk3.jpg','desk4.jpg','showcase.jpg',
+                'document_box.jpg','rope.jpg','box.jpg','darkness.jpg',
+                'light.jpg','light2.jpg','bulb.jpg','bulb2.jpg','bulb4.jpg',
+                'fire1.jpg','fire2.jpg','fire3.jpg','fire4.jpg','fire5.jpg','fire6.jpg','fire7.jpg','fire8.jpg','fire9.jpg',
+                'story1_1.jpg','story1_2.jpg','story1_3.jpg','story2_1.jpg','story2_2.jpg','story2_3.jpg',
+                'story3_1.jpg','story3_2.jpg','story3_3.jpg','story4_1.jpg','story4_2.jpg','story4_3.jpg','story5.jpg',
+                'end1.jpg','end2.jpg','end3.jpg','end4.jpg','end5.jpg',
+                'book1.jpg','book2.jpg','book3.jpg','book4.jpg'
+            ];
+            extra.forEach(u => urls.add(u));
+            // 실제 프리로드 (Image 객체를 배열에 보관해 GC로 사라지지 않게 함)
+            urls.forEach(u => {
+                const img = new Image();
+                img.src = u;
+                _preloadedImages.push(img);
+            });
+        }
+        // 페이지 로드 직후 백그라운드로 미리 받아둠
+        if (document.readyState === 'loading') {
+            window.addEventListener('DOMContentLoaded', () => setTimeout(preloadAllImages, 100));
+        } else {
+            setTimeout(preloadAllImages, 100);
+        }
 
         const guestTraits = {
             'crocodile': "Aggressive: Might intimidate you into a bad deal.",
@@ -5590,61 +5713,6 @@ function spawnEagle_followup(guest) {
     }, 950);
 }
 
-function spawnEagleLizardFollowup(guest) {
-    _eagleHideLeftIcons();
-    const good = Math.random() < 0.5;
-
-    if (good) {
-        const div = _spawnGuestDiv('lizard1.jpg', { lizard: true });
-        gameState._eagleDiv = div;
-        setTimeout(() => {
-            gameState.money += 200000000;
-            updateMoneyCounter('도마뱀의 사례금');
-            _logEagleEvent(200000000, '도마뱀의 사례금');
-            _eagleBubble('"ㄷ..덕분에 살았습니다.."', []);
-            setTimeout(() => {
-                _eagleClearBubble();
-                if (gameState._eagleDiv) exitGuest(gameState._eagleDiv);
-                gameState._eagleDiv = null;
-                setTimeout(() => {
-                    if (gameState.dailyGuestsQueue.length === 0) finishAllDeals();
-                    else resetGameTurn();
-                }, 800);
-            }, 2000);
-        }, 950);
-    } else {
-        gameState.lizardCaught = true; 
-        const lizDiv = _spawnGuestDiv('lizard1.jpg', { lizard: true, left: '-9cqw', z: 1 });
-        const eagDiv = _spawnGuestDiv('eagle.jpg', { left: '9cqw', z: 2 });
-        gameState._eagleDiv = eagDiv;
-        gameState._eagleDiv2 = lizDiv;
-
-        setTimeout(() => {
-            const steal = Math.floor(gameState.money * 0.2);
-            gameState.money = Math.max(0, gameState.money - steal);
-            updateMoneyCounter('독수리에게 강탈당함');
-            _logEagleEvent(-steal, '독수리에게 강탈당함');
-            
-            const lines = [
-                '"너도 한패였나..?"',
-                '"거짓말의 대가를 치러라."'
-            ];
-            _eagleBubble(lines[Math.floor(Math.random() * lines.length)], []);
-            
-            setTimeout(() => {
-                _eagleClearBubble();
-                if (gameState._eagleDiv) exitGuest(gameState._eagleDiv);
-                if (gameState._eagleDiv2) exitGuest(gameState._eagleDiv2);
-                gameState._eagleDiv = null;
-                gameState._eagleDiv2 = null;
-                setTimeout(() => {
-                    if (gameState.dailyGuestsQueue.length === 0) finishAllDeals();
-                    else resetGameTurn();
-                }, 800);
-            }, 2000);
-        }, 950);
-    }
-}
         // 후속 방문 ② 도마뱀 방문 (못 봤다고 답한 경우): 50% 보답 / 50% 독수리와 함께 등장해 배신 응징
         function spawnEagleLizardFollowup(guest) {
             _eagleHideLeftIcons();
@@ -5805,6 +5873,55 @@ function spawnEagleLizardFollowup(guest) {
             }
         }
 
+        // 다음 날 큐의 각 손님에게 물건/진위/가격을 미리 확정 (이어하기 일관성)
+        function _preassignAllItems() {
+            const queue = gameState.dailyGuestsQueue || [];
+            queue.forEach(guest => {
+                if (!guest || guest._assignedItem) return;
+                if (['eagle','wolf','crow','cat','mouse'].includes(guest.id)) return;
+                if (guest._eagleAsk || guest._eagleFollowup || guest._robber || guest._robberAsk || guest._robberReturn) return;
+
+                let itemData, validItems = [];
+                if (guest.id === 'monkey') {
+                    const cands = items.filter(i => i.owner !== 'common' && i.owner !== 'monkey' && i.owner !== 'pigeon' && i.owner !== 'miners' && i.owner !== 'crow');
+                    const orig = cands[Math.floor(Math.random() * cands.length)];
+                    const isFake = Math.random() < 0.4;
+                    const variant = isFake ? (items.find(i => i.owner === orig.owner && !i.authentic) || orig) : orig;
+                    itemData = { ...variant, name: `[훔쳐온] ${variant.name}`, desc: `(누군가의 주머니나 보물창고에서 훔쳐온 흔적이 뚜렷한 장물입니다.) ${variant.desc}` };
+                } else if (['streamer','lizard','pigeon','miners','pig','artist'].includes(guest.id)) {
+                    validItems = items.filter(i => i.owner === guest.id);
+                    if (guest._forceReal) { const r = validItems.filter(i => i.authentic); if (r.length) validItems = r; }
+                    itemData = validItems[Math.floor(Math.random() * validItems.length)];
+                } else {
+                    validItems = items.filter(i => i.owner === guest.id || i.owner === 'common');
+                    if (guest._forceReal) { const r = validItems.filter(i => i.authentic); if (r.length) validItems = r; }
+                    itemData = validItems[Math.floor(Math.random() * validItems.length)];
+                }
+                if (!itemData) return;
+                itemData = { ...itemData };
+                if (guest.id === 'mouse' && !itemData.name.includes('밀수된')) {
+                    // (쥐는 위에서 제외되지만 안전장치)
+                }
+                const pool = ITEM_DESC_POOL[itemData.baseImg];
+                if (pool && guest.id !== 'monkey') {
+                    const dv = itemData.authentic ? pool.real : pool.fake;
+                    if (dv && dv.length) itemData.desc = dv[Math.floor(Math.random() * dv.length)];
+                }
+                let price;
+                if (['str1','str2','str3','str4'].includes(itemData.id)) price = 30000000;
+                else if (guest.id === 'miners') price = 20000000;
+                else if (guest.id === 'goat') price = (Math.floor(Math.random() * 3) + 3) * 10000000;
+                else if (guest.id === 'crocodile') price = 40000000;
+                else if (guest.id === 'artist') price = 50000000;
+                else if (guest.id === 'pigeon') price = 0;
+                else if (itemData.owner === 'common') price = 10000000;
+                else price = 20000000;
+
+                guest._assignedItem = itemData;
+                guest._assignedPrice = price;
+            });
+        }
+
 function generateGuest() {
             const container = document.getElementById('game-guest-container');
             container.innerHTML = '';
@@ -5834,12 +5951,14 @@ function generateGuest() {
             if (gameState._pigeonScaredName) {
                 gameState._pigeonScaredName = null;
                 showFloatingText('손님이 전도에 질려 도망쳤습니다!', '#ffd700');
+                // 도망간 손님도 '응대한 예약 손님'으로 카운트
+                gameState._bookedServedToday = (gameState._bookedServedToday || 0) + 1;
+                updateDayIndicator();
                 // 바로 다음 손님을 부르지 않고, 종을 다시 내려 사용자가 다시 치도록 함
                 resetGameTurn();
                 return;
             }
             const guest = gameState.dailyGuestsQueue.shift();
-            updateDayIndicator();   // 남은 손님 수 갱신
             gameState.lastGuest = guest.id;
             gameState.currentGuestData = guest;
 
@@ -5866,6 +5985,7 @@ function generateGuest() {
             if (_isBookedGuest) {
                 gameState._bookedServedToday = (gameState._bookedServedToday || 0) + 1;
             }
+            updateDayIndicator();   // 카운트 갱신 (현재 응대 중인 예약 손님 포함)
 
             // ── 상호작용 손님(고양이/쥐뱀)은 등장 즉시 아이콘 잠금 ──
             //    (대화 UI 생성보다 서류·라이터가 먼저 떠서 잠금이 뚫리는 타이밍 버그 방지)
@@ -5973,6 +6093,15 @@ function generateGuest() {
                 gameState._resumeSkipItemSetup = false;
             }
 
+            // ── 이 손님에게 이미 확정된 물건이 있으면 그대로 사용 (이어하기/재등장 시 동일 보장) ──
+            //    currentGuestData는 큐에서 꺼낸 객체와 동일 참조이므로 여기에 저장하면 저장/복원에 함께 보존됨
+            if (!gameState._resumeSkipItemSetup && guest._assignedItem) {
+                itemData = guest._assignedItem;
+                gameState.lastItem = itemData.id;
+                gameState.currentItem = itemData;
+                gameState._resumeSkipItemSetup = true;  // 설명 변형/재선정 건너뜀
+            }
+
             // ★ [핵심 추가] 아이템별 진가품 설명 랜덤 선택 로직
             if (!gameState._resumeSkipItemSetup) {
             itemData = { ...itemData };
@@ -5994,6 +6123,9 @@ function generateGuest() {
 
             gameState.lastItem = itemData.id;
             gameState.currentItem = itemData;
+            // 이 손님에 물건을 확정 저장 → 다음 등장/이어하기 시 동일하게 재사용
+            if (guest && guest.id !== 'monkey') guest._assignedItem = itemData;
+            else if (guest) guest._assignedItem = itemData;  // 원숭이도 확정(이미 변형 포함)
             }
 
             // ── 캐릭터/아이템별 가격 설정 ──
@@ -6012,6 +6144,11 @@ function generateGuest() {
             else if (guest.id === 'pigeon') gameState.itemPrice = 0; // 비둘기 성경 0원
             else if (itemData.owner === 'common') gameState.itemPrice = 10000000;
             else gameState.itemPrice = 20000000;
+            // 이 손님에 가격 확정 저장 → 재등장/이어하기 시 동일 (염소 랜덤가 고정)
+            if (guest) guest._assignedPrice = gameState.itemPrice;
+            } else if (guest && typeof guest._assignedPrice === 'number') {
+                // 확정 물건 재사용 시 저장된 가격도 복원
+                gameState.itemPrice = guest._assignedPrice;
             }
 
             const guestDiv = document.createElement('div');
@@ -7098,111 +7235,6 @@ function showFloatingText(text, color) {
     }
 }
 
-function rejectItem() {
-            hideLighter();
-            window.onmousedown = null; window.onmousemove = null; window.onmouseup = null; window.onpointermove = null; window.onpointerup = null; window.onpointermove = null; window.onpointerup = null;
-            const doc = document.getElementById('game-document');
-            doc.onmousedown = null; doc.onpointerdown = null;
-            
-            // ★ 거래 거절 시 장부 방문 체크
-            if (gameState.currentGuestData) {
-                const bookedMatch = gameState.originalDailyQueue.find(g => g.id === gameState.currentGuestData.id);
-                if (bookedMatch) bookedMatch.visited = true;
-            }
-
-            // ── 스트리머 거절 → 방송 거절 기록 ──
-            if (gameState.lastGuest === 'streamer') gameState.streamerBroadcasted = false;
-            // ── 비둘기 거절 → 오늘 거절 기록, 미구매 플래그 + 알림 ──
-            if (gameState.lastGuest === 'pigeon') {
-                gameState.pigeonRejectedToday = true;
-                gameState.pigeonNotBought = true;
-                showFloatingText('비둘기는 당신을 매일 찾아 올 것 입니다..', '#ffd700');
-            }
-
-
-            const guest = document.querySelector('.game-guest');
-
-            // ── 악어: 거래 거절 시 50% 확률로 현재 소지금의 10%를 뜯김 ──
-            if (gameState.lastGuest === 'crocodile' && Math.random() < 0.5) {
-                const stolen = Math.floor(gameState.money * 0.1); // 소지금의 10% 계산
-                gameState.money = Math.max(0, gameState.money - stolen);
-                
-                // 돈 차감 UI 업데이트
-                updateMoneyCounter('악어에게 강탈당함');
-                
-                // 차감액을 실시간 텍스트로 작게 띄우기 (위로 쓱 사라지는 애니메이션)
-                const stolenText = `−₩${stolen.toLocaleString()}`;
-                const floatingDiv = document.createElement('div');
-                floatingDiv.innerText = stolenText;
-                floatingDiv.style.position = 'absolute';
-                floatingDiv.style.top = '30cqh';
-                floatingDiv.style.left = '50%';
-                floatingDiv.style.transform = 'translateX(-50%)';
-                floatingDiv.style.color = '#ff6b6b';
-                floatingDiv.style.fontSize = '3cqw';
-                floatingDiv.style.fontWeight = 'bold';
-                floatingDiv.style.textShadow = '0 0.5cqw 1cqw rgba(0,0,0,0.8)';
-                floatingDiv.style.zIndex = '9999';
-                floatingDiv.style.transition = 'all 1.5s ease-out';
-                stageAppend(floatingDiv);
-                
-                setTimeout(() => {
-                    floatingDiv.style.top = '10cqh';
-                    floatingDiv.style.opacity = '0';
-                }, 50);
-                setTimeout(() => floatingDiv.remove(), 1600);
-                
-                // 악어 전용 대사 + 일반 시스템 플로팅 메시지 동시 출력
-                setTimeout(() => {
-                    showFloatingText(`악어의 협박으로 소지금을 ${stolenText}만큼 뜯겼다...`, '#ff6b6b');
-                }, 800);
-                
-                if (guest) {
-                    const sb = document.getElementById('speech-bubble');
-                    if (sb) {
-                        sb.innerHTML = '<div style="font-size:1.3cqw;font-weight:bold;text-align:center;padding:1cqw">"이 정도는 내놔야 공평하지 않겠어?"</div>';
-                        sb.classList.add('visible');
-                        setTimeout(() => sb.classList.remove('visible'), 2000);
-                    }
-                }
-            }
-
-            // 거절 이후 처리 로직 (공통)
-            if (guest) {
-                showGuestDialogue('reject', () => {
-                    setTimeout(() => {
-                        hideSpeechBubble();
-                        exitGuest(guest);
-                        setTimeout(() => {
-                            // 소지금 0원 시 조기 마감
-                            if (gameState.money <= 0 && !gameState.earlyClose) {
-                                gameState.earlyClose = true;
-                                showFloatingText('소지금 소진! 오늘 영업을 마감합니다.', '#ff6b6b');
-                                setTimeout(() => finishAllDeals(), 1500);
-                                return;
-                            }
-                            if (gameState.dailyGuestsQueue.length === 0) finishAllDeals();
-                            else resetGameTurn();
-                        }, 800);
-                    }, 1000);
-                });
-            } else {
-                setTimeout(() => {
-                    hideSpeechBubble();
-                    exitGuest(guest);
-                    setTimeout(() => {
-                        if (gameState.money <= 0 && !gameState.earlyClose) {
-                            gameState.earlyClose = true;
-                            showFloatingText('소지금 소진! 오늘 영업을 마감합니다.', '#ff6b6b');
-                            setTimeout(() => finishAllDeals(), 1500);
-                            return;
-                        }
-                        if (gameState.dailyGuestsQueue.length === 0) finishAllDeals();
-                        else resetGameTurn();
-                    }, 800);
-                }, 1000);
-            }
-        }
         // 손님 한 방향 회전 + 옆면에서 이미지 교체 (주인장과 동일한 방식)
         function spinGuest(guest, newImageUrl) {
             if (!guest) return;
@@ -7237,8 +7269,9 @@ function rejectItem() {
             const inGame = gc && gc.style.display === 'block';
             if (inGame && gameState.originalDailyQueue && gameState.originalDailyQueue.length > 0) {
                 const total = gameState.originalDailyQueue.length;
-                const remaining = gameState.dailyGuestsQueue.length;
-                const done = Math.max(0, Math.min(total, total - remaining));
+                // 돌발 손님(독수리/늑대/까마귀 등)은 큐 길이를 변동시키므로,
+                // 실제 처리한 '예약 손님 수'(_bookedServedToday)를 기준으로 표시
+                const done = Math.max(0, Math.min(total, gameState._bookedServedToday || 0));
                 guestTxt = `  ·  손님 ${done}/${total}`;
             }
             el.innerText = `${gameState.day}일차${guestTxt}`;
@@ -7488,38 +7521,8 @@ function renderBookReaderContent() {
         }
 
         // ── ★ [추가] 카탈로그 탈출 시 미판정 리스크 방어 가드 시스템 ──
-        function askCloseCatalog() {
-            if (catalogAnimating) return;
-            
-            const todayDeals = gameState.obtainedCount || 0;
-            const todaysItems = gameState.purchasedItems.filter(e => (e.day || 1) === gameState.day);
-            const unjudgedCount = todaysItems.filter(e => !e.judged).length;
-            
-            if (unjudgedCount > 0) {
-                alert(`아직 감정 판정을 내리지 않은 거래 물품이 ${unjudgedCount}개 존재합니다!\n진열장 내부의 아이템을 눌러 정답 판정(O/X)을 완료해 주세요.`);
-                return;
-            }
-
-            const m = document.getElementById('catalog-confirm');
-            if (m) m.classList.add('show');
-        }
 
         // ★ 추가: 카탈로그를 닫고 방을 나갈 때 감정 안 한 물건이 있으면 막기
-        function askCloseCatalog() {
-            if (catalogAnimating) return;
-            // 튜토리얼 중에는 미판정 가드 건너뜀
-            if (!tutorial.active) {
-                const todayDeals = gameState.obtainedCount || 0;
-                const todaysItems = gameState.purchasedItems.filter(e => (e.day || 1) === gameState.day);
-                const unjudgedCount = todaysItems.filter(e => !e.judged).length;
-                if (unjudgedCount > 0) {
-                    alert(`아직 감정하지 않은 물건이 ${unjudgedCount}개 남았습니다! 책상 위의 물건을 눌러 판정해주세요.`);
-                    return;
-                }
-            }
-            const m = document.getElementById('catalog-confirm');
-            if (m) m.classList.add('show');
-        }
 
         // ───── 로비 ↔ 감정사 방 화살표 키 내비게이션 ─────
         // worldView: 0 = 로비, 1 = 감정사 방
@@ -7659,8 +7662,27 @@ function renderBookReaderContent() {
             }, 1300);
         }
         // 나가기 버튼 → 확인 모달
+        function showUnjudgedAlert(count) {
+            const el = document.getElementById('unjudged-alert');
+            const c = document.getElementById('unjudged-alert-count');
+            if (c) c.innerText = count;
+            if (el) el.classList.add('show');
+        }
+        function dismissUnjudgedAlert() {
+            const el = document.getElementById('unjudged-alert');
+            if (el) el.classList.remove('show');
+        }
         function askCloseCatalog() {
             if (catalogAnimating) return;
+            // 미감정 물건이 있으면 나가기 차단 (튜토리얼 중 제외)
+            if (!tutorial.active) {
+                const todaysItems = gameState.purchasedItems.filter(e => (e.day || 1) === gameState.day);
+                const unjudgedCount = todaysItems.filter(e => !e.judged).length;
+                if (unjudgedCount > 0) {
+                    showUnjudgedAlert(unjudgedCount);
+                    return;
+                }
+            }
             const m = document.getElementById('catalog-confirm');
             if (m) m.classList.add('show');
         }
@@ -9560,6 +9582,7 @@ function goToLobby() {
             //  (이어하기 시 동일한 손님/순서가 그대로 복원되도록 — 랜덤 재생성 방지)
             gameState.day += 1;
             prepareNewDay();
+            _preassignAllItems();           // 각 손님의 물건/진위/가격을 미리 확정
             gameState._dayPrepared = true;   // 이미 다음 날이 준비됨 표시
             saveGame(true);
             goToLobby();
@@ -10222,6 +10245,15 @@ function endCutscene() {
 }
 
 function startTutorial() {
+    // 저장된 게임이 있으면 튜토리얼 대신 이어하기 창을 띄움 (스토리 본 뒤 로비에서)
+    if (hasSaveData()) {
+        tutorial.active = false;
+        _tutorialDone = true;
+        const sb = document.getElementById('skip-tutorial-btn');
+        if (sb) sb.classList.remove('show');
+        setTimeout(() => _showContinuePrompt(), 400);
+        return;
+    }
     tutorial.active = true;
     tutorial.step = 0;
     tutorial.sub = 0;
