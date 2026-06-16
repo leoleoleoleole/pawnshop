@@ -892,6 +892,92 @@
             transform: translateY(0);
         }
 
+        /* ── 오늘의 신문 아이콘 (불태우기 오른쪽) ── */
+        #newspaper-trigger {
+            position: absolute;
+            bottom: 5cqh;
+            left: 11cqw;
+            width: 5.2cqw;
+            height: 13cqh;        /* A4 비율(약 1:1.41) */
+            cursor: pointer;
+            z-index: 200;
+            opacity: 0;
+            transform: translateY(20cqh);
+            transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.34, 1.3, 0.64, 1);
+            filter: drop-shadow(0 0.6cqw 1.2cqw rgba(0,0,0,0.7));
+            background: linear-gradient(160deg, #e3e3e3 0%, #b8b8b8 100%);   /* 회색 신문지 */
+            border: 0.16cqw solid #7a7a7a;
+            border-radius: 0.25cqw;
+        }
+        #newspaper-trigger.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        #newspaper-trigger:hover { transform: translateY(-1cqh) scale(1.05); }
+        #newspaper-trigger .np-fold {
+            position: absolute; top: 0; right: 0;
+            width: 1.3cqw; height: 2.2cqh;
+            background: linear-gradient(225deg, #aaaaaa 50%, #909090 50%);
+            border-left: 0.09cqw solid #7a7a7a; border-bottom: 0.09cqw solid #7a7a7a;
+        }
+        #newspaper-trigger .np-title {
+            position: absolute; top: 1.2cqh; left: 0; right: 0;
+            text-align: center; font-family: 'Georgia', serif; font-weight: bold;
+            font-size: 0.9cqw; color: #2e2e2e; letter-spacing: 0.05cqw;
+        }
+        #newspaper-trigger .np-line {
+            position: absolute; left: 0.6cqw; right: 0.6cqw; height: 0.2cqh;
+            background: rgba(40,40,40,0.5);
+        }
+        #newspaper-trigger .np-line1 { top: 4.4cqh; }
+        #newspaper-trigger .np-line2 { top: 6.2cqh; }
+        #newspaper-trigger .np-line3 { top: 8cqh; width: 55%; left: 0.6cqw; right: auto; }
+        #newspaper-label {
+            position: absolute;
+            bottom: 1.5cqh;
+            left: 9.6cqw;
+            width: 8cqw;
+            text-align: center;
+            color: #fcd53f;
+            font-size: 1cqw;
+            font-weight: bold;
+            font-family: 'Georgia', serif;
+            letter-spacing: 0.1cqw;
+            text-shadow: 0 0 0.5cqw #000, 0 0.2cqw 0.4cqw rgba(0,0,0,0.9);
+            opacity: 0;
+            transition: opacity 0.4s ease 0.2s, transform 0.4s ease 0.2s;
+            transform: translateY(-1cqh);
+            z-index: 200;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        #newspaper-label.visible { opacity: 1; transform: translateY(0); }
+        /* 신문 보기 모달 */
+        #newspaper-modal {
+            position: absolute; inset: 0; z-index: 9000;
+            display: none; align-items: center; justify-content: center;
+            background: rgba(10,6,3,0.78); backdrop-filter: blur(0.4cqw);
+        }
+        #newspaper-modal.show { display: flex; }
+        #newspaper-modal-inner {
+            position: relative; display: flex; flex-direction: column; align-items: center;
+            animation: bubblePop 0.32s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        #newspaper-img {
+            max-height: 94cqh; max-width: 78cqw;
+            box-shadow: 0 1cqw 3cqw rgba(0,0,0,0.7);
+            border-radius: 0.2cqw;
+        }
+        #newspaper-close {
+            margin-top: -3cqh;
+            position: relative; z-index: 2;
+            font-family: 'Gaegu','Georgia',serif; font-size: 1.3cqw; font-weight: bold;
+            padding: 0.9cqh 4cqw; border-radius: 0.7cqw; cursor: pointer;
+            background: linear-gradient(165deg, #3a2a08, #5a4310); color: #fcd53f;
+            border: 0.16cqw solid #cba328;
+        }
+        #newspaper-close:hover { filter: brightness(1.15); }
+
         /* ── 손님 말풍선 (왼쪽 위) ── */
         /* ── 텍스트 덜덜 떠는 애니메이션 (도마뱀 전용) ── */
         @keyframes text-tremble {
@@ -2112,7 +2198,7 @@
             width: 6cqw; height: 7.4cqw;
             cursor: pointer; z-index: 9500;
             opacity: 0; pointer-events: none;
-            transition: opacity 0.4s ease, filter 0.2s ease, transform 0.2s ease;
+            transition: opacity 0.4s ease, filter 0.2s ease, transform 0.5s cubic-bezier(0.34, 1.3, 0.64, 1);
             font-size: 0;
         }
         /* 표지(종이 묶음) — 왼쪽에 스프링 공간 확보 */
@@ -2154,7 +2240,7 @@
             background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(120,120,120,0.2));
             box-shadow: 0.12cqw 0 0.2cqw rgba(0,0,0,0.45);
         }
-        #ledger-btn:hover { filter: brightness(1.08); transform: translateY(-0.3cqw) rotate(-1.5deg); }
+        #ledger-btn:hover { filter: brightness(1.08); transform: translateY(-1cqh) scale(1.05); }
         /* 아이콘 위 '방문 명단' 라벨 (아이콘과 안 겹치게 충분히 위로) */
         #ledger-btn-label {
             position: absolute;
@@ -3086,6 +3172,22 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
             <div class="dupont-body"></div>
         </div>
         <div id="lighter-label">불태우기</div>
+        <!-- 오늘의 신문 아이콘 (불태우기 오른쪽) -->
+        <div id="newspaper-trigger" onclick="openTodayNewspaper()">
+            <div class="np-fold"></div>
+            <div class="np-line np-line1"></div>
+            <div class="np-line np-line2"></div>
+            <div class="np-line np-line3"></div>
+            <div class="np-title">NEWS</div>
+        </div>
+        <div id="newspaper-label">오늘의 신문</div>
+        <!-- 신문 보기 모달 -->
+        <div id="newspaper-modal" onclick="if(event.target===this) closeTodayNewspaper()">
+            <div id="newspaper-modal-inner">
+                <img id="newspaper-img" src="" alt="오늘의 신문">
+                <button id="newspaper-close" onclick="closeTodayNewspaper()">닫기</button>
+            </div>
+        </div>
         <div id="speech-bubble"></div>
         <div id="lighter-animation">
             <img class="fire-frame" data-frame="1" src="fire1.jpg" alt="">
@@ -3858,9 +3960,16 @@ function exitToLobby() {
         // 커튼 여는 시각 연출만 분리 (왼쪽으로 통째로 미끄러져 나감 — 텍스트도 함께 이동)
         function _openCurtainVisual() {
             curtain.style.display = 'block';
-            curtain.style.transformOrigin = 'left center';
-            curtain.style.transition = 'transform 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
-            curtain.style.transform = 'translateX(-105%)';   // 자기 너비+여유분 만큼 왼쪽으로 완전히 빠짐
+            // 다른 커튼 연출과 동일하게: 왼쪽 기준으로 접히며(translateX + scaleX) 빠짐
+            curtain.style.transformOrigin = 'left';
+            curtain.style.transition = 'none';
+            curtain.style.transform = 'translateX(0) scaleX(1)';
+            void curtain.offsetWidth;
+            curtain.style.transition = 'transform 1.4s cubic-bezier(0.4, 0, 0.2, 1)';
+            curtain.style.transform = 'translateX(-100cqw) scaleX(0)';
+            // 클릭 텍스트는 접힐 때 찌그러져 보이지 않도록 숨김
+            const _ct = curtain.querySelector('.curtain-text');
+            if (_ct) _ct.style.opacity = '0';
             setTimeout(() => {
                 darkOverlay.style.transition = 'opacity 0.6s ease-out';
                 darkOverlay.style.opacity = '0';
@@ -3871,7 +3980,7 @@ function exitToLobby() {
                     if (ledgerBtn) ledgerBtn.classList.add('lobby-visible');
                     // (이어하기 창은 컷씬 종료 후 로비 도착 시점에 startTutorial에서 띄움)
                 }, 600);
-            }, 300);
+            }, 900);
         }
 
         // 커튼을 닫았다가(왼→제자리) 다시 여는 연출 후 콜백 (이어하기용)
@@ -4231,6 +4340,9 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
     robberHiredEagle: false,     // 독수리에게 5천만 주고 의뢰했는지
     robberPendingVisit: false,   // 다음날 마지막에 독수리(+강도) 방문 예약
     todayVisitLog: [],           // 오늘 방문한 손님 기록 (돌발 포함) [{id, kind}]
+    // ── 배달부의 신문 ──
+    todayNewspaper: null,        // 오늘의 신문 종류: null | 'newspaper1'(폭동/강도) | 'newspaper2'(예술가 특수)
+    _deliveryDone: false,        // 오늘 배달부가 이미 다녀갔는지
 };
 
         // ════════════════════════════════════════════════
@@ -4272,6 +4384,9 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                 robberHiredEagle: g.robberHiredEagle || false,
                 robberPendingVisit: g.robberPendingVisit || false,
                 todayVisitLog: g.todayVisitLog || [],
+                todayNewspaper: g.todayNewspaper || null,
+                _deliveryDone: g._deliveryDone || false,
+                _riotRobberScheduled: g._riotRobberScheduled || false,
                 eaglePendingVisit: g.eaglePendingVisit || null,
                 eagleVisitDone: g.eagleVisitDone || false,
                 _eagleFollowupQueued: g._eagleFollowupQueued || null,
@@ -4352,7 +4467,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
 
             // ── 기본 후보군 (불시/성경구매비둘기 제외) ──
             const normalPool = guests.filter(g =>
-                g.id !== 'streamer' && g.id !== 'lizard' && g.id !== 'crow' && g.id !== 'eagle' && g.id !== 'wolf' &&
+                g.id !== 'streamer' && g.id !== 'lizard' && g.id !== 'crow' && g.id !== 'eagle' && g.id !== 'wolf' && g.id !== 'delivery' &&
                 !(g.id === 'pigeon' && (gameState.pigeonBought || gameState.pigeonBible)) &&
                 !(g.id === 'cat' && gameState.catHasVisited)  // 첫 방문 후 예약 제외
             );
@@ -4400,6 +4515,25 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                 bookedGuests.push(picked);
             }
 
+            // ── 배달부의 신문: 오늘의 신문 종류 결정 (newspaper1=폭동/강도, newspaper2=예술가 특수) ──
+            gameState.todayNewspaper = Math.random() < 0.5 ? 'newspaper1' : 'newspaper2';
+            gameState._deliveryDone = false;
+
+            // newspaper2면 예술가가 반드시 예약에 포함되도록 보장
+            if (gameState.todayNewspaper === 'newspaper2') {
+                const hasArtist = bookedGuests.some(g => g.id === 'artist');
+                if (!hasArtist) {
+                    const artistGuest = guests.find(g => g.id === 'artist');
+                    if (artistGuest) {
+                        // 예약 손님 한 명을 예술가로 교체 (예약 인원 수 유지)
+                        const replaceIdx = Math.floor(Math.random() * bookedGuests.length);
+                        bookedGuests[replaceIdx] = { ...artistGuest, visited: false };
+                    }
+                }
+                // 예술가 특수 가격/감정가 플래그
+                bookedGuests.forEach(g => { if (g.id === 'artist') g._artistSpecial = true; });
+            }
+
             // 예약 순서 셔플 (확정 포함 손님이 항상 첫 번째가 되지 않도록)
             for (let i = bookedGuests.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -4420,6 +4554,26 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
 
             gameState.originalDailyQueue = bookedGuests;
             gameState.dailyGuestsQueue  = [...bookedGuests];
+
+            // ── 배달부: 모든 손님보다 먼저, 큐 맨 앞에 배치 (오늘의 신문 전달) ──
+            const deliveryGuest = guests.find(g => g.id === 'delivery');
+            if (deliveryGuest) {
+                gameState.dailyGuestsQueue.unshift({ ...deliveryGuest, _delivery: true });
+            }
+
+            // ── newspaper1(폭동의 날): 강도(늑대) 반드시 1회 출현, 소지금 40% 강탈 ──
+            if (gameState.todayNewspaper === 'newspaper1') {
+                const wolfGuest = guests.find(g => g.id === 'wolf');
+                if (wolfGuest) {
+                    // 배달부(0번) 이후 예약 손님들 사이에 강도 삽입
+                    const wi = Math.floor(Math.random() * 3) + 2; // 최소 2번째 이후
+                    const insertAt = Math.min(wi, gameState.dailyGuestsQueue.length);
+                    gameState.dailyGuestsQueue.splice(insertAt, 0, { ...wolfGuest, _robber: true, _riotRobber: true });
+                    gameState._riotRobberScheduled = true;
+                }
+            } else {
+                gameState._riotRobberScheduled = false;
+            }
 
             // 일일 카운터/이벤트 플래그 초기화
             gameState._bookedServedToday = 0;
@@ -4469,8 +4623,9 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
     }
 
             // ── 불시 손님: 늑대(강도) — 도마뱀이 안 나온 날에만 15% 확률 돌발 출현 ──
+            //    (폭동의 날 newspaper1은 이미 강도가 확정 출현하므로 추가 랜덤 출현 제외)
             const wolfGuest = guests.find(g => g.id === 'wolf');
-            if (wolfGuest && !gameState._lizardSpawnedToday && !gameState.robberPendingVisit && Math.random() < 0.15) {
+            if (wolfGuest && !gameState._riotRobberScheduled && !gameState._lizardSpawnedToday && !gameState.robberPendingVisit && Math.random() < 0.15) {
                 const wi = Math.floor(Math.random() * 3) + 1;
                 gameState.dailyGuestsQueue.splice(wi, 0, { ...wolfGuest, _robber: true });
             }
@@ -4853,6 +5008,10 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                     reject: ["흥, 예술을 모르시는군요.", "언젠가 후회하실 겁니다.", "아쉽네요. 다음 기회에..."]
                 }
             },
+            {
+                id: 'delivery', frames: ['delivery.jpg'],
+                dialogue: { enter: ["오늘의 신문입니다!"], accept: [], reject: [] }
+            },
         ]; // <-- guests 배열이 끝나는 대괄호입니다.
 
         // ── 진가품 텍스트 묘사 풀 (스팀펑크풍 & 평어체 적용) ──
@@ -5086,6 +5245,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                 'crocodile.jpg','crocodile2.jpg','pig.jpg','pig2.jpg',
                 'steamer1.jpg','steamer2.jpg','steamer3.jpg','lizard1.jpg','lizard2.jpg',
                 'eagle.jpg','wolf.jpg','artist.jpg','cat.jpg','mouse_and_snake.jpg',
+                'delivery.jpg','newspaper1.jpg','newspaper2.jpg',
                 'monkey.jpg','miners.jpg','pigeon.jpg','crow.jpg','goat.jpg',
                 'owner.jpg','owner2.jpg','judge_woman.jpg',
                 'main_background2.jpg','story_background.jpg','background.jpg',
@@ -5213,6 +5373,8 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             hideOwnerBubble();
             const ledgerBtn = document.getElementById('ledger-btn');
             if (ledgerBtn) { ledgerBtn.classList.remove('lobby-visible'); }
+            // 신문 아이콘은 숨김으로 시작 — 배달부가 다녀간 뒤 손님 등장 시 라이터와 함께 노출됨
+            _hideNewspaperIcon();
 
             let entryMode;
             if (isFreshGame) entryMode = 'new';
@@ -5564,6 +5726,7 @@ const lines = guestData.dialogue[situation];
             const lt = document.getElementById('lighter-trigger'); if (lt) lt.classList.remove('visible');
             const ll = document.getElementById('lighter-label');   if (ll) ll.classList.remove('visible');
             const lb = document.getElementById('ledger-btn');      if (lb) lb.classList.remove('visible');
+            _hideNewspaperIcon();
             if (typeof hideMagnifierUI === 'function') hideMagnifierUI();
         }
         // 독수리/도마뱀 손님 DOM 하나 생성 (left 오프셋으로 나란히 배치 가능)
@@ -5580,9 +5743,14 @@ const lines = guestData.dialogue[situation];
             setTimeout(() => div.classList.remove('guest-entering'), 850);
             return div;
         }
-function _eagleBubble(text, buttons) {
+function _eagleBubble(text, buttons, lower) {
     const sb = document.getElementById('speech-bubble');
     if (!sb) return;
+
+    // 말풍선 위치 결정: 늑대(lower=true)는 왼쪽 아래, 그 외는 기본(왼쪽 위)
+    //  visible이 아닌(투명) 상태에서 위치를 확정해 표시 → 위치 점프/잔상 방지
+    if (lower) sb.classList.add('bubble-lower');
+    else sb.classList.remove('bubble-lower');
 
     sb.innerHTML = '';
     sb.style.pointerEvents = 'none'; 
@@ -5625,6 +5793,8 @@ function _eagleClearBubble() {
         sb.innerHTML = '';
         sb.style.pointerEvents = 'none';
         sb.classList.remove('visible');
+        // bubble-lower는 제거하지 않음 — 다음 _eagleBubble 호출이 위치를 새로 설정하므로
+        // 투명 상태에서 위치가 바뀌어 화면엔 점프/잔상이 보이지 않음
     }
 }
 
@@ -5771,26 +5941,92 @@ function spawnEagle_followup(guest) {
         }
         function spawnWolfRobber(guest) {
             _eagleHideLeftIcons();
-            const sb = document.getElementById('speech-bubble');
-            if (sb) sb.classList.add('bubble-lower');
             const div = _spawnGuestDiv('wolf.jpg');
             gameState._eagleDiv = div;
             setTimeout(() => {
-                const steal = Math.floor(gameState.money * 0.2);
+                // 폭동의 날(newspaper1) 강도는 40%, 평소 돌발 강도는 20% 강탈
+                const rate = guest._riotRobber ? 0.4 : 0.2;
+                const steal = Math.floor(gameState.money * rate);
                 gameState.money = Math.max(0, gameState.money - steal);
                 gameState.robberStolen = steal;
                 updateMoneyCounter('늑대에게 강탈당함');
-                _eagleBubble('"가진 걸 다 내놔!"', []);
+                _logEagleEvent(-steal, '늑대에게 강탈당함');
+                _eagleBubble('"가진 걸 다 내놔!"', [], true);   // 늑대: 왼쪽 아래 말풍선
                 gameState._eagleAskRobberAfter = true;   // 늑대 퇴장 후 독수리 의뢰 질문 등장
                 setTimeout(() => {
                     _eagleClearBubble();
-                    const sb2 = document.getElementById('speech-bubble');
-                    if (sb2) sb2.classList.remove('bubble-lower');
                     if (gameState._eagleDiv) exitGuest(gameState._eagleDiv);
                     gameState._eagleDiv = null;
                     setTimeout(() => { resetGameTurn(); }, 800);
                 }, 2200);
             }, 950);
+        }
+
+        // ════════════ 배달부 (오늘의 신문 전달) ════════════
+        function spawnDelivery(guest) {
+            _eagleHideLeftIcons();
+            const div = _spawnGuestDiv('delivery.jpg');
+            gameState._eagleDiv = div;
+            gameState._newspaperRead = false;
+            setTimeout(() => {
+                const isRiot = gameState.todayNewspaper === 'newspaper1';
+                const headline = isRiot ? '"오늘의 신문입니다! 폭동에 주의하세요!"' : '"오늘의 신문입니다! 예술품 소식이네요."';
+                _eagleBubble(headline, [
+                    { label: '신문 보기', onclick: 'openTodayNewspaper()' }
+                ]);
+                gameState._deliveryDone = true;
+                // 자동 퇴장하지 않음 — 신문을 본 뒤 작별 대사 → '안녕히 가세요.'로 퇴장
+            }, 950);
+        }
+        // 신문을 한 번 본 뒤(모달 닫기) 배달부 말풍선을 작별 대사로 전환
+        function _deliveryAskLeave() {
+            if (!gameState._eagleDiv) return;
+            _eagleBubble('"이제 가봐도 될까요?"', [
+                { label: '안녕히 가세요.', onclick: '_exitDelivery()' }
+            ]);
+        }
+        // 배달부 퇴장
+        function _exitDelivery() {
+            if (gameState._deliveryExiting) return;
+            gameState._deliveryExiting = true;
+            _eagleClearBubble();
+            if (gameState._eagleDiv) exitGuest(gameState._eagleDiv);
+            gameState._eagleDiv = null;
+            gameState._deliveryExiting = false;
+            setTimeout(() => { resetGameTurn(); }, 800);
+        }
+
+        // 신문 아이콘 표시/숨김
+        function _showNewspaperIcon() {
+            const t = document.getElementById('newspaper-trigger');
+            const l = document.getElementById('newspaper-label');
+            if (t) t.classList.add('visible');
+            if (l) l.classList.add('visible');
+        }
+        function _hideNewspaperIcon() {
+            const t = document.getElementById('newspaper-trigger');
+            const l = document.getElementById('newspaper-label');
+            if (t) t.classList.remove('visible');
+            if (l) l.classList.remove('visible');
+        }
+        // 오늘의 신문 모달 열기/닫기
+        function openTodayNewspaper() {
+            const np = gameState.todayNewspaper;
+            if (!np) return;
+            const img = document.getElementById('newspaper-img');
+            const modal = document.getElementById('newspaper-modal');
+            if (img) img.src = np + '.jpg';   // newspaper1.jpg / newspaper2.jpg
+            if (modal) modal.classList.add('show');
+        }
+        function closeTodayNewspaper() {
+            const modal = document.getElementById('newspaper-modal');
+            if (modal) modal.classList.remove('show');
+            // 배달부가 등장한 상태에서 신문을 닫으면 작별 대사로 전환
+            if (gameState._eagleDiv && gameState._deliveryDone && !gameState._deliveryExiting
+                && gameState.currentGuestData && (gameState.currentGuestData.id === 'delivery' || gameState.currentGuestData._delivery)) {
+                gameState._newspaperRead = true;
+                _deliveryAskLeave();
+            }
         }
 
         // 독수리(강도 의뢰 질문)
@@ -5878,8 +6114,8 @@ function spawnEagle_followup(guest) {
             const queue = gameState.dailyGuestsQueue || [];
             queue.forEach(guest => {
                 if (!guest || guest._assignedItem) return;
-                if (['eagle','wolf','crow','cat','mouse'].includes(guest.id)) return;
-                if (guest._eagleAsk || guest._eagleFollowup || guest._robber || guest._robberAsk || guest._robberReturn) return;
+                if (['eagle','wolf','crow','cat','mouse','delivery'].includes(guest.id)) return;
+                if (guest._eagleAsk || guest._eagleFollowup || guest._robber || guest._robberAsk || guest._robberReturn || guest._delivery) return;
 
                 let itemData, validItems = [];
                 if (guest.id === 'monkey') {
@@ -5912,11 +6148,12 @@ function spawnEagle_followup(guest) {
                 else if (guest.id === 'miners') price = 20000000;
                 else if (guest.id === 'goat') price = (Math.floor(Math.random() * 3) + 3) * 10000000;
                 else if (guest.id === 'crocodile') price = 40000000;
-                else if (guest.id === 'artist') price = 50000000;
+                else if (guest.id === 'artist') price = (gameState.todayNewspaper === 'newspaper2') ? 100000000 : 50000000;
                 else if (guest.id === 'pigeon') price = 0;
                 else if (itemData.owner === 'common') price = 10000000;
                 else price = 20000000;
 
+                if (guest.id === 'artist') itemData._artistSpecial = (gameState.todayNewspaper === 'newspaper2');
                 guest._assignedItem = itemData;
                 guest._assignedPrice = price;
             });
@@ -5970,6 +6207,7 @@ function generateGuest() {
             else if (guest._eagleAsk || guest._eagleFollowup || guest.id === 'eagle') _visitKind = '돌발(독수리)';
             else if (guest.id === 'lizard') _visitKind = '돌발(도마뱀)';
             else if (guest.id === 'crow') _visitKind = '돌발(까마귀)';
+            else if (guest.id === 'delivery' || guest._delivery) _visitKind = '배달부(신문)';
             else if (guest._fromStreamer) _visitKind = '돌발';
             else if (guest._bibleVisit) _visitKind = '돌발(비둘기)';
             gameState.todayVisitLog.push({ id: guest.id, kind: _visitKind });
@@ -5981,7 +6219,7 @@ function generateGuest() {
             // ── 예약 손님(돌발/특수 제외) 처리 수 카운트 → 독수리 후속 방문 타이밍 ──
             const _isBookedGuest = !guest._eagleAsk && !guest._eagleFollowup && !guest._fromStreamer
                 && !guest._bibleVisit && !guest._robber && !guest._robberAsk && !guest._robberReturn
-                && guest.id !== 'lizard' && guest.id !== 'crow' && guest.id !== 'wolf';
+                && guest.id !== 'lizard' && guest.id !== 'crow' && guest.id !== 'wolf' && guest.id !== 'delivery' && !guest._delivery;
             if (_isBookedGuest) {
                 gameState._bookedServedToday = (gameState._bookedServedToday || 0) + 1;
             }
@@ -5992,7 +6230,18 @@ function generateGuest() {
             gameState._catAnswered   = (guest.id === 'cat')   ? false : true;
             gameState._snakeBothered = (guest.id === 'mouse') ? false : true;
 
-            // ── 늑대(강도): 물건 없이 등장 → 소지금 20% 강탈 ──
+            // ── 배달부: 물건 없이 등장 → 오늘의 신문 전달 ──
+            if (guest.id === 'delivery' || guest._delivery) {
+                spawnDelivery(guest);
+                return;
+            }
+
+            // 배달부가 이미 다녀간 뒤(다음 손님부터) 오늘의 신문 아이콘 노출
+            if (gameState._deliveryDone && gameState.todayNewspaper) {
+                _showNewspaperIcon();
+            }
+
+            // ── 늑대(강도): 물건 없이 등장 → 소지금 20%(폭동의 날 40%) 강탈 ──
             if (guest.id === 'wolf' || guest._robber) {
                 spawnWolfRobber(guest);
                 return;
@@ -6123,6 +6372,8 @@ function generateGuest() {
 
             gameState.lastItem = itemData.id;
             gameState.currentItem = itemData;
+            // 예술가 미술품: 신문2(폭동2)의 날 매입품 표시 (감정가 2억/4천만 적용용)
+            if (guest && guest.id === 'artist') itemData._artistSpecial = (gameState.todayNewspaper === 'newspaper2');
             // 이 손님에 물건을 확정 저장 → 다음 등장/이어하기 시 동일하게 재사용
             if (guest && guest.id !== 'monkey') guest._assignedItem = itemData;
             else if (guest) guest._assignedItem = itemData;  // 원숭이도 확정(이미 변형 포함)
@@ -6140,7 +6391,7 @@ function generateGuest() {
                 gameState.itemPrice = (Math.floor(Math.random() * 3) + 3) * 10000000;
             }
             else if (guest.id === 'crocodile') gameState.itemPrice = 40000000; // 악어 4천만 고정
-            else if (guest.id === 'artist') gameState.itemPrice = 50000000; // 예술가 미술품 5천만 고정
+            else if (guest.id === 'artist') gameState.itemPrice = (gameState.todayNewspaper === 'newspaper2') ? 100000000 : 50000000; // 예술품: 신문2면 1억, 평소 5천만
             else if (guest.id === 'pigeon') gameState.itemPrice = 0; // 비둘기 성경 0원
             else if (itemData.owner === 'common') gameState.itemPrice = 10000000;
             else gameState.itemPrice = 20000000;
@@ -7788,8 +8039,8 @@ function renderBookReaderContent() {
                         if (entry.item.owner === 'pigeon') {
                             itemProfit = 0;
                         } else if (entry.item.owner === 'artist') {
-                            // 예술가 미술품: 진품 1억 고정
-                            itemProfit = 100000000;
+                            // 예술가 미술품: 신문2(폭동2)의 날 매입품이면 진품 2억, 평소 1억
+                            itemProfit = entry.item._artistSpecial ? 200000000 : 100000000;
                         } else {
                             // 진품 정답: 5천만~1억, 맨 앞자리만
                             const raw = Math.floor(Math.random() * 50000000) + 50000000;
@@ -7800,8 +8051,8 @@ function renderBookReaderContent() {
                         if (entry.item.baseImg === 'coin') {
                             itemProfit = 100;
                         } else if (entry.item.owner === 'artist') {
-                            // 예술가 미술품: 가품 1천만 고정
-                            itemProfit = 10000000;
+                            // 예술가 미술품: 신문2의 날 매입품이면 가품 4천만, 평소 1천만
+                            itemProfit = entry.item._artistSpecial ? 40000000 : 10000000;
                         } else {
                             // 가품 정답: 0~1천만, 맨 앞자리만
                             const raw = Math.floor(Math.random() * 10000000);
@@ -8596,6 +8847,7 @@ function goToLobby() {
             if (document.getElementById('receipt-modal').style.display === 'flex') return;
             hideAppraiserBubble();
             updateAppraiseMarker();   // 감정 필요 느낌표 갱신
+            _hideNewspaperIcon();     // 로비에서는 신문 아이콘 숨김 (게임 입장 후 배달부가 다시 노출)
             
             // ★ 로비 복귀 시 남아있던 숨김 인라인 스타일을 깨끗하게 지우고 다시 표시합니다.
             const ledgerBtn = document.getElementById('ledger-btn');
@@ -8957,6 +9209,9 @@ function goToLobby() {
             const ml = document.getElementById('magnifier-btn-label');
             if (mb) mb.classList.add('visible');
             if (ml) ml.classList.add('visible');
+
+            // ★ 오늘의 신문 아이콘도 함께 등장 (배달부가 이미 다녀간 날)
+            if (gameState._deliveryDone && gameState.todayNewspaper) _showNewspaperIcon();
         }
         function hideLighter() {
             const t = document.getElementById('lighter-trigger');
@@ -8985,6 +9240,9 @@ function goToLobby() {
             const ml = document.getElementById('magnifier-btn-label');
             if (mb) { mb.classList.remove('visible'); mb.classList.remove('active'); }
             if (ml) ml.classList.remove('visible');
+
+            // ★ 오늘의 신문 아이콘도 함께 퇴장
+            _hideNewspaperIcon();
         }
         // 새 프레임을 위에 덮어쓰는 방식 — 두 프레임이 동시에 보이지 않아 깜빡임 없음
         function setFireFrame(n) {
