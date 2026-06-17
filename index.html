@@ -6046,8 +6046,13 @@ function spawnEagle_followup(guest) {
             gameState._eagleDiv = div;
             gameState._newspaperRead = false;
             setTimeout(() => {
-                const isRiot = gameState.todayNewspaper === 'newspaper1';
-                const headline = isRiot ? '"오늘의 신문입니다! 폭동에 주의하세요!"' : '"오늘의 신문입니다! 예술품 소식이네요."';
+                const np = gameState.todayNewspaper;
+                let headline;
+                if (np === 'newspaper1') headline = '"오늘의 신문입니다! 폭동이 일어났다는군요, 조심하세요!"';
+                else if (np === 'newspaper2') headline = '"오늘의 신문입니다! 예술품 소식이네요."';
+                else if (np === 'newspaper3') headline = '"오늘의 신문입니다! 요즘 사이비 교단 때문에 흉흉하네요..."';
+                else if (np === 'newspaper4') headline = '"오늘의 신문입니다! 스트리밍이 대유행이래요!"';
+                else headline = '"오늘의 신문입니다!"';
                 _eagleBubble(headline, [
                     { label: '신문 보기', onclick: 'openTodayNewspaper()' }
                 ]);
@@ -6062,7 +6067,7 @@ function spawnEagle_followup(guest) {
             let msg;
             if (np === 'newspaper1') msg = '"오늘은 폭동의 날입니다. 강도가 들이닥쳐 소지금의 40%를 빼앗아갈 테니 조심하세요!"';
             else if (np === 'newspaper2') msg = '"예술품 가격이 치솟고 있어요. 오늘 예술가가 찾아오는데, 작품값이 1억이지만 진품이면 2억, 가품이면 4천만에 감정된다네요."';
-            else if (np === 'newspaper3') msg = '"사이비 교단 탓에 다들 외출을 꺼려요. 오늘 예약 손님 절반은 안 올지도 몰라요. 대신 비둘기의 성경을 가지고 있다면 기부금이 1억으로 늘어난답니다."';
+            else if (np === 'newspaper3') msg = '"사이비 교단 탓에 다들 외출을 꺼려요. 오늘은 예약 손님이 저마다 안 올 수도 있어요. 대신 비둘기의 성경을 가지고 있다면 기부금이 1억으로 늘어난답니다."';
             else if (np === 'newspaper4') msg = '"스트리밍이 대유행이에요! 오늘 스트리머가 꼭 들르는데, 제시가도 감정가도 두 배랍니다. 대신 돌발 손님이 들이닥칠 확률도 크게 오르니 주의하세요."';
             else msg = '"오늘도 좋은 거래 되세요!"';
             _eagleBubble(msg, [
