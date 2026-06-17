@@ -954,7 +954,7 @@
         #newspaper-label.visible { opacity: 1; transform: translateY(0); }
         /* 신문 보기 모달 */
         #newspaper-modal {
-            position: absolute; inset: 0; z-index: 9000;
+            position: absolute; inset: 0; z-index: 9700;
             display: none; align-items: center; justify-content: center;
             background: rgba(10,6,3,0.78); backdrop-filter: blur(0.4cqw);
         }
@@ -5051,6 +5051,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                 dialogue: {
                     enter: ["안녕하세요! 방송 켜도 될까요~?", "저 방송하는데요, 잠깐 같이 찍어도 될까요?", "구독자들이 엄청 좋아할 것 같아서요!"],
                     accept: ["고마워요! 구독자들이 좋아하겠네요~", "역시! 이 거래 그대로 방송 나갑니다~", "감사합니다! 다음에 또 올게요~"],
+                    streamerBuy: ["대박! 이 거래 그대로 방송에 올릴게요~", "구독자들아 봤지? 완전 이득이지!", "역시 여기 사장님이 최고야~ 구독 박아주세요!", "이거 실시간으로 다 찍혔어요! 감사합니다~"],
                     reject: [
                         ".........."
                     ]
@@ -9689,7 +9690,15 @@ function goToLobby() {
                 if (gid === 'miners') actualPrice = 20000000; // 항상 2천만 지불
 
 // (기존 코드)
-        if (gid === 'streamer') gameState.streamerBroadcasted = true;
+        if (gid === 'streamer') {
+            gameState.streamerBroadcasted = true;
+            // 매입 완료 시 당황(steamer3) 이미지가 남아있지 않도록 기본 프레임으로 복원
+            const sGuest = document.querySelector('.game-guest');
+            if (sGuest) {
+                sGuest.style.backgroundImage = "url('steamer1.jpg')";
+                delete sGuest.dataset.burnedReact;
+            }
+        }
 
         gameState.purchasedItems.push({
             item: gameState.currentItem,
@@ -9746,7 +9755,8 @@ function goToLobby() {
                 return;
             }
             if (guest) {
-                showGuestDialogue('accept', () => {
+                const _acceptSituation = (gameState.lastGuest === 'streamer') ? 'streamerBuy' : 'accept';
+                showGuestDialogue(_acceptSituation, () => {
                     setTimeout(() => {
                         hideSpeechBubble();
                         exitGuest(guest);
