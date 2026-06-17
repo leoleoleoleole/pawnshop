@@ -4562,12 +4562,16 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             // newspaper3(사이비): 예약 손님 각각 50% 확률로 결석 + 비둘기 기부금 1억
             if (gameState.todayNewspaper === 'newspaper3') {
                 gameState._pigeonBigDonationToday = true;
-                bookedGuests = bookedGuests.filter(() => Math.random() >= 0.5);
+                // const 배열이므로 재할당하지 않고 내용만 교체 (결석자 제거)
+                const survivors = bookedGuests.filter(() => Math.random() >= 0.5);
                 // 전부 결석하면 너무 비니 최소 1명은 남김
-                if (bookedGuests.length === 0) {
+                if (survivors.length === 0) {
                     const cand = guests.find(g => !['streamer','lizard','crow','eagle','wolf','delivery','cat','mouse'].includes(g.id));
-                    if (cand) bookedGuests.push({ ...cand, visited: false });
+                    if (cand) survivors.push({ ...cand, visited: false });
+                    else if (bookedGuests.length > 0) survivors.push(bookedGuests[0]);
                 }
+                bookedGuests.length = 0;
+                survivors.forEach(g => bookedGuests.push(g));
             }
 
             // newspaper4(스트리밍 붐): 스트리머 반드시 예약 포함 + 제시가/감정가 2배
