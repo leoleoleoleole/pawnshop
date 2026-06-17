@@ -4059,25 +4059,34 @@ function exitToLobby() {
             };
             if (no) no.onclick = function() {
                 document.getElementById('continue-modal').classList.remove('show');
-                clearSave();   // 저장 삭제 → 새로고침 후 자동으로 새 게임(컷씬)부터 시작
-                // 커튼이 왼→오로 닫히며 화면을 덮은 뒤 새로고침 → 튜토리얼로 진입
+                clearSave();   // 저장 삭제
+                // 커튼이 닫히며 화면을 덮은 뒤, 상태를 초기화하고 컷씬(→튜토리얼)부터 새로 시작
                 const curtain = document.getElementById('curtain');
+                const _startFresh = function() {
+                    // 새 게임 상태로 초기화
+                    _tutorialDone = false;
+                    tutorial.active = true; tutorial.step = 0; tutorial.sub = 0; tutorial.waiting = false;
+                    try { startGameSetup('new'); } catch(e) {}
+                    // 컷씬 시작 — 끝나면 endCutscene이 커튼을 열며 튜토리얼로 진입시킴
+                    startCutscene();
+                };
                 if (curtain) {
-                    curtain.style.zIndex = '10000';
+                    curtain.style.zIndex = '6000';
                     curtain.style.display = 'flex';
-                    curtain.style.transformOrigin = 'left center';
+                    curtain.style.transformOrigin = 'right center';
                     curtain.style.transform = 'translateX(-100cqw) scaleX(0)';
                     curtain.style.transition = 'none';
                     curtain.style.opacity = '1';
                     const _ct = curtain.querySelector('.curtain-text');
-                    if (_ct) _ct.style.opacity = '0';
-                    requestAnimationFrame(() => {
-                        curtain.style.transition = 'transform 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
-                        curtain.style.transform = 'translateX(0) scaleX(1)';
-                    });
-                    setTimeout(() => location.reload(), 1300);
+                    if (_ct) _ct.style.display = 'none';
+                    void curtain.offsetWidth;
+                    // 커튼 닫힘 (왼→오, 화면을 덮음)
+                    curtain.style.transition = 'transform 1.0s cubic-bezier(0.4,0,0.2,1)';
+                    curtain.style.transform = 'translateX(0) scaleX(1)';
+                    // 커튼이 화면을 덮은 뒤 컷씬 시작 (컷씬이 이 커튼 위에서 전개됨)
+                    setTimeout(_startFresh, 1050);
                 } else {
-                    location.reload();
+                    _startFresh();
                 }
             };
         })();
