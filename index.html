@@ -454,6 +454,48 @@
             from { transform: scale(0.6); opacity: 0; }
             to   { transform: scale(1);   opacity: 1; }
         }
+
+        /* ── 표준 모달 등장 애니메이션 (전 모달 통일) ── */
+        @keyframes stdModalPop {
+            from { transform: scale(0.85); opacity: 0; }
+            to   { transform: scale(1);    opacity: 1; }
+        }
+        @keyframes stdOverlayFade {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+        /* 모달 오버레이(반투명 배경)는 부드럽게 페이드인 */
+        #catalog-confirm.show, #exit-modal.show, #refresh-modal.show,
+        #unjudged-alert.show, #newspaper-modal.show, #money-reason.show,
+        #appraise-notice.show, #horizontal-doc-modal.show {
+            animation: stdOverlayFade 0.25s ease both;
+        }
+        /* 모달 본체(박스)는 살짝 튀어오르며 등장 */
+        #catalog-confirm.show #catalog-confirm-box,
+        #exit-modal.show .refresh-modal-box,
+        #refresh-modal.show .refresh-modal-box,
+        #unjudged-alert.show #unjudged-alert-box,
+        #newspaper-modal.show #newspaper-modal-inner {
+            animation: stdModalPop 0.32s cubic-bezier(0.34, 1.45, 0.64, 1) both;
+        }
+
+        /* ── 클릭 피드백: 눌렀을 때 살짝 어두워짐 (위치 이동 없음 → translateX 정렬 버튼도 안전) ── */
+        button, [onclick] { -webkit-tap-highlight-color: transparent; }
+        button:active:not(.no-press) {
+            filter: brightness(0.86);
+            transition: filter 0.06s ease;
+        }
+        /* scale 눌림은 위치를 transform으로 잡지 않는 버튼에만 (.press-fb 명시) */
+        .press-fb:active {
+            filter: brightness(0.92);
+            transition: filter 0.06s ease;
+        }
+        /* 좌측 아이콘류: 눌렀을 때 살짝 어두워짐 */
+        #lighter-trigger:active, #ledger-btn:active,
+        #newspaper-trigger:active, #magnifier-btn:active {
+            filter: brightness(0.92);
+            transition: filter 0.06s ease;
+        }
         /* 말풍선 꼬리: 본체와 동일 색/테두리의 삼각형(clip-path)으로 본체에서 자연스럽게 뻗음 */
         #owner-bubble::after, #appraiser-bubble::after {
             content: '';
@@ -893,66 +935,74 @@
             transform: translateY(0);
         }
 
-        /* ── 오늘의 신문 아이콘 (불태우기 오른쪽) ── */
+/* ── 서브 메뉴 폴더 (신문, 명단 보관) ── */
+        #folder-trigger {
+            position: absolute;
+            bottom: 37cqh; left: 4.75cqw;
+            width: 4.5cqw; height: 4.5cqw;
+            z-index: 200;
+            cursor: pointer;
+            background: radial-gradient(circle at 35% 30%, #5a4018 0%, #2a1a08 72%);
+            border: 0.2cqw solid #cba328;
+            border-radius: 0.6cqw;
+            box-shadow: 0 0.4cqw 1cqw rgba(0,0,0,0.6), inset 0 0.15cqw 0.4cqw rgba(255,224,122,0.35);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.2cqw;
+            opacity: 0; transform: translateY(20cqh);
+            pointer-events: none;
+            transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.34, 1.3, 0.64, 1), filter 0.18s ease;
+            user-select: none;
+        }
+        #folder-trigger.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        #folder-trigger:hover, #folder-trigger.expanded { filter: brightness(1.2); }
+
+        #folder-label {
+            position: absolute;
+            bottom: 33.5cqh; left: 4cqw; width: 6cqw;
+            text-align: center; color: #fcd53f; font-family: 'Georgia', serif;
+            font-size: 0.85cqw; font-weight: bold; letter-spacing: 0.1cqw;
+            text-shadow: 0 0.15cqw 0.4cqw #000, 0 0 0.6cqw rgba(0,0,0,0.9);
+            pointer-events: none; opacity: 0;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            transform: translateY(-1cqh);
+        }
+        #folder-label.visible { opacity: 1; transform: translateY(0); }
+
+        /* ── 오늘의 신문 아이콘 (폴더 내부에 수납됨) ── */
         #newspaper-trigger {
             position: absolute;
-            bottom: 5cqh;
-            left: 11cqw;
-            width: 4cqw;
-            height: 10cqh;        /* A4 비율(약 1:1.41) */
-            cursor: pointer;
-            z-index: 200;
-            opacity: 0;
-            transform: translateY(20cqh);
-            transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.34, 1.3, 0.64, 1);
+            bottom: 37cqh; left: 4.5cqw;
+            width: 4cqw; height: 10cqh;
+            cursor: pointer; z-index: 190;
+            opacity: 0; pointer-events: none;
+            transform: scale(0.5);
+            transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.3, 0.64, 1), left 0.3s cubic-bezier(0.34, 1.3, 0.64, 1);
             filter: drop-shadow(0 0.6cqw 1.2cqw rgba(0,0,0,0.7));
-            background: linear-gradient(160deg, #e3e3e3 0%, #b8b8b8 100%);   /* 회색 신문지 */
-            border: 0.16cqw solid #7a7a7a;
-            border-radius: 0.25cqw;
+            background: linear-gradient(160deg, #e3e3e3 0%, #b8b8b8 100%);
+            border: 0.16cqw solid #7a7a7a; border-radius: 0.25cqw;
         }
-        #newspaper-trigger.visible {
-            opacity: 1;
-            transform: translateY(0);
+        #newspaper-trigger.visible.expanded {
+            opacity: 1 !important; pointer-events: auto !important; transform: scale(1) !important;
         }
-        #newspaper-trigger:hover { transform: translateY(-1cqh) scale(1.05); }
-        #newspaper-trigger .np-fold {
-            position: absolute; top: 0; right: 0;
-            width: 1.3cqw; height: 2.2cqh;
-            background: linear-gradient(225deg, #aaaaaa 50%, #909090 50%);
-            border-left: 0.09cqw solid #7a7a7a; border-bottom: 0.09cqw solid #7a7a7a;
-        }
-        #newspaper-trigger .np-title {
-            position: absolute; top: 1cqh; left: 0; right: 0;
-            text-align: center; font-family: 'Georgia', serif; font-weight: bold;
-            font-size: 0.72cqw; color: #2e2e2e; letter-spacing: 0.04cqw;
-        }
-        #newspaper-trigger .np-line {
-            position: absolute; left: 0.5cqw; right: 0.5cqw; height: 0.18cqh;
-            background: rgba(40,40,40,0.5);
-        }
+        #newspaper-trigger.visible.expanded:hover { transform: scale(1.05) translateY(-0.5cqh) !important; filter: brightness(1.1); }
+        #newspaper-trigger .np-fold { position: absolute; top: 0; right: 0; width: 1.3cqw; height: 2.2cqh; background: linear-gradient(225deg, #aaaaaa 50%, #909090 50%); border-left: 0.09cqw solid #7a7a7a; border-bottom: 0.09cqw solid #7a7a7a; }
+        #newspaper-trigger .np-title { position: absolute; top: 1cqh; left: 0; right: 0; text-align: center; font-family: 'Georgia', serif; font-weight: bold; font-size: 0.72cqw; color: #2e2e2e; letter-spacing: 0.04cqw; }
+        #newspaper-trigger .np-line { position: absolute; left: 0.5cqw; right: 0.5cqw; height: 0.18cqh; background: rgba(40,40,40,0.5); }
         #newspaper-trigger .np-line1 { top: 3.4cqh; }
         #newspaper-trigger .np-line2 { top: 4.8cqh; }
         #newspaper-trigger .np-line3 { top: 6.2cqh; width: 55%; left: 0.5cqw; right: auto; }
+        
         #newspaper-label {
             position: absolute;
-            bottom: 1.5cqh;
-            left: 9cqw;
-            width: 8cqw;
-            text-align: center;
-            color: #fcd53f;
-            font-size: 1cqw;
-            font-weight: bold;
-            font-family: 'Georgia', serif;
-            letter-spacing: 0.1cqw;
+            bottom: 33.5cqh; left: 4.5cqw; width: 6cqw;
+            text-align: center; color: #fcd53f; font-size: 0.85cqw; font-weight: bold;
+            font-family: 'Georgia', serif; letter-spacing: 0.1cqw;
             text-shadow: 0 0 0.5cqw #000, 0 0.2cqw 0.4cqw rgba(0,0,0,0.9);
-            opacity: 0;
-            transition: opacity 0.4s ease 0.2s, transform 0.4s ease 0.2s;
-            transform: translateY(-1cqh);
-            z-index: 200;
-            pointer-events: none;
-            white-space: nowrap;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease, left 0.3s cubic-bezier(0.34, 1.3, 0.64, 1);
+            z-index: 190;
         }
-        #newspaper-label.visible { opacity: 1; transform: translateY(0); }
+        #newspaper-label.visible.expanded { opacity: 1 !important; }
         /* 신문 보기 모달 */
         #newspaper-modal {
             position: absolute; inset: 0; z-index: 9700;
@@ -2264,22 +2314,30 @@
         #ledger-btn.game-pos.visible + #ledger-btn-label { opacity: 1; }
         #ledger-btn.lobby-visible { opacity: 1; pointer-events: auto; }
 
-        /* ── 거래 화면 전용: 불태우기(라이터) 버튼 위 ── */
+/* ── 거래 화면 전용 명단 버튼: 폴더 내부에 수납됨 ── */
         #ledger-btn.game-pos {
-            bottom: 22cqh;   /* 라이터 위 */
+            bottom: 36.5cqh !important;
             left: 4.5cqw; right: auto;
-            width: 4.5cqw; height: 5.5cqw;
-            transform: translateY(20cqh);
-            opacity: 0; pointer-events: none;
+            width: 4.5cqw !important; height: 5.5cqw !important;
+            transform: scale(0.5);
+            opacity: 0; pointer-events: none; z-index: 9500 !important;
+            transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.3, 0.64, 1), left 0.3s cubic-bezier(0.34, 1.3, 0.64, 1);
         }
-        /* 게임 화면 작은 아이콘: 스프링/표지 비례 축소 (모양 유지) */
-        #ledger-btn.game-pos .ledger-cover { top: 0; left: 0.6cqw; width: calc(100% - 0.6cqw); }
-        #ledger-btn.game-pos .ledger-spiral { left: 0; width: 1.1cqw; top: 0.3cqw; bottom: 0.3cqw; }
-        #ledger-btn.game-pos .ledger-spiral span { width: 1cqw; height: 0.38cqw; border-width: 0.12cqw; }
-        #ledger-btn.game-pos.visible {
-            transform: translateY(0);
-            opacity: 1; pointer-events: auto;
+        #ledger-btn.game-pos.expanded {
+            transform: scale(1) !important;
+            opacity: 1 !important; pointer-events: auto !important;
         }
+        #ledger-btn.game-pos.expanded:hover {
+            transform: scale(1.05) translateY(-0.5cqh) !important; 
+        }
+
+        #ledger-btn.game-pos + #ledger-btn-label {
+            bottom: 33.5cqh !important; left: 4cqw; right: auto; width: 6cqw !important; font-size: 0.85cqw !important;
+            opacity: 0; pointer-events: none; z-index: 9500 !important;
+            transition: opacity 0.3s ease, left 0.3s cubic-bezier(0.34, 1.3, 0.64, 1);
+        }
+        #ledger-btn.game-pos.expanded + #ledger-btn-label { opacity: 1 !important; }
+        #ledger-btn.lobby-visible { opacity: 1 !important; pointer-events: auto !important; transform: translateY(0) !important; left: auto; right: 2.5cqw !important; }
 
         /* ── 방문 명단 수첩 (가운데 펼쳐지는 수첩) ── */
         #ledger-modal {
@@ -2867,21 +2925,20 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
         #continue-btns button:hover { transform: translateY(-0.2cqw); filter: brightness(1.1); }
         #continue-yes { background: #3a2a08; color: #fcd53f; border: 0.2cqw solid #cba328; }
         #continue-no  { background: rgba(255,255,255,0.08); color: #d8b87a; border: 0.2cqw solid #7a5a2a; }
-        /* ════════ 돋보기 (물건 자세히 보기) ════════ */
-        /* 게임 화면 왼쪽, 방문명단(game-pos) 위 */
+/* ════════ 돋보기 (물건 자세히 보기) ════════ */
+        /* 게임 화면 왼쪽 중간 (폴더 아래 위치) */
         #magnifier-btn {
             position: absolute;
-            bottom: 37cqh; left: 4.75cqw;
+            bottom: 21cqh; left: 4.75cqw;
             width: 4.5cqw; height: 4.5cqw;
             z-index: 9500;
             cursor: pointer;
-            display: flex;                      /* 항상 flex — 표시는 opacity/transform으로 제어 */
+            display: flex;
             align-items: center; justify-content: center;
             background: radial-gradient(circle at 35% 30%, #6a5018 0%, #3a2a08 72%);
             border: 0.2cqw solid #cba328;
             border-radius: 50%;
             box-shadow: 0 0.4cqw 1cqw rgba(0,0,0,0.6), inset 0 0.15cqw 0.4cqw rgba(255,224,122,0.35);
-            /* 등장/퇴장: 불태우기·방문명단과 동일한 슬라이드 */
             opacity: 0;
             transform: translateY(20cqh);
             pointer-events: none;
@@ -2900,7 +2957,7 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
         }
         #magnifier-btn-label {
             position: absolute;
-            bottom: 33.5cqh; left: 4cqw;
+            bottom: 17.5cqh; left: 4cqw;
             width: 6cqw;
             z-index: 9500;
             text-align: center;
@@ -2910,7 +2967,7 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
             color: #fcd53f;
             text-shadow: 0 0.15cqw 0.4cqw #000, 0 0 0.6cqw rgba(0,0,0,0.9);
             pointer-events: none;
-            display: block;                  /* 항상 block — 표시는 opacity로 제어 */
+            display: block;
             opacity: 0;
             transition: opacity 0.4s ease;
             user-select: none;
@@ -2964,7 +3021,7 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
     <div id="money-reason"></div>
     <div id="obtained-counter">거래 횟수: 0</div>
     
-    <div id="ledger-btn" onclick="showLedgerModal()" title="방문 명단">
+<div id="ledger-btn" onclick="showLedgerModal()" title="방문 명단" onmouseenter="keepFolderExpanded()" onmouseleave="collapseFolder()">
         <div class="ledger-cover">
             <div class="ledger-label-line"></div>
             <div class="ledger-label-line"></div>
@@ -3169,13 +3226,18 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
             <div class="envelope-flap"></div>
         </div>
         <!-- 라이터: 트리거 버튼 + 큰 애니메이션 -->
-        <div id="lighter-trigger" onclick="igniteLighter()">
+<div id="lighter-trigger" onclick="igniteLighter()">
             <div class="dupont-cap"></div>
             <div class="dupont-body"></div>
         </div>
         <div id="lighter-label">불태우기</div>
-        <!-- 오늘의 신문 아이콘 (불태우기 오른쪽) -->
-        <div id="newspaper-trigger" onclick="openTodayNewspaper()">
+
+        <div id="folder-trigger" onmouseenter="expandFolder()" onmouseleave="collapseFolder()">
+            <span style="font-size: 2cqw;">📁</span>
+        </div>
+        <div id="folder-label">메뉴 폴더</div>
+
+        <div id="newspaper-trigger" onclick="openTodayNewspaper()" onmouseenter="keepFolderExpanded()" onmouseleave="collapseFolder()">
             <div class="np-fold"></div>
             <div class="np-line np-line1"></div>
             <div class="np-line np-line2"></div>
@@ -4068,8 +4130,21 @@ function exitToLobby() {
                     _tutorialDone = false;
                     tutorial.active = true; tutorial.step = 0; tutorial.sub = 0; tutorial.waiting = false;
                     try { startGameSetup('new'); } catch(e) {}
-                    // 컷씬 시작 — 끝나면 endCutscene이 커튼을 열며 튜토리얼로 진입시킴
+                    // 컷씬 시작 (커튼 아래에서 준비됨)
                     startCutscene();
+                    // 커튼을 다시 걷어 컷씬이 보이도록 함 — 이후 컷씬을 끝내면 endCutscene이 로비/튜토리얼로 진입
+                    if (curtain) {
+                        requestAnimationFrame(() => {
+                            curtain.style.transition = 'transform 1.0s cubic-bezier(0.4,0,0.2,1)';
+                            curtain.style.transformOrigin = 'right center';
+                            curtain.style.transform = 'translateX(-100cqw) scaleX(0)';
+                            setTimeout(() => {
+                                curtain.style.display = 'none';
+                                const _ct2 = curtain.querySelector('.curtain-text');
+                                if (_ct2) _ct2.style.display = '';
+                            }, 1050);
+                        });
+                    }
                 };
                 if (curtain) {
                     curtain.style.zIndex = '6000';
@@ -4322,6 +4397,19 @@ function exitToLobby() {
                 return;
             }
 
+            // ── 사이비 신문으로 결석한 손님: 커튼을 열지 않고 안내만 띄운 뒤 종을 다시 내림 ──
+            if (gameState.dailyGuestsQueue.length > 0 && gameState.dailyGuestsQueue[0]._cultAbsent) {
+                gameState.dailyGuestsQueue.shift();   // 결석 손님 제거
+                gameState._bookedServedToday = (gameState._bookedServedToday || 0) + 1;
+                updateDayIndicator();
+                if (!gameState.todayVisitLog) gameState.todayVisitLog = [];
+                setTimeout(() => {
+                    showFloatingText('사이비 교단을 꺼려하는 손님이 오지 않았습니다..', '#c8b0e0');
+                    resetGameTurn();
+                }, 700);
+                return;
+            }
+
             // 밧줄 당기면: 커튼 열림 → 손님 등장 → 손님이 자리잡으면 커튼 닫힘
             setTimeout(() => {
                 openStageCurtain();               // 커튼이 왼→오로 슬라이드되며 열림
@@ -4569,19 +4657,32 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                 bookedGuests.forEach(g => { if (g.id === 'artist') g._artistSpecial = true; });
             }
 
-            // newspaper3(사이비): 예약 손님 각각 50% 확률로 결석 + 비둘기 기부금 1억
+            // newspaper3(사이비): 예약 손님 각각 50% 확률로 결석(_cultAbsent)
+            //   + 비둘기가 반드시 그날 5번째 손님으로 등장해 플레이어에게 1억을 기부
             if (gameState.todayNewspaper === 'newspaper3') {
                 gameState._pigeonBigDonationToday = true;
-                // const 배열이므로 재할당하지 않고 내용만 교체 (결석자 제거)
-                const survivors = bookedGuests.filter(() => Math.random() >= 0.5);
-                // 전부 결석하면 너무 비니 최소 1명은 남김
-                if (survivors.length === 0) {
-                    const cand = guests.find(g => !['streamer','lizard','crow','eagle','wolf','delivery','cat','mouse'].includes(g.id));
-                    if (cand) survivors.push({ ...cand, visited: false });
-                    else if (bookedGuests.length > 0) survivors.push(bookedGuests[0]);
+                let absentCount = 0;
+                bookedGuests.forEach(g => {
+                    if (Math.random() < 0.5) { g._cultAbsent = true; absentCount++; }
+                });
+                // 전부 결석하면 너무 비니 최소 1명은 출석시킴
+                if (absentCount === bookedGuests.length && bookedGuests.length > 0) {
+                    bookedGuests[Math.floor(Math.random() * bookedGuests.length)]._cultAbsent = false;
                 }
-                bookedGuests.length = 0;
-                survivors.forEach(g => bookedGuests.push(g));
+                // 비둘기를 5번째 손님 자리에 강제 배치 (특수 기부: 1억 지급)
+                const pigeonGuest = guests.find(g => g.id === 'pigeon');
+                if (pigeonGuest) {
+                    const cultPigeon = { ...pigeonGuest, _cultPigeon: true, visited: false };
+                    // 예약을 최소 5명까지 채운 뒤 5번째(index 4)를 비둘기로 지정
+                    while (bookedGuests.length < 4) {
+                        const cand = guests.find(g => !['streamer','lizard','crow','eagle','wolf','delivery','cat','mouse','pigeon'].includes(g.id)
+                            && !bookedGuests.some(b => b.id === g.id));
+                        if (!cand) break;
+                        bookedGuests.push({ ...cand, visited: false });
+                    }
+                    if (bookedGuests.length >= 4) bookedGuests.splice(4, 0, cultPigeon);
+                    else bookedGuests.push(cultPigeon);
+                }
             }
 
             // newspaper4(스트리밍 붐): 스트리머 반드시 예약 포함 + 제시가/감정가 2배
@@ -4770,7 +4871,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
         const guestDisplayNames = {
             crocodile: '악어', monkey: '원숭이', miners: '광부', pigeon: '비둘기',
             pig: '돼지', mouse: '쥐 & 뱀', cat: '고양이', crow: '까마귀', goat: '염소',
-            lizard: '도마뱀', streamer: '스트리머', eagle: '독수리', wolf: '늑대(강도)', artist: '예술가', delivery: '배달원'
+            lizard: '도마뱀', streamer: '스트리머', eagle: '독수리', wolf: '늑대(강도)', artist: '예술가', delivery: '배달원', idol: '아이돌'
         };
         let notebookPage = 0;       // 현재 보고 있는 페이지 인덱스
         let notebookList = [];      // 현재 수첩에 표시할 손님 목록
@@ -4795,6 +4896,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             wolf:       "흉포한 강도 늑대.\n· 돌발 출현, 소지금 20% 강탈\n· 직후 독수리에게 의뢰 가능\n· 의뢰 시 다음날 보상 기회",
             artist:     "자부심 강한 예술가.\n· 직접 그린 미술품만 판매\n· 매입가 5천만 고정\n· 진품 감정 시 1억 / 가품 1천만",
             delivery:   "매일 아침 가장 먼저 오는 배달원.\n· 그날의 신문을 전달\n· 신문에 따라 특별한 일이 일어남\n· 오늘의 신문은 좌측 아이콘으로 다시 볼 수 있음",
+            idol:       "거래 전 정중히 양해를 구하는 아이돌.\n· 등장 시 '거래 가능할까요?'라고 물음\n· 응하면 표정을 바꾸고 거래를 시작\n· (능력은 추후 공개)",
         };
 
         function buildNotebookPage(idx) {
@@ -4857,6 +4959,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                     {id:'wolf',      name:'늑대(강도)'},
                     {id:'artist',    name:'예술가'},
                     {id:'delivery',  name:'배달원'},
+                    {id:'idol',      name:'아이돌'},
                 ];
                 if (idx === 0) {
                     return `<div class="notebook-day">이번주 예약 손님</div>
@@ -4864,7 +4967,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                             페이지를 넘기면 각 손님 정보를 볼 수 있습니다
                         </div>
                         <div class="notebook-order" style="font-size:1.4cqw;line-height:2.1;color:#5a3a1a">
-                            총 15종류의 손님이 방문합니다.<br>
+                            총 16종류의 손님이 방문합니다.<br>
                             각 손님마다 고유한 거래 방식이 있으니<br>
                             잘 파악하고 협상해 보세요!
                         </div>`;
@@ -4910,7 +5013,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             const gameCanvas = document.getElementById('game-canvas');
             const inGame = !!(gameCanvas && getComputedStyle(gameCanvas).display !== 'none');
             // 인게임: 0=타이틀+예약손님들+마지막 방문기록 페이지, 로비: 0=타이틀+13캐릭터
-            notebookList = new Array(inGame ? gameState.originalDailyQueue.length + 1 : 16).fill(null);
+            notebookList = new Array(inGame ? gameState.originalDailyQueue.length + 1 : 17).fill(null);
             notebookPage = 0;
             renderNotebook();
             modal.classList.add('show');
@@ -5099,6 +5202,14 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                 id: 'delivery', frames: ['delivery.jpg'],
                 dialogue: { enter: ["오늘의 신문입니다!"], accept: [], reject: [] }
             },
+            {
+                id: 'idol', frames: ['idol1.jpg', 'idol2.jpg'], idol: true,
+                dialogue: {
+                    enter: ["거래 가능할까요?"],
+                    accept: ["감사합니다! 좋은 거래였어요.", "역시! 잘 부탁드려요~"],
+                    reject: ["아쉽네요...", "다음에 또 올게요."]
+                }
+            },
         ]; // <-- guests 배열이 끝나는 대괄호입니다.
 
         // ── 진가품 텍스트 묘사 풀 (스팀펑크풍 & 평어체 적용) ──
@@ -5122,7 +5233,6 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                     "고서적임에도 모든 페이지의 두께와 크기가 증기 절단기로 자른 듯 완벽하게 일치하여 이질적인 느낌이다.",
                     "오래된 철식 잉크가 톱니바퀴 설계도 주변으로 미세하게 번져 있어 형태를 제대로 알아보기 힘든 곳이 있다.",
                     "오래된 세월의 향기 대신, 책을 펼치면 기분 좋은 표백제 냄새가 은은하게 풍긴다.",    
-                    "표지 가죽이 깔끔하지만 군데군데 누군가 급하게 황동 징을 박아 덧댄 투박한 자국이 보인다.",  
                     "표지 모서리가 단 한 번도 펼치지 않은 새 책처럼 빳빳하고, 압축 종이 질감이 느껴진다.",            
                 ],
                 fake: [    
@@ -5142,7 +5252,6 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                 fake: [
                     "앞면에 정체불명의 낯선 초상화가 뚜렷하게 각인되어 있으며 어딘가 굉장히 익숙한 느낌이 든다.",
                     "뒷면에 숫자와 낯선 고대 왕국의 문자로 보이는 문자가 아주 선명하게 적혀 있다.",
-                    "황금빛으로 조잡하게 칠해져 있지만, 테두리의 톱니바퀴 모양을 보니 거리에서 흔히 쓰는 자판기용 동전이 확실하다.",
                     "무게가 가볍고, 차가운 질감이 느껴진다.",
                     "바닥에 던지면 '챙그랑' 하는 맑은 쇳소리가 울려 퍼진다."
                 ]
@@ -5153,14 +5262,12 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                     "바닥에 내려놓았을 때 쇳소리가 나지 않고 소리가 흙바닥에 먹히는 듯한 둔탁한 타격음이 발생한다.",
                     "측면에 새겨진 일련번호가 자동 타각기로 찍어낸 듯 완벽한 간격과 일정한 깊이로 정교하게 각인되어 있다.",
                     "모서리가 증기 절단기로 막 깎아낸 것처럼 예리하고 완벽한 직각을 이루며 흠집 하나 찾아볼 수 없다.",
-                    "손에 쥐었을 때 묵직하면서도 묘한 서늘함이 느껴지며, 체온과 동화되기까지 꽤 오랜 시간이 걸린다."
                 ],
                 fake: [
                     "금괴의 표면이 매끄럽지 않고 곰보처럼 파인 자국과 미세한 냉각 주름이 불규칙하게 퍼져 있다.",
                     "바닥에 내려놓았을 때 속이 빈 맑고 높은 금속음이 울려 퍼진다.",
                     "측면에 새겨진 일련번호의 깊이와 간격이 비뚤빼뚤하여 누군가 급하게 정으로 직접 내리친 듯하다.",
                     "모서리 부분이 둥글게 마모되거나 무언가에 강하게 찍혀 형태가 온전한 직육면체가 아니다.",
-                    "손에 쥐었을 때 묵직하면서도 묘한 서늘함이 느껴지며, 무언가 끈적거린다."
                 ]
             },
             'clock': {
@@ -5183,14 +5290,12 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                     "뚜껑을 열 때 관절 부위가 뻑뻑해 약간의 힘이 필요하며, 깊고 울림이 있는 묵직한 '핑' 쇳소리가 울린다.",
                     "톱니바퀴를 굴리면 강한 마찰음과 함께 타오르는 듯한 푸른빛 불꽃이 피어오른다.",
                     "모서리와 이음새가 기계에서 찍어낸 것 처럼 날카롭고 깨끗하며 전체적인 관리 상태가 좋다.",
-                    "손에 쥐었을 때 크기에 비해 유독 무겁고, 금속 특유의 서늘함이 체온과 섞이기까지 오랜 시간이 걸린다."
                 ],
                 fake: [
                     "황금빛을 내려 했으나, 동합금을 쓴 탓에 표면이 기묘하고 붉은 주황빛을 띤다.",
                     "뚜껑을 열 때 관절 부위가 뻑뻑해 약간의 힘이 필요하며, 짧고 가벼운 '틱' 소리가 난다.",
                     "톱니바퀴를 굴리면 약한 마찰음과 함께, 거칠고 정열정인 붉은색 불꽃이 피어오른다.",
                     "연료 주입구를 덮은 뚜껑의 나사결이 사람의 손을 많이 탄 듯 심하게 닳아 있다.",
-                    "손에 쥐었을 때 겉보기와 달리 가볍고, 금속 특유의 서늘함이 체온과 섞이기까지 큰 시간이 걸리지 않는다."
                 ]
             },
             'wine': {
@@ -5211,14 +5316,12 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                 real: [
                     "짙은 빛을 띠고 있으며, 인위적이며 크고 무식하게 주조되었다.",
                     "굵고 투박한 줄기에는 정교한 태엽과 톱니바퀴 문양이 양각되어 있어 귀족들의 사치품임을 증명한다.",
-                    "꽃잎의 두께가 제각각 다르고 투박하여, 억지로 빚어낸 거친 수공예의 흔적이 역력하다.",
                     "꽃받침 아래의 미세한 용두를 돌리면 황금 꽃잎이 묵직한 마찰음을 내며 느릿하고 기괴하게 전개된다.",
                     "손에 쥐었을 때 생화의 가벼움은 전혀 없고, 사람의 뼈를 부러뜨릴 수 있을 정도로 무식하게 무거운 중량이 느껴진다."
                 ],
                 fake: [
                     "화려한 광택을 띠고 있으나, 깊이감 없는 창백한 빛깔을 가지고 있다.",
                     "줄기 부분을 살짝 쥐어보면 금속의 묵직함 대신, 속이 빈 가벼운 느낌이 들며 건들면 찌그러질 듯 삐걱거린다.",
-                    "꽃잎의 두께와 곡률이 한 치의 오차도 없이 동일하여, 공장의 증기 프레스로 수천 개씩 찍어낸 조잡한 양산품의 형태를 띤다.",
                     "꽃받침 아래에 기계 장치가 달려 있으나, 돌려보아도 작동을 하지 않고 내부에서 헛도는 소리만 날 뿐이다.",
                     "재물을 과시하려는 듯한 과장된 크기에 비해 무게가 가벼워 휴대하기 편안하다."
                 ]
@@ -5228,14 +5331,12 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                     "바깥쪽 모암 부분에 흙과 먼지가 켜켜이 퇴적되어 굳은 흉측한 층리 결이 남아 있다.",
                     "안쪽 결정들의 크기가 들쭉날쭉하며, 불빛을 받는 각도에 따라 색이 거무튀튀하고 칙칙하게 변하기도 한다.",
                     "결정의 뿌리 쪽으로 갈수록 색이 탁해지고 불투명해지는 색들의 불규칙한 그라데이션이 보인다.",
-                    "결정과 겉의 모암이 만나는 경계선이 복잡하게 얽혀 특유의 질감이 두드러진다.",
                     "손으로 표면을 훑어보면 깎아지른 듯 날카로우면서도 불규칙한 결정의 단면이 손끝을 베일 듯 무자비하게 스친다."
                 ],
                 fake: [
                     "바깥쪽 모암 부분이 돌가루를 반듯하게 뭉쳐놓은 것처럼 질감이 균일하고 밋밋하여 조형물 같은 느낌을 준다.",
                     "안쪽 결정들의 크기와 밖으로 튀어나온 각도 메우 투박하여 길거리에 떨어진 돌덩이 같다.",
                     "결정의 뾰족한 끝부분이 짙은 회색이고 안쪽 뿌리는 완전히 불투명하여, 인공 염색액에 담갔다 뺀 흔적이 다분하다.",
-                    "결정과 겉의 모암의 경계선이 다듬은 것처럼 일직선으로 뚜렷하고 깔끔하게 나뉘어 있다.",
                     "결정의 표면이 매끄럽게 연마 처리를 마친 것처럼 날카로움 없이 둥글고 부드럽다."
                 ]
             },
@@ -5244,18 +5345,39 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                     "렌즈에 어떠한 도수나 굴절률이 없으며 단순 자기 과시용 장식품으로 쓰이는 듯하다.",
                     "프레임 안쪽에 장인의 이니셜이 뾰족한 끌로 억지로 찍어낸 듯 깊이가 다르고 삐뚤빼뚤하게 새겨져 있다.",
                     "수십 년 된 물건이라는 설명이 무색하게 프레임에 녹슨 곳 하나 없이 관리가 잘 되어 깨끗하다.",
-                    "피부와 직접 닿는 프레임 부분의 황동 도금이 사람의 땀과 증기에 의해 은은하게 녹슬고 마모되어 있다.",
                     "렌즈를 감싸는 태엽과 프레임의 장력이 미세하게 약해져 있어, 흔들면 렌즈가 아주 살짝 달그락거리는 소리가 난다.",
-                    "콧대 패드 부분의 가죽이 뻣뻣함하고 관리를 위해 사용한 듯한 화학 약품 냄새가 난다."
                 ],
                 fake: [
                     "렌즈를 통해 글씨를 보면 굴절이 들어가 있어 시야가 묘하게 왜곡되고 살짝 어지럽다.",
                     "프레임 안쪽에 장인의 이니셜이 뾰족한 끌로 억지로 찍어낸 듯 깊이가 다르고 삐뚤빼뚤하게 새겨져 있다.",
                     "피부와 직접 닿는 프레임 부분의 황동 도금이 사람의 땀과 증기에 의해 은은하게 녹슬고 마모되어 있다.",
                     "렌즈와 프레임 사이의 유격이 전혀 없이, 빈틈없이 고정되어 있다.",
-                    "콧대에 닿는 패드 부분의 가죽이 오랜 사용으로 마모되어 누군가의 피부색에 가깝게 짙게 땀에 전 자국이 있다."
                 ]
-            }
+            },
+            'art1': {
+            real: [
+                "캔버스의 보존 상태가 방금 붓칠을 끝낸 것처럼 흠잡을 데 없이 깨끗하다.",
+                "건물 사이로 붉게 타오르는 노을의 색채가 캔버스 위에서 생생하게 살아 숨 쉰다.",
+                "오랜 시간이 흘렀음에도 물감이 갈라지거나 훼손된 흔적을 전혀 찾아볼 수 없다."
+                ],
+            fake: [
+                "캔버스 표면과 테두리 부분이 심하게 해져 있어 거칠게 다뤄진 흔적이 역력하다.",
+                "그림 전체에 묵은 먼지와 때가 잔뜩 껴 있어 붉은 노을의 색이 우중충하고 탁하게 보인다.",
+                "캔버스 뒷면을 만져보면 습한 지하실에 오래 방치된 듯 축축하고 불쾌한 질감이 느껴진다."
+                ]
+            },
+            'art2': {
+            real: [
+                "조각상의 겉면이 아주 미세한 흠집조차 없이 매끄럽고 정교하게 연마되어 있다.",
+                "하늘을 향해 뻗은 주먹과 그것을 끌어내리는 검은 손들의 역동적인 디테일이 완벽하게 보존되어 있다.",
+                "어느 각도에서 보아도 균열이나 파손이 전혀 없는 최상급의 상태를 유지하고 있다."
+                ],
+            fake: [
+                "해방을 상징하는 거창한 묘사와 다르게, 조각상 겉면 전체에 흉측한 금이 수없이 많이 가 있다.",
+                "조악한 재질로 대충 빚어내어, 살짝만 건드려도 겉면이 바스라지며 쪼개질 듯 위태롭다.",
+                "보관 상태가 엉망이어서 표면 곳곳이 떨어져 나간 형편없는 모조품의 형태를 띤다."
+                ]
+            },
         };
 
         const items = [
@@ -5304,10 +5426,10 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             { id:'goa2', owner:'goat', cat:'사치품', baseImg:'monocle', authentic:false, name:"황동 프레임 명품 모노클", desc:"귀족이나 회계사들이 한쪽 눈에 끼는 지적이고 고급스러운 외눈안경의 레플리카 버전." },
             // ── 예술가 전용 (단일 이미지, 진가품 접미사 없음) ──
             // ── 예술가 전용 (단일 이미지, 각 작품마다 진품/가품 존재) ──
-            { id:'art1r', owner:'artist', cat:'미술품', baseImg:'art1', authentic:true,  name:"예술가의 회화 작품", desc:"붓 터치 하나하나에 혼이 담긴, 진품으로 인정받는 회화 작품." },
-            { id:'art1f', owner:'artist', cat:'미술품', baseImg:'art1', authentic:false, name:"예술가의 회화 작품", desc:"그럴듯해 보이지만 어딘가 어설픈, 가치가 낮은 모작." },
-            { id:'art2r', owner:'artist', cat:'미술품', baseImg:'art2', authentic:true,  name:"예술가의 회화 작품", desc:"독창적인 색채와 구도가 살아있는, 진품으로 인정받는 회화 작품." },
-            { id:'art2f', owner:'artist', cat:'미술품', baseImg:'art2', authentic:false, name:"예술가의 회화 작품", desc:"원작을 흉내 냈지만 디테일이 떨어지는, 가치가 낮은 모작." }
+            { id: 'art1_real', type: 'art', authentic: true, name: "황혼의 틈새", baseImg: 'art1', desc: "건물 사이로 붉게 물든 노을이 인상적인 풍경화. 보존 상태가 아주 깨끗하고 훌륭하다.", owner: "artist", width: "16cqw", height: "auto" },
+            { id: 'art1_fake', type: 'art', authentic: false, name: "황혼의 틈새", baseImg: 'art1', desc: "건물 사이로 노을이 보이는 그림. 하지만 캔버스가 심하게 해져 있고 묵은 먼지가 잔뜩 껴 있다.", owner: "artist", width: "16cqw", height: "auto" },
+            { id: 'art2_real', type: 'art', authentic: true, name: "억압과 해방", baseImg: 'art2', desc: "하늘을 향해 주먹을 뻗는 자와 그를 끌어내리는 검은 손들을 묘사한 조각상. 매끄럽고 완벽한 상태다.", owner: "artist", width: "12cqw", height: "auto" },
+            { id: 'art2_fake', type: 'art', authentic: false, name: "억압과 해방", baseImg: 'art2', desc: "해방을 쟁취하려는 거창한 조각상. 하지만 겉면 전체에 흉측하게 금이 엄청나게 많이 가 있다.", owner: "artist", width: "12cqw", height: "auto" },
         ];
 
         // ════════════ 이미지 프리로드 (GitHub Pages 등 배포 환경에서 교체 시 깜빡임 방지) ════════════
@@ -5332,7 +5454,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                 'crocodile.jpg','crocodile2.jpg','pig.jpg','pig2.jpg',
                 'steamer1.jpg','steamer2.jpg','steamer3.jpg','lizard1.jpg','lizard2.jpg',
                 'eagle.jpg','wolf.jpg','artist.jpg','cat.jpg','mouse_and_snake.jpg',
-                'delivery.jpg','newspaper1.jpg','newspaper2.jpg','newspaper3.jpg','newspaper4.jpg',
+                'delivery.jpg','newspaper1.jpg','newspaper2.jpg','newspaper3.jpg','newspaper4.jpg','idol1.jpg','idol2.jpg',
                 'monkey.jpg','miners.jpg','pigeon.jpg','crow.jpg','goat.jpg',
                 'owner.jpg','owner2.jpg','judge_woman.jpg',
                 'main_background2.jpg','story_background.jpg','background.jpg',
@@ -6050,6 +6172,31 @@ function spawnEagle_followup(guest) {
         }
 
         // ════════════ 배달부 (오늘의 신문 전달) ════════════
+        // ── 사이비 신문(newspaper3): 비둘기가 5번째 손님으로 등장해 1억 기부 ──
+        function spawnCultPigeon(guest) {
+            _eagleHideLeftIcons();
+            const div = _spawnGuestDiv('pigeon.jpg');
+            gameState._eagleDiv = div;
+            setTimeout(() => {
+                _eagleBubble('"사이비가 판치는 세상이지만, 부디 주님의 가호가 함께하길... 작은 정성입니다."', [
+                    { label: '감사히 받겠습니다.', onclick: '_cultPigeonDonate()' }
+                ]);
+            }, 950);
+        }
+        function _cultPigeonDonate() {
+            gameState.money += 100000000;
+            updateMoneyCounter('비둘기의 기부');
+            _eagleBubble('"부디 흔들리지 마시길... 그럼, 이만."', [
+                { label: '안녕히 가세요.', onclick: '_exitCultPigeon()' }
+            ]);
+        }
+        function _exitCultPigeon() {
+            _eagleClearBubble();
+            if (gameState._eagleDiv) exitGuest(gameState._eagleDiv);
+            gameState._eagleDiv = null;
+            setTimeout(() => { resetGameTurn(); }, 800);
+        }
+
         function spawnDelivery(guest) {
             _eagleHideLeftIcons();
             const div = _spawnGuestDiv('delivery.jpg');
@@ -6077,7 +6224,7 @@ function spawnEagle_followup(guest) {
             let msg;
             if (np === 'newspaper1') msg = '"오늘은 폭동의 날입니다. 강도가 들이닥쳐 소지금의 40%를 빼앗아갈 테니 조심하세요!"';
             else if (np === 'newspaper2') msg = '"예술품 가격이 치솟고 있어요. 오늘 예술가가 찾아오는데, 작품값이 1억이지만 진품이면 2억, 가품이면 4천만에 감정된다네요."';
-            else if (np === 'newspaper3') msg = '"사이비 교단 탓에 다들 외출을 꺼려요. 오늘은 예약 손님이 저마다 안 올 수도 있어요. 대신 비둘기의 성경을 가지고 있다면 기부금이 1억으로 늘어난답니다."';
+            else if (np === 'newspaper3') msg = '"사이비 교단 탓에 다들 외출을 꺼려요. 오늘은 예약 손님이 저마다 안 올 수도 있어요. 대신 다섯 번째 손님으로 신실한 비둘기가 찾아와 1억을 기부한답니다."';
             else if (np === 'newspaper4') msg = '"스트리밍이 대유행이에요! 오늘 스트리머가 꼭 들르는데, 제시가도 감정가도 두 배랍니다. 대신 돌발 손님이 들이닥칠 확률도 크게 오르니 주의하세요."';
             else msg = '"오늘도 좋은 거래 되세요!"';
             _eagleBubble(msg, [
@@ -6221,7 +6368,7 @@ function spawnEagle_followup(guest) {
             queue.forEach(guest => {
                 if (!guest || guest._assignedItem) return;
                 if (['eagle','wolf','crow','cat','mouse','delivery'].includes(guest.id)) return;
-                if (guest._eagleAsk || guest._eagleFollowup || guest._robber || guest._robberAsk || guest._robberReturn || guest._delivery) return;
+                if (guest._eagleAsk || guest._eagleFollowup || guest._robber || guest._robberAsk || guest._robberReturn || guest._delivery || guest._cultPigeon) return;
 
                 let itemData, validItems = [];
                 if (guest.id === 'monkey') {
@@ -6310,6 +6457,22 @@ function generateGuest() {
             gameState.lastGuest = guest.id;
             gameState.currentGuestData = guest;
 
+            // ── 사이비 신문(newspaper3)으로 결석한 예약 손님: 등장시키지 않고 안내 후 다음 턴 ──
+            if (guest._cultAbsent) {
+                if (typeof closeStageCurtain === 'function') closeStageCurtain();   // 열렸을 수 있는 커튼 닫기
+                // 결석도 '응대한 예약 손님'으로 카운트
+                gameState._bookedServedToday = (gameState._bookedServedToday || 0) + 1;
+                updateDayIndicator();
+                if (!gameState.todayVisitLog) gameState.todayVisitLog = [];
+                gameState.todayVisitLog.push({ id: guest.id, kind: '결석(사이비)' });
+                showFloatingText('사이비 교단을 꺼려하는 손님이 오지 않았습니다..', '#c8b0e0');
+                setTimeout(() => {
+                    if (gameState.dailyGuestsQueue.length === 0) finishAllDeals();
+                    else resetGameTurn();
+                }, 1400);
+                return;
+            }
+
             // ── 방문 기록 (돌발/특수 포함) ──
             if (!gameState.todayVisitLog) gameState.todayVisitLog = [];
             let _visitKind = '예약';
@@ -6342,6 +6505,12 @@ function generateGuest() {
             gameState._snakeBothered = (guest.id === 'mouse') ? false : true;
 
             // ── 배달부: 물건 없이 등장 → 오늘의 신문 전달 ──
+            // ── 사이비 신문(newspaper3): 비둘기가 5번째 손님으로 등장 → 1억 기부 ──
+            if (guest._cultPigeon) {
+                spawnCultPigeon(guest);
+                return;
+            }
+
             if (guest.id === 'delivery' || guest._delivery) {
                 spawnDelivery(guest);
                 return;
@@ -6603,6 +6772,16 @@ function generateGuest() {
                 return;
             }
 
+            // ── 아이돌: 등장 시 "거래 가능할까요?" 질문 → '가능합니다' 클릭 시 idol2로 전환 후 계약서 ──
+            if (guest.idol) {
+                gameState.idolGuestDiv = guestDiv;
+                gameState.idolFrames = guest.frames;
+                deskItem.classList.remove('show');
+                document.getElementById('game-document').style.display = 'none';
+                showIdolQuestion();
+                return;
+            }
+
             // ── 비둘기 성경 기부 방문 ──
             if (guest._bibleVisit) {
                 deskItem.classList.remove('show');
@@ -6615,8 +6794,8 @@ function generateGuest() {
                     sb3.classList.add('visible');
                 }
                 // 기부금 지급 (사이비 신문3의 날엔 1억으로 증가)
-                const donate = gameState._pigeonBigDonationToday ? 100000000 : 30000000;
-                const donateText = gameState._pigeonBigDonationToday ? '+₩100,000,000' : '+₩30,000,000';
+                const donate = 30000000;
+                const donateText = '+₩30,000,000';
                 if (sb3) {
                     sb3.innerHTML = `<div style="font-size:1.2cqw;font-weight:bold;text-align:center;line-height:1.8">
                         "주님의 은총이 함께하시길...<br>작은 정성이지만 받아주세요."<br>
@@ -6696,6 +6875,37 @@ function generateGuest() {
             // ── 뱀+쥐: 위에서 처리됨 ──
         }
         
+        // ── 아이돌 등장 질문: "거래 가능할까요?" ──
+        function showIdolQuestion() {
+            const sb = document.getElementById('speech-bubble');
+            if (!sb) return;
+            sb.innerHTML =
+                '<div class="streamer-q">"거래 가능할까요?"</div>' +
+                '<div class="streamer-btns">' +
+                  '<button class="choice-btn-yes" onclick="idolAnswer()">가능합니다.</button>' +
+                '</div>';
+            sb.style.pointerEvents = 'auto';
+            sb.classList.add('visible');
+        }
+        // ── 아이돌 응답 처리: idol2로 전환 후 계약서 표시 ──
+        function idolAnswer() {
+            const sb = document.getElementById('speech-bubble');
+            const guestDiv = gameState.idolGuestDiv;
+            // idol1 → idol2 이미지 전환 (다른 손님과 동일한 spinGuest 애니메이션)
+            if (guestDiv && gameState.idolFrames && gameState.idolFrames[1]) {
+                spinGuest(guestDiv, gameState.idolFrames[1]);
+            }
+            if (sb) { sb.innerHTML = ''; sb.style.pointerEvents = 'none'; sb.classList.remove('visible'); }
+            // 잠시 후 계약서/물건 표시 (일반 거래 진행)
+            setTimeout(() => {
+                const deskItem = document.getElementById('desk-item');
+                if (deskItem) deskItem.classList.add('show');
+                const doc = document.getElementById('game-document');
+                if (doc) { doc.style.display = 'flex'; doc.style.visibility = 'visible'; }
+                initSignatureCanvas(); initTearHandler();
+            }, 500);
+        }
+
         // ── 스트리머 방송 허락 질문 ──
         function showStreamerQuestion() {
             const sb = document.getElementById('speech-bubble');
@@ -9310,59 +9520,169 @@ function goToLobby() {
             }
         }
 
-        function showLighter() {
-            // 상호작용 미완료 시 라이터 표시 안 함 (상호작용 무시 방지)
-            if (gameState.lastGuest === 'cat' && gameState._catAnswered === false) return;
-            if (gameState.lastGuest === 'mouse' && gameState._snakeBothered === false) return;
-            const t = document.getElementById('lighter-trigger');
-            if (t) t.classList.add('visible');
-            const lbl = document.getElementById('lighter-label');
-            if (lbl) lbl.classList.add('visible');
-            
-            // ★ 명단 버튼도 라이터와 함께 등장
-            const lb = document.getElementById('ledger-btn');
-            if (lb && lb.classList.contains('game-pos')) lb.classList.add('visible');
+function showLighter() {
+    // 상호작용 미완료 시 라이터 표시 안 함 (상호작용 무시 방지)
+    if (gameState.lastGuest === 'cat' && gameState._catAnswered === false) return;
+    if (gameState.lastGuest === 'mouse' && gameState._snakeBothered === false) return;
 
-            // ★ 돋보기도 라이터와 함께 등장 (상호작용 잠금 조건 동일)
-            const mb = document.getElementById('magnifier-btn');
-            const ml = document.getElementById('magnifier-btn-label');
-            if (mb) mb.classList.add('visible');
-            if (ml) ml.classList.add('visible');
+    const t = document.getElementById('lighter-trigger');
+    if (t) t.classList.add('visible');
+    const lbl = document.getElementById('lighter-label');
+    if (lbl) lbl.classList.add('visible');
 
-            // ★ 오늘의 신문 아이콘도 함께 등장 (배달부가 이미 다녀간 날)
-            if (gameState._deliveryDone && gameState.todayNewspaper) _showNewspaperIcon();
+    // ★ 폴더 아이콘 등장
+    const ft = document.getElementById('folder-trigger');
+    if (ft) ft.classList.add('visible');
+    const fl = document.getElementById('folder-label');
+    if (fl) fl.classList.add('visible');
+
+    // 명단 버튼 내부적으로 visible 추가 (폴더에 담긴 상태)
+    const lb = document.getElementById('ledger-btn');
+    if (lb && lb.classList.contains('game-pos')) lb.classList.add('visible');
+
+    const mb = document.getElementById('magnifier-btn');
+    const ml = document.getElementById('magnifier-btn-label');
+    if (mb) mb.classList.add('visible');
+    if (ml) ml.classList.add('visible');
+
+    // 신문 아이콘 내부적으로 visible 추가 (폴더에 담긴 상태)
+    if (gameState._deliveryDone && gameState.todayNewspaper) _showNewspaperIcon();
+}
+
+function hideLighter() {
+    const t = document.getElementById('lighter-trigger');
+    if (t) {
+        t.classList.remove('visible');
+        t.dataset.used = 'false';
+        t.style.pointerEvents = 'auto';
+    }
+    const lbl = document.getElementById('lighter-label');
+    if (lbl) lbl.classList.remove('visible');
+
+    // ★ 폴더 아이콘 퇴장
+    const ft = document.getElementById('folder-trigger');
+    if (ft) ft.classList.remove('visible', 'expanded');
+    const fl = document.getElementById('folder-label');
+    if (fl) fl.classList.remove('visible');
+
+    const anim = document.getElementById('lighter-animation');
+    if (anim) {
+        anim.classList.remove('show', 'hide');
+    }
+    document.querySelectorAll('.fire-frame').forEach(img => img.classList.remove('active'));
+    try { stopFlameLoop(); } catch(e){}
+
+    const lb = document.getElementById('ledger-btn');
+    if (lb) {
+        lb.classList.remove('visible', 'expanded');
+        lb.style.left = ''; // 로비 복귀를 위해 초기화
+    }
+    const ll = document.getElementById('ledger-btn-label');
+    if (ll) {
+        ll.classList.remove('expanded');
+        ll.style.left = '';
+    }
+
+    if (typeof magnifierOn !== 'undefined' && magnifierOn) toggleMagnifier();
+    const mb = document.getElementById('magnifier-btn');
+    const ml = document.getElementById('magnifier-btn-label');
+    if (mb) mb.classList.remove('visible', 'active');
+    if (ml) ml.classList.remove('visible');
+
+    _hideNewspaperIcon();
+}
+
+// 신문 아이콘 표시/숨김
+function _showNewspaperIcon() {
+    const n = document.getElementById('newspaper-trigger');
+    const l = document.getElementById('newspaper-label');
+    if (n) n.classList.add('visible');
+    if (l) l.classList.add('visible');
+}
+function _hideNewspaperIcon() {
+    const n = document.getElementById('newspaper-trigger');
+    const l = document.getElementById('newspaper-label');
+    if (n) {
+        n.classList.remove('visible', 'expanded');
+        n.style.left = '';
+    }
+    if (l) {
+        l.classList.remove('visible', 'expanded');
+        l.style.left = '';
+    }
+}
+
+// ════════ 폴더(메뉴) 슬라이드 작동 스크립트 ════════
+let folderExpandTimer = null;
+
+function expandFolder() {
+    clearTimeout(folderExpandTimer);
+    const folder = document.getElementById('folder-trigger');
+    if (!folder || !folder.classList.contains('visible')) return;
+    
+    folder.classList.add('expanded');
+    
+    const hasNews = (gameState._deliveryDone && gameState.todayNewspaper);
+    const newsBtn = document.getElementById('newspaper-trigger');
+    const newsLbl = document.getElementById('newspaper-label');
+    const ledgerBtn = document.getElementById('ledger-btn');
+    const ledgerLbl = document.getElementById('ledger-btn-label');
+    
+    let offset = 10.5; // 슬라이드 될 거리
+    
+    if (hasNews && newsBtn && newsBtn.classList.contains('visible')) {
+        newsBtn.classList.add('expanded');
+        newsBtn.style.left = offset + 'cqw';
+        if (newsLbl) {
+            newsLbl.classList.add('expanded');
+            newsLbl.style.left = (offset - 1) + 'cqw';
         }
-        function hideLighter() {
-            const t = document.getElementById('lighter-trigger');
-            if (t) {
-                t.classList.remove('visible');
-                t.dataset.used = 'false';
-                t.style.pointerEvents = 'auto';
-            }
-            const lbl = document.getElementById('lighter-label');
-            if (lbl) lbl.classList.remove('visible');
-            const anim = document.getElementById('lighter-animation');
-            if (anim) {
-                anim.classList.remove('show');
-                anim.classList.remove('hide');
-            }
-            document.querySelectorAll('.fire-frame').forEach(img => img.classList.remove('active'));
-            stopFlameLoop();
-
-            // ★ 명단 버튼도 라이터와 함께 퇴장
-            const lb = document.getElementById('ledger-btn');
-            if (lb) lb.classList.remove('visible');
-
-            // ★ 돋보기도 라이터와 함께 퇴장 (열려 있으면 닫고, 슬라이드 다운으로 사라짐)
-            if (typeof magnifierOn !== 'undefined' && magnifierOn) toggleMagnifier();
-            const mb = document.getElementById('magnifier-btn');
-            const ml = document.getElementById('magnifier-btn-label');
-            if (mb) { mb.classList.remove('visible'); mb.classList.remove('active'); }
-            if (ml) ml.classList.remove('visible');
-
-            // ★ 오늘의 신문 아이콘도 함께 퇴장
-            _hideNewspaperIcon();
+        offset += 6.5; 
+    }
+    
+    // 명단 버튼 (인게임 상태일 때 무조건 표시되도록 조건 수정)
+    if (ledgerBtn && ledgerBtn.classList.contains('game-pos')) {
+        ledgerBtn.classList.add('expanded');
+        ledgerBtn.style.left = offset + 'cqw';
+        if (ledgerLbl) {
+            ledgerLbl.classList.add('expanded');
+            ledgerLbl.style.left = (offset - 0.7) + 'cqw';
         }
+    }
+}
+
+function collapseFolder() {
+    folderExpandTimer = setTimeout(() => {
+        const folder = document.getElementById('folder-trigger');
+        if (folder) folder.classList.remove('expanded');
+        
+        const newsBtn = document.getElementById('newspaper-trigger');
+        const newsLbl = document.getElementById('newspaper-label');
+        const ledgerBtn = document.getElementById('ledger-btn');
+        const ledgerLbl = document.getElementById('ledger-btn-label');
+        
+        if (newsBtn) {
+            newsBtn.classList.remove('expanded');
+            newsBtn.style.left = '4.5cqw';
+        }
+        if (newsLbl) {
+            newsLbl.classList.remove('expanded');
+            newsLbl.style.left = '4.5cqw';
+        }
+        if (ledgerBtn && ledgerBtn.classList.contains('game-pos')) {
+            ledgerBtn.classList.remove('expanded');
+            ledgerBtn.style.left = '4.5cqw';
+        }
+        if (ledgerLbl && ledgerBtn.classList.contains('game-pos')) {
+            ledgerLbl.classList.remove('expanded');
+            ledgerLbl.style.left = '4cqw';
+        }
+    }, 250);
+}
+
+function keepFolderExpanded() {
+    clearTimeout(folderExpandTimer);
+}
         // 새 프레임을 위에 덮어쓰는 방식 — 두 프레임이 동시에 보이지 않아 깜빡임 없음
         function setFireFrame(n) {
             const all = document.querySelectorAll('.fire-frame');
