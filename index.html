@@ -447,9 +447,9 @@
             animation: bubblePop 0.3s cubic-bezier(0.34,1.56,0.64,1);
         }
         /* 주인장 머리 위 오른쪽 */
-        #owner-bubble { bottom: 68cqh; left: 56cqw; }
-        /* 감정사 머리 위 오른쪽 */
-        #appraiser-bubble { bottom: 70cqh; left: 56cqw; }
+        #owner-bubble { bottom: 64cqh; left: 56cqw; }
+        /* 감정사 머리 위 */
+        #appraiser-bubble { bottom: 66cqh; left: 48cqw; }
         @keyframes bubblePop {
             from { transform: scale(0.6); opacity: 0; }
             to   { transform: scale(1);   opacity: 1; }
@@ -509,10 +509,10 @@
         }
         /* 주인장: 말풍선 왼쪽 아래에서 캐릭터(왼쪽 아래)를 향해 뻗음 */
         #owner-bubble::after { left: 1.6cqw; }
-        /* 감정사: 오른쪽 아래에서 캐릭터를 향함 (좌우 반전 삼각형) */
+        /* 감정사: 왼쪽 아래에서 캐릭터(왼쪽 아래)를 향해 뻗음 */
         #appraiser-bubble::after {
-            left: auto; right: 1.6cqw;
-            clip-path: polygon(0 0, 100% 0, 82% 100%);
+            left: 1.6cqw; right: auto;
+            clip-path: polygon(0 0, 100% 0, 18% 100%);
         }
         /* hover */
         #owner-bubble:hover, #appraiser-bubble:hover {
@@ -825,6 +825,11 @@
             background-size: 78%;
             top: -8cqh;
         }
+        /* 아이돌은 살짝 축소하고 위로 올림 */
+        .game-guest.guest-idol {
+            background-size: 80%;
+            top: -11cqh;
+        }
         /* 악어는 이미지가 아래로 치우쳐 위로 올림 (악어1/악어2 동일 위치) */
         .game-guest.guest-crocodile {
             top: -6cqh;
@@ -938,7 +943,7 @@
 /* ── 서브 메뉴 폴더 (신문, 명단 보관) ── */
         #folder-trigger {
             position: absolute;
-            bottom: 34cqh; left: 4.75cqw;
+            bottom: 33cqh; left: 4.75cqw;
             width: 4.5cqw; height: 4.5cqw;
             z-index: 200;
             cursor: pointer;
@@ -958,7 +963,8 @@
 
         #folder-label {
             position: absolute;
-            bottom: 30.5cqh; left: 4cqw; width: 6cqw;
+            bottom: 30.5cqh; left: 3.5cqw; width: 7cqw;
+            z-index: 9600;
             text-align: center; color: #fcd53f; font-family: 'Georgia', serif;
             font-size: 0.85cqw; font-weight: bold; letter-spacing: 0.1cqw;
             text-shadow: 0 0.15cqw 0.4cqw #000, 0 0 0.6cqw rgba(0,0,0,0.9);
@@ -971,7 +977,7 @@
         /* ── 오늘의 신문 아이콘 (폴더 내부에 수납됨) ── */
         #newspaper-trigger {
             position: absolute;
-            bottom: 34cqh; left: 4.5cqw;
+            bottom: 33cqh; left: 4.5cqw;
             width: 4cqw; height: 10cqh;
             cursor: pointer; z-index: 190;
             opacity: 0; pointer-events: none;
@@ -994,7 +1000,7 @@
         
         #newspaper-label {
             position: absolute;
-            bottom: 30.5cqh; left: 4.5cqw; width: 6cqw;
+            bottom: 29.5cqh; left: 4.5cqw; width: 6cqw;
             text-align: center; color: #fcd53f; font-size: 0.85cqw; font-weight: bold;
             font-family: 'Georgia', serif; letter-spacing: 0.1cqw;
             text-shadow: 0 0 0.5cqw #000, 0 0.2cqw 0.4cqw rgba(0,0,0,0.9);
@@ -1010,6 +1016,107 @@
             background: rgba(10,6,3,0.78); backdrop-filter: blur(0.4cqw);
         }
         #newspaper-modal.show { display: flex; }
+
+        /* ── 조커 미니게임 (서류 위치에 표시) ── */
+        #joker-modal {
+            position: absolute; top: 10cqh; right: 5cqw; width: 38cqw; height: 80cqh;
+            z-index: 9750;
+            display: none; align-items: center; justify-content: flex-start; flex-direction: column;
+        }
+        #joker-modal.show { display: flex; animation: stdOverlayFade 0.3s ease both; }
+        #joker-modal-inner {
+            position: relative; display: flex; flex-direction: column; align-items: center;
+            width: 100%; height: 100%; padding: 2.5cqh 2cqw; box-sizing: border-box;
+            background: linear-gradient(160deg, #2a0808 0%, #4a0e0e 100%);
+            border: 0.25cqw solid #c0303a; border-radius: 1cqw;
+            box-shadow: 0 1cqw 3cqw rgba(0,0,0,0.7), inset 0 0 3cqw rgba(192,48,58,0.2);
+            animation: stdModalPop 0.35s cubic-bezier(0.34,1.45,0.64,1) both;
+            overflow: hidden;
+        }
+        #joker-title {
+            font-family: 'Georgia', serif; font-size: 1.8cqw; font-weight: bold;
+            color: #f0d0d0; letter-spacing: 0.2cqw; margin-bottom: 0.8cqh;
+            text-shadow: 0 0.2cqw 0.5cqw #000;
+        }
+        #joker-info {
+            font-size: 0.95cqw; color: #ffe0a0; margin-bottom: 1.5cqh; text-align: center;
+            line-height: 1.5; min-height: 3cqh;
+        }
+        #joker-board {
+            display: grid; gap: 0.7cqw; justify-content: center; margin-bottom: 1.2cqh;
+        }
+        #joker-msg {
+            font-size: 1.05cqw; color: #fff; min-height: 2.5cqh; text-align: center;
+            font-weight: bold; text-shadow: 0 0.15cqw 0.4cqw #000;
+            margin-top: auto;
+        }
+        /* 카드 */
+        .jk-card {
+            width: 7cqw; height: 9.5cqh; border-radius: 0.6cqw;
+            background: #f5f0e6; border: 0.2cqw solid #1a1a1a;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; position: relative;
+            transition: transform 0.45s cubic-bezier(0.4,0,0.2,1), box-shadow 0.2s;
+            box-shadow: 0 0.3cqw 0.7cqw rgba(0,0,0,0.5);
+        }
+        .jk-card:hover { box-shadow: 0 0.4cqw 1.2cqw rgba(255,200,80,0.6); }
+        .jk-card.flipped { background: #b01f2a; }
+        .jk-card .jk-face {
+            font-size: 2.6cqw; font-weight: bold; color: #1a1a1a;
+            backface-visibility: hidden;
+        }
+        .jk-card.flipped .jk-face-back { display: none; }
+        .jk-card:not(.flipped) .jk-face-front { display: none; }
+        .jk-card .jk-face-back {
+            font-size: 2cqw; color: #f0c0c0; font-family: 'Georgia', serif;
+        }
+        .jk-card.matched { opacity: 0.35; pointer-events: none; }
+        .jk-card.locked { pointer-events: none; }
+        /* 카드 야바위 그리드 (absolute 위치 이동) */
+        #joker-board.card-mode {
+            display: block; position: relative;
+            width: 31cqw; height: 32cqh; margin: 1cqh auto;
+        }
+        #joker-board.card-mode .jk-card {
+            position: absolute;
+            transition: left 0.5s cubic-bezier(0.45,0,0.55,1), top 0.5s cubic-bezier(0.45,0,0.55,1), box-shadow 0.2s;
+        }
+        /* 컵 (야바위: absolute 위치 이동) */
+        #joker-board.cup-mode {
+            display: block; position: relative;
+            width: 34cqw; height: 22cqh; margin: auto;
+        }
+        .jk-cup {
+            position: absolute; top: 8cqh;
+            width: 6cqw; height: 13cqh; cursor: pointer;
+            transition: left 0.35s cubic-bezier(0.45,0,0.55,1);
+            z-index: 2;
+        }
+        /* 공: 컵 안쪽 바닥에 위치, 컵 본체(상위 레이어)에 가려짐 */
+        .jk-cup .jk-ball-vis {
+            position: absolute; bottom: 0.5cqh; left: 50%; transform: translateX(-50%);
+            width: 3cqw; height: 3cqw; border-radius: 50%;
+            background: radial-gradient(circle at 60% 35%, #fffde0, #f5d000 55%, #b8860b);
+            box-shadow: 0 0 1cqw rgba(245,208,0,0.8);
+            z-index: 1;
+            opacity: 0;   /* 평소 숨김, 컵을 들 때만 표시 */
+        }
+        .jk-cup.lifted .jk-ball-vis { opacity: 1; }
+        .jk-cup .cup-body {
+            position: absolute; inset: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(160deg, #d04040 0%, #8a1818 100%);
+            border: 0.2cqw solid #f0c0c0;
+            border-radius: 0.6cqw 0.6cqw 1.2cqw 1.2cqw;
+            clip-path: polygon(15% 0, 85% 0, 100% 100%, 0% 100%);
+            box-shadow: inset 0 0 1cqw rgba(0,0,0,0.4);
+            z-index: 2;   /* 공보다 위 → 공을 가림 */
+            transition: transform 0.25s ease;
+        }
+        /* 컵을 들면 컵 본체만 위로 올라가고, 공은 바닥에 남아 드러남 */
+        .jk-cup.lifted .cup-body { transform: translateY(-7cqh); }
+        .jk-cup:hover .cup-body { transform: translateY(-1cqh); }
+        .jk-cup.locked { pointer-events: none; }
         #newspaper-modal-inner {
             position: relative; display: flex; flex-direction: column; align-items: center;
             animation: bubblePop 0.32s cubic-bezier(0.34,1.56,0.64,1);
@@ -1042,12 +1149,12 @@
 
         #speech-bubble {
             position: absolute;
-            top: 8cqh;
+            top: 14cqh;
             left: 3cqw;
-            width: 22cqw;
-            min-height: 22cqh;
+            width: 17cqw;
+            min-height: 18cqh;
             background: #fdfaf0;
-            border: 0.25cqw solid #2a1a08;
+            border: 0.25cqw solid #fdfaf0;
             border-radius: 1.5cqw;
             padding: 1.5cqw 1.8cqw;
             box-sizing: border-box;
@@ -1073,32 +1180,44 @@
             top: auto;
             bottom: 8cqh;
         }
+        /* 배달원: 말풍선을 조금 낮춤 */
+        #speech-bubble.bubble-mid {
+            top: 16cqh;
+        }
+        /* 독수리/강도: 말풍선을 몸 가까이(중앙 쪽)로 */
+        #speech-bubble.bubble-right {
+            left: auto;
+            right: 36cqw;
+            top: 10cqh;
+        }
+        #speech-bubble.bubble-right::before { right: auto; left: 3cqw; }
+        #speech-bubble.bubble-right::after { right: auto; left: 3.15cqw; }
         /* 스트리머 질문/선택지 */
         .streamer-q {
             font-size: 1.4cqw; font-weight: bold; text-align: center;
             margin-bottom: 1.4cqh;
         }
         .streamer-btns { display: flex; flex-direction: column; gap: 0.9cqh; align-items: center; }
-        /* 말풍선 꼬리 (왼쪽 아래에서 손님 쪽으로) */
+        /* 말풍선 꼬리 (말풍선 하단에서 손님 쪽으로 내려옴) */
         #speech-bubble::before {
             content: '';
             position: absolute;
-            bottom: -2.2cqh;
-            left: 3cqw;
+            bottom: -1.8cqh;
+            right: 4cqw; left: auto;
             width: 0; height: 0;
-            border-left: 1.2cqw solid transparent;
-            border-right: 1.5cqw solid transparent;
-            border-top: 2.2cqh solid #2a1a08;
+            border-left: 1.3cqw solid transparent;
+            border-right: 1.3cqw solid transparent;
+            border-top: 2cqh solid #fdfaf0;
         }
         #speech-bubble::after {
             content: '';
             position: absolute;
-            bottom: -1.7cqh;
-            left: 3.15cqw;
+            bottom: -1.2cqh;
+            right: 4.15cqw; left: auto;
             width: 0; height: 0;
-            border-left: 1cqw solid transparent;
-            border-right: 1.3cqw solid transparent;
-            border-top: 1.8cqh solid #fdfaf0;
+            border-left: 1.15cqw solid transparent;
+            border-right: 1.15cqw solid transparent;
+            border-top: 1.7cqh solid #fdfaf0;
         }
 
         /* 본체 (노란색 직사각형 - 글씨 없음) */
@@ -2308,7 +2427,7 @@
         #ledger-btn.lobby-visible + #ledger-btn-label { opacity: 1; }
         /* 게임 화면: 라이터 위 아이콘 아래 */
         #ledger-btn.game-pos + #ledger-btn-label {
-            bottom: 18.5cqh; left: 4cqw; right: auto; width: 6cqw; font-size: 0.85cqw;
+            bottom: 17cqh; left: 4cqw; right: auto; width: 6cqw; font-size: 0.85cqw;
             opacity: 0;
         }
         #ledger-btn.game-pos.visible + #ledger-btn-label { opacity: 0; }
@@ -2316,7 +2435,7 @@
 
 /* ── 거래 화면 전용 명단 버튼: 폴더 내부에 수납됨 ── */
         #ledger-btn.game-pos {
-            bottom: 33.5cqh !important;
+            bottom: 32.5cqh !important;
             left: 4.5cqw; right: auto;
             width: 4.5cqw !important; height: 5.5cqw !important;
             transform: scale(0.5);
@@ -2332,7 +2451,7 @@
         }
 
         #ledger-btn.game-pos + #ledger-btn-label {
-            bottom: 30.5cqh !important; left: 4cqw; right: auto; width: 6cqw !important; font-size: 0.85cqw !important;
+            bottom: 29.5cqh !important; left: 4cqw; right: auto; width: 6cqw !important; font-size: 0.85cqw !important;
             opacity: 0; pointer-events: none; z-index: 9500 !important;
             transition: opacity 0.3s ease, left 0.3s cubic-bezier(0.34, 1.3, 0.64, 1);
         }
@@ -2929,7 +3048,7 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
         /* 게임 화면 왼쪽 중간 (폴더 아래 위치) */
         #magnifier-btn {
             position: absolute;
-            bottom: 21cqh; left: 4.75cqw;
+            bottom: 20.5cqh; left: 4.75cqw;
             width: 4.5cqw; height: 4.5cqw;
             z-index: 9500;
             cursor: pointer;
@@ -2957,7 +3076,7 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
         }
         #magnifier-btn-label {
             position: absolute;
-            bottom: 17.5cqh; left: 4cqw;
+            bottom: 17cqh; left: 4cqw;
             width: 6cqw;
             z-index: 9500;
             text-align: center;
@@ -3250,6 +3369,16 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
             <div id="newspaper-modal-inner">
                 <img id="newspaper-img" src="" alt="오늘의 신문">
                 <button id="newspaper-close" onclick="closeTodayNewspaper()">닫기</button>
+            </div>
+        </div>
+
+        <!-- 조커 미니게임 모달 -->
+        <div id="joker-modal">
+            <div id="joker-modal-inner">
+                <div id="joker-title">조커의 게임</div>
+                <div id="joker-info"></div>
+                <div id="joker-board"></div>
+                <div id="joker-msg"></div>
             </div>
         </div>
         <div id="speech-bubble"></div>
@@ -3567,11 +3696,11 @@ function renderDocScrollItems() {
             const isAuthentic = entry.judgmentResult;
             const resultColor = isAuthentic ? '#2b7a1a' : '#a32020';
             const resultText  = isAuthentic ? '진품 (Authentic)' : '가품 (Fake)';
-            const finalImg = (item.owner === 'pigeon' || item.owner === 'streamer' || item.owner === 'idol') ? item.baseImg+'.jpg' : item.baseImg+'_'+(isAuthentic?'real':'fake')+'.jpg';
+            const finalImg = (item.owner === 'pigeon' || item.owner === 'streamer' || item.owner === 'idol' || item.owner === 'joker') ? item.baseImg+'.jpg' : item.baseImg+'_'+(isAuthentic?'real':'fake')+'.jpg';
             contentHtml += `<div style="width:100%;height:18cqh;background-image:url('${finalImg}');background-size:contain;background-position:center;background-repeat:no-repeat;margin-bottom:1.5cqh"></div>
                 <div style="font-size:1.4cqw;font-weight:bold;color:${resultColor};text-align:center;background:rgba(255,255,255,0.5);padding:1cqh;border-radius:0.5cqw;border:0.15cqw dashed ${resultColor}">${resultText}</div>`;
         } else {
-            const hiddenImg = (item.owner === 'pigeon' || item.owner === 'streamer' || item.owner === 'idol')
+            const hiddenImg = (item.owner === 'pigeon' || item.owner === 'streamer' || item.owner === 'idol' || item.owner === 'joker')
                 ? item.baseImg + '.jpg'
                 : item.authentic
                     ? item.baseImg + '_real.jpg'
@@ -4129,6 +4258,8 @@ function exitToLobby() {
                     // 새 게임 상태로 초기화
                     _tutorialDone = false;
                     tutorial.active = true; tutorial.step = 0; tutorial.sub = 0; tutorial.waiting = false;
+                    // 컷씬/튜토리얼 도입부에서는 좌상단 일차·돈 UI를 숨김
+                    if (typeof hideDayIndicator === 'function') hideDayIndicator();
                     try { startGameSetup('new'); } catch(e) {}
                     // 컷씬 시작 (커튼 아래에서 준비됨)
                     startCutscene();
@@ -4397,6 +4528,13 @@ function exitToLobby() {
                 return;
             }
 
+            // ── 남은 손님이 없는데 종을 친 경우: 커튼을 열지 않고 감정소(또는 비둘기 특수 등장)로 ──
+            //    (사이비 신문 날 결석 처리 후 큐가 빈 상태에서 빈 종을 쳐 커튼만 깜빡이는 버그 방지)
+            if (gameState.dailyGuestsQueue.length === 0) {
+                setTimeout(() => { finishAllDeals(); }, 400);
+                return;
+            }
+
             // ── 사이비 신문으로 결석한 손님: 커튼을 열지 않고 안내만 띄운 뒤 종을 다시 내림 ──
             if (gameState.dailyGuestsQueue.length > 0 && gameState.dailyGuestsQueue[0]._cultAbsent) {
                 gameState.dailyGuestsQueue.shift();   // 결석 손님 제거
@@ -4405,7 +4543,9 @@ function exitToLobby() {
                 if (!gameState.todayVisitLog) gameState.todayVisitLog = [];
                 setTimeout(() => {
                     showFloatingText('사이비 교단을 꺼려하는 손님이 오지 않았습니다..', '#c8b0e0');
-                    resetGameTurn();
+                    // 결석 손님이 마지막이었다면 감정소(또는 비둘기 등장)로, 아니면 다음 손님 받기
+                    if (gameState.dailyGuestsQueue.length === 0) finishAllDeals();
+                    else resetGameTurn();
                 }, 700);
                 return;
             }
@@ -4444,9 +4584,10 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
     pigeonRejectedToday: false,  // 오늘 비둘기 거절 여부
     streamerBroadcasted: null,   // null=미결정, true=허락, false=거절
     earlyClose: false,           // 조기 마감 여부
-    receivedReports: [],         // 결산 보고서를 받은 일차 목록
-    crocStolen: [],              // 악어 강탈 기록 [{day, amount}]
+    receivedReports: [],         // 결산 보고서를 받은 일차 목록    crocStolen: [],              // 악어 강탈 기록 [{day, amount}]
     eagleEvents: [],             // 독수리/늑대 이벤트 금전 기록 [{day, amount(+수입/-지출), label}]
+    pigeonDonations: [],         // 비둘기 기부 기록 [{day, amount, label}]
+    jokerResults: [],            // 조커 게임 결과 기록 [{day, amount(+/-), label}]
     // ── 독수리 이벤트 상태 ──
     eagleToldDirection: false,   // 독수리에게 "저기로 갔어요"라고 답함 → 다음날 독수리 재방문 예약
     eaglePendingVisit: null,     // 다음날 방문 예약: 'eagle'(독수리 보상/처벌) | 'lizard'(도마뱀 보답/배신)
@@ -4485,6 +4626,13 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                 crowSales: g.crowSales || [],
                 crocStolen: g.crocStolen || [],
                 eagleEvents: g.eagleEvents || [],
+                _eagleFollowupGood: (g._eagleFollowupGood !== undefined) ? g._eagleFollowupGood : null,
+                _eagleLizardGood: (g._eagleLizardGood !== undefined) ? g._eagleLizardGood : null,
+                _cultPigeonPending: g._cultPigeonPending || false,
+                _cultPigeonDone: g._cultPigeonDone || false,
+                _crowPriceToday: (g._crowPriceToday !== undefined) ? g._crowPriceToday : null,
+                pigeonDonations: g.pigeonDonations || [],
+                jokerResults: g.jokerResults || [],
                 receivedReports: g.receivedReports || [],
                 obtainedCount: g.obtainedCount,
                 needsAppraisal: g.needsAppraisal,
@@ -4643,15 +4791,34 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                 bookedGuests.push(picked);
             }
 
-            // ── 배달부의 신문: 오늘의 신문 종류 결정 (4종 균등) ──
+            // ── 배달부의 신문: 오늘의 신문 종류 결정 (4종, 전날과 다른 종류) ──
             //   1=폭동/강도, 2=예술가 특수, 3=사이비(예약 50% 결석/비둘기 기부 1억), 4=스트리밍(스트리머 강제·2배·돌발↑)
-            const _npRoll = Math.floor(Math.random() * 4) + 1;
+            const _prevNp = gameState.todayNewspaper; // 전날 신문 (예: 'newspaper2')
+            let _npCandidates = [1, 2, 3, 4];
+            // 7일차(마지막 날)에는 폭동/강도 신문(1) 출현 금지
+            if (gameState.day >= 7) {
+                _npCandidates = _npCandidates.filter(n => n !== 1);
+            }
+            if (_prevNp) {
+                const _prevNum = parseInt(_prevNp.replace('newspaper', ''), 10);
+                if (_prevNum >= 1 && _prevNum <= 4) {
+                    _npCandidates = _npCandidates.filter(n => n !== _prevNum);
+                }
+            }
+            // 후보가 비면(이론상 방어) 전체에서 7일차 금지만 적용
+            if (_npCandidates.length === 0) _npCandidates = (gameState.day >= 7) ? [2, 3, 4] : [1, 2, 3, 4];
+            const _npRoll = _npCandidates[Math.floor(Math.random() * _npCandidates.length)];
             gameState.todayNewspaper = 'newspaper' + _npRoll;
             gameState._deliveryDone = false;            gameState._streamerDoubleToday = false;
             gameState._pigeonBigDonationToday = false;
             gameState._idolVisitedToday = false;
             gameState._idolNewsDone = false;
             gameState.todayIdolNews = null;
+            gameState._eagleFollowupGood = null;
+            gameState._eagleLizardGood = null;
+            gameState._cultPigeonPending = false;
+            gameState._cultPigeonDone = false;
+            gameState._crowPriceToday = null;
 
             // newspaper2면 예술가가 반드시 예약에 포함되도록 보장
             if (gameState.todayNewspaper === 'newspaper2') {
@@ -4678,20 +4845,9 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                 if (absentCount === bookedGuests.length && bookedGuests.length > 0) {
                     bookedGuests[Math.floor(Math.random() * bookedGuests.length)]._cultAbsent = false;
                 }
-                // 비둘기를 5번째 손님 자리에 강제 배치 (특수 기부: 1억 지급)
-                const pigeonGuest = guests.find(g => g.id === 'pigeon');
-                if (pigeonGuest) {
-                    const cultPigeon = { ...pigeonGuest, _cultPigeon: true, visited: false };
-                    // 예약을 최소 5명까지 채운 뒤 5번째(index 4)를 비둘기로 지정
-                    while (bookedGuests.length < 4) {
-                        const cand = guests.find(g => !['streamer','lizard','crow','eagle','wolf','delivery','cat','mouse','pigeon'].includes(g.id)
-                            && !bookedGuests.some(b => b.id === g.id));
-                        if (!cand) break;
-                        bookedGuests.push({ ...cand, visited: false });
-                    }
-                    if (bookedGuests.length >= 4) bookedGuests.splice(4, 0, cultPigeon);
-                    else bookedGuests.push(cultPigeon);
-                }
+                // 비둘기는 큐에 넣지 않고, 모든 손님 응대 후 특수 등장시킴 (카운트 제외)
+                gameState._cultPigeonPending = true;
+                gameState._cultPigeonDone = false;
             }
 
             // newspaper4(스트리밍 붐): 스트리머 반드시 예약 포함 + 제시가/감정가 2배
@@ -4796,7 +4952,8 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             const wolfGuest = guests.find(g => g.id === 'wolf');
             const robberBlockedByYesterday = (gameState.day <= gameState.lastRobberDay + 1);
             let spawnRobberToday = false;
-            if (wolfGuest && !gameState._lizardSpawnedToday && !gameState.robberPendingVisit) {
+            // 7일차(마지막 날)에는 강도 출현 금지
+            if (wolfGuest && gameState.day < 7 && !gameState._lizardSpawnedToday && !gameState.robberPendingVisit) {
                 if (gameState._riotRobberScheduled) {
                     // 폭동의 날: 강도 확정 (단 어제도 강도였다면, 폭동이 우선이라 출현시키되 연속은 허용)
                     spawnRobberToday = true;
@@ -4880,7 +5037,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
         const guestDisplayNames = {
             crocodile: '악어', monkey: '원숭이', miners: '광부', pigeon: '비둘기',
             pig: '돼지', mouse: '쥐 & 뱀', cat: '고양이', crow: '까마귀', goat: '염소',
-            lizard: '도마뱀', streamer: '스트리머', eagle: '독수리', wolf: '늑대(강도)', artist: '예술가', delivery: '배달원', idol: '아이돌'
+            lizard: '도마뱀', streamer: '스트리머', eagle: '독수리', wolf: '늑대(강도)', artist: '예술가', delivery: '배달원', idol: '아이돌', joker: '조커'
         };
         let notebookPage = 0;       // 현재 보고 있는 페이지 인덱스
         let notebookList = [];      // 현재 수첩에 표시할 손님 목록
@@ -4906,6 +5063,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             artist:     "자부심 강한 예술가.\n· 직접 그린 미술품만 판매\n· 매입가 5천만 고정\n· 진품 감정 시 1억 / 가품 1천만",
             delivery:   "매일 아침 가장 먼저 오는 배달원.\n· 그날의 신문을 전달\n· 신문에 따라 특별한 일이 일어남\n· 오늘의 신문은 좌측 아이콘으로 다시 볼 수 있음",
             idol:       "거래 전 정중히 양해를 구하는 아이돌.\n· 등장 시 '거래 가능할까요?'라고 물음\n· 응하면 표정을 바꾸고 거래를 시작\n· (능력은 추후 공개)",
+            joker:      "도박을 즐기는 수상한 조커.\n· 카드(배팅 1억) 또는 황금공(배팅 5천만) 제시\n· 수락하면 미니게임 시작\n· 카드: 같은 무늬 맞추기 / 황금공: 공이 든 컵 찾기",
         };
 
         function buildNotebookPage(idx) {
@@ -4969,6 +5127,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                     {id:'artist',    name:'예술가'},
                     {id:'delivery',  name:'배달원'},
                     {id:'idol',      name:'아이돌'},
+                    {id:'joker',     name:'조커'},
                 ];
                 if (idx === 0) {
                     return `<div class="notebook-day">이번주 예약 손님</div>
@@ -4976,7 +5135,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                             페이지를 넘기면 각 손님 정보를 볼 수 있습니다
                         </div>
                         <div class="notebook-order" style="font-size:1.4cqw;line-height:2.1;color:#5a3a1a">
-                            총 16종류의 손님이 방문합니다.<br>
+                            총 17종류의 손님이 방문합니다.<br>
                             각 손님마다 고유한 거래 방식이 있으니<br>
                             잘 파악하고 협상해 보세요!
                         </div>`;
@@ -5023,7 +5182,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             const gameCanvas = document.getElementById('game-canvas');
             const inGame = !!(gameCanvas && getComputedStyle(gameCanvas).display !== 'none');
             // 인게임: 0=타이틀+예약손님들+마지막 방문기록 페이지, 로비: 0=타이틀+13캐릭터
-            notebookList = new Array(inGame ? gameState.originalDailyQueue.length + 1 : 17).fill(null);
+            notebookList = new Array(inGame ? gameState.originalDailyQueue.length + 1 : 18).fill(null);
             notebookPage = 0;
             renderNotebook();
             modal.classList.add('show');
@@ -5218,6 +5377,14 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                     enter: ["거래 가능할까요?"],
                     accept: ["감사합니다! 좋은 거래였어요.", "역시! 잘 부탁드려요~"],
                     reject: ["아쉽네요...", "다음에 또 올게요."]
+                }
+            },
+            {
+                id: 'joker', frames: ['joker.jpg'], joker: true,
+                dialogue: {
+                    enter: ["한 판 어떠신가요? 운이 좋다면 큰돈을 버실 수 있죠."],
+                    accept: ["좋아요, 게임을 시작하죠!"],
+                    reject: ["흥, 겁쟁이시군요.", "다음 기회에..."]
                 }
             },
         ]; // <-- guests 배열이 끝나는 대괄호입니다.
@@ -5441,6 +5608,8 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             { id: 'art2_real', type: 'art', authentic: true, name: "억압과 해방", baseImg: 'art2', desc: "하늘을 향해 주먹을 뻗는 자와 그를 끌어내리는 검은 손들을 묘사한 조각상. 매끄럽고 완벽한 상태다.", owner: "artist", width: "12cqw", height: "auto" },
             { id: 'art2_fake', type: 'art', authentic: false, name: "억압과 해방", baseImg: 'art2', desc: "해방을 쟁취하려는 거창한 조각상. 하지만 겉면 전체에 흉측하게 금이 엄청나게 많이 가 있다.", owner: "artist", width: "12cqw", height: "auto" },
             { id: 'idol_sign', type: 'art', authentic: true, name: "아이돌의 친필 사인", baseImg: 'sign', desc: "신예 아이돌 '에테르'의 친필 사인. 팬들이 받고 싶어 안달이 난 귀한 물건이다.", owner: "idol", width: "16cqw", height: "auto" },
+            { id: 'joker_card', type: 'misc', cat: '도박', authentic: true, name: "수상한 카드", baseImg: 'card', desc: "조커가 내민 한 장의 카드. 운명을 건 게임의 시작을 알린다.", owner: "joker", width: "10cqw", height: "auto" },
+            { id: 'joker_ball', type: 'misc', cat: '도박', authentic: true, name: "황금 공", baseImg: 'gold_ball', desc: "조커가 내민 반짝이는 황금 공. 어느 컵 속에 숨을지 지켜봐야 한다.", owner: "joker", width: "10cqw", height: "auto" },
         ];
 
         // ════════════ 이미지 프리로드 (GitHub Pages 등 배포 환경에서 교체 시 깜빡임 방지) ════════════
@@ -5452,7 +5621,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
             // 물건 이미지 (진품/가품 또는 단일)
             try {
                 items.forEach(it => {
-                    if (it.owner === 'pigeon' || it.owner === 'streamer' || it.owner === 'idol') {
+                    if (it.owner === 'pigeon' || it.owner === 'streamer' || it.owner === 'idol' || it.owner === 'joker') {
                         urls.add(it.baseImg + '.jpg');
                     } else {
                         urls.add(it.baseImg + '_real.jpg');
@@ -5465,7 +5634,7 @@ const gameState = { obtainedCount: 0, purchasedSigned: false, isTearing: false, 
                 'crocodile.jpg','crocodile2.jpg','pig.jpg','pig2.jpg',
                 'steamer1.jpg','steamer2.jpg','steamer3.jpg','lizard1.jpg','lizard2.jpg',
                 'eagle.jpg','wolf.jpg','artist.jpg','cat.jpg','mouse_and_snake.jpg',
-                'delivery.jpg','newspaper1.jpg','newspaper2.jpg','newspaper3.jpg','newspaper4.jpg','idol1.jpg','idol2.jpg','sign.jpg','idolnews1.jpg','idolnews2.jpg',
+                'delivery.jpg','newspaper1.jpg','newspaper2.jpg','newspaper3.jpg','newspaper4.jpg','idol1.jpg','idol2.jpg','sign.jpg','idolnews1.jpg','idolnews2.jpg','joker.jpg','card.jpg','gold_ball.jpg',
                 'monkey.jpg','miners.jpg','pigeon.jpg','crow.jpg','goat.jpg',
                 'owner.jpg','owner2.jpg','judge_woman.jpg',
                 'main_background2.jpg','story_background.jpg','background.jpg',
@@ -5755,7 +5924,10 @@ function startGameSetup(mode = 'new') {
             gameState.lastItem = null;
             updateObtainedCounter();
             updateMoneyCounter();
-            showDayIndicator();   
+            // 컷씬 또는 튜토리얼 도입(첫 게임 진입 전)에는 좌상단 일차·돈 UI를 띄우지 않음
+            if (!(cutscene && cutscene.active) && !(tutorial.active && tutorial.step < 2)) {
+                showDayIndicator();
+            }
             resetGameTurn();
             
             const tc = document.getElementById('fire-canvas');
@@ -5870,6 +6042,11 @@ function startGameSetup(mode = 'new') {
 
        // ── 상황별 랜덤 대사 타이핑 출력 & 특수 손님 경고 ──
         function showGuestDialogue(situation, onComplete) {
+            // 일반 손님 대사: 독수리/배달원 전용 말풍선 위치 클래스 해제
+            gameState._isEagleBubble = false;
+            gameState._isDeliveryBubble = false;
+            const _sbReset = document.getElementById('speech-bubble');
+            if (_sbReset) { _sbReset.classList.remove('bubble-right'); _sbReset.classList.remove('bubble-mid'); _sbReset.classList.remove('bubble-lower'); }
             // 쥐+뱀: 큰 말풍선 미사용
             if (gameState.lastGuest === 'mouse') {
                 if (typeof onComplete === 'function') onComplete();
@@ -5971,6 +6148,12 @@ function _eagleBubble(text, buttons, lower) {
     //  visible이 아닌(투명) 상태에서 위치를 확정해 표시 → 위치 점프/잔상 방지
     if (lower) sb.classList.add('bubble-lower');
     else sb.classList.remove('bubble-lower');
+    // 배달원은 말풍선을 조금 낮춤
+    if (gameState._isDeliveryBubble) sb.classList.add('bubble-mid');
+    else sb.classList.remove('bubble-mid');
+    // 독수리는 말풍선을 오른쪽으로
+    if (gameState._isEagleBubble) sb.classList.add('bubble-right');
+    else sb.classList.remove('bubble-right');
 
     sb.innerHTML = '';
     sb.style.pointerEvents = 'none'; 
@@ -6022,6 +6205,7 @@ function spawnEagle(guest) {
     _eagleHideLeftIcons();
     const div = _spawnGuestDiv('eagle.jpg');
     gameState._eagleDiv = div;
+    gameState._isEagleBubble = true;
 
     setTimeout(() => {
         const lines = [
@@ -6067,7 +6251,12 @@ function spawnEagle_followup(guest) {
     _eagleHideLeftIcons();
     const div = _spawnGuestDiv('eagle.jpg');
     gameState._eagleDiv = div;
-    const good = Math.random() < 0.5;
+    gameState._isEagleBubble = true;
+    // 결과를 한 번만 결정해 저장 (이어하기 후에도 동일하게 유지)
+    if (gameState._eagleFollowupGood === undefined || gameState._eagleFollowupGood === null) {
+        gameState._eagleFollowupGood = Math.random() < 0.5;
+    }
+    const good = gameState._eagleFollowupGood;
 
     setTimeout(() => {
         if (good) {
@@ -6106,7 +6295,10 @@ function spawnEagle_followup(guest) {
         // 후속 방문 ② 도마뱀 방문 (못 봤다고 답한 경우): 50% 보답 / 50% 독수리와 함께 등장해 배신 응징
         function spawnEagleLizardFollowup(guest) {
             _eagleHideLeftIcons();
-            const good = Math.random() < 0.5;
+            if (gameState._eagleLizardGood === undefined || gameState._eagleLizardGood === null) {
+                gameState._eagleLizardGood = Math.random() < 0.5;
+            }
+            const good = gameState._eagleLizardGood;
             if (good) {
                 // 도마뱀만 등장해 사례
                 const div = _spawnGuestDiv('lizard1.jpg', { lizard: true });
@@ -6129,6 +6321,7 @@ function spawnEagle_followup(guest) {
                 // 도마뱀 + 독수리 동시 등장 (나란히, 독수리가 앞)
                 const lizDiv = _spawnGuestDiv('lizard1.jpg', { lizard: true, left: '-9cqw', z: 1 });
                 const eagDiv = _spawnGuestDiv('eagle.jpg', { left: '9cqw', z: 2 });
+                gameState._isEagleBubble = false;
                 gameState._eagleDiv = eagDiv;
                 gameState._eagleDiv2 = lizDiv;
                 // 독수리가 도마뱀을 찾아내 응징 → 도마뱀 잡힘 (이후 출현 중단)
@@ -6163,6 +6356,7 @@ function spawnEagle_followup(guest) {
             _eagleHideLeftIcons();
             const div = _spawnGuestDiv('wolf.jpg');
             gameState._eagleDiv = div;
+            gameState._isEagleBubble = true;   // 강도 말풍선도 오른쪽 위 (독수리와 동일 위치)
             setTimeout(() => {
                 // 폭동의 날(newspaper1) 강도는 40%, 평소 돌발 강도는 20% 강탈
                 const rate = guest._riotRobber ? 0.4 : 0.2;
@@ -6171,7 +6365,7 @@ function spawnEagle_followup(guest) {
                 gameState.robberStolen = steal;
                 updateMoneyCounter('늑대에게 강탈당함');
                 _logEagleEvent(-steal, '늑대에게 강탈당함');
-                _eagleBubble('"가진 걸 다 내놔!"', [], true);   // 늑대: 왼쪽 아래 말풍선
+                _eagleBubble('"가진 걸 다 내놔!"', []);   // 늑대: 오른쪽 위 말풍선
                 gameState._eagleAskRobberAfter = true;   // 늑대 퇴장 후 독수리 의뢰 질문 등장
                 setTimeout(() => {
                     _eagleClearBubble();
@@ -6189,7 +6383,7 @@ function spawnEagle_followup(guest) {
             const div = _spawnGuestDiv('pigeon.jpg');
             gameState._eagleDiv = div;
             setTimeout(() => {
-                _eagleBubble('"사이비가 판치는 세상이지만, 부디 주님의 가호가 함께하길... 작은 정성입니다."', [
+                _eagleBubble('"우리 교단의 가르침을 따르는 당신께 축복을. 이건 형제님을 위한 헌금입니다."', [
                     { label: '감사히 받겠습니다.', onclick: '_cultPigeonDonate()' }
                 ]);
             }, 950);
@@ -6197,7 +6391,9 @@ function spawnEagle_followup(guest) {
         function _cultPigeonDonate() {
             gameState.money += 100000000;
             updateMoneyCounter('비둘기의 기부');
-            _eagleBubble('"부디 흔들리지 마시길... 그럼, 이만."', [
+            if (!gameState.pigeonDonations) gameState.pigeonDonations = [];
+            gameState.pigeonDonations.push({ day: gameState.day, amount: 100000000, label: '비둘기의 기부 (사이비)' });
+            _eagleBubble('"교단의 품은 언제나 열려 있습니다. 부디 우리와 함께하시길... 그럼, 이만."', [
                 { label: '안녕히 가세요.', onclick: '_exitCultPigeon()' }
             ]);
         }
@@ -6205,7 +6401,10 @@ function spawnEagle_followup(guest) {
             _eagleClearBubble();
             if (gameState._eagleDiv) exitGuest(gameState._eagleDiv);
             gameState._eagleDiv = null;
-            setTimeout(() => { resetGameTurn(); }, 800);
+            setTimeout(() => {
+                if (gameState.dailyGuestsQueue.length === 0) finishAllDeals();
+                else resetGameTurn();
+            }, 800);
         }
 
         function spawnDelivery(guest) {
@@ -6213,6 +6412,7 @@ function spawnEagle_followup(guest) {
             const div = _spawnGuestDiv('delivery.jpg');
             gameState._eagleDiv = div;
             gameState._newspaperRead = false;
+            gameState._isDeliveryBubble = true;   // 배달원 말풍선은 조금 낮춤
             // ── 아이돌 신문 배달 (마지막 손님 뒤 출몰) ──
             if (guest._idolNews || gameState.currentGuestData && gameState.currentGuestData._idolNews) {
                 _showNewspaperIcon();
@@ -6278,6 +6478,7 @@ function spawnEagle_followup(guest) {
             if (gameState._deliveryExiting) return;
             gameState._deliveryExiting = true;
             const wasIdolNews = !!gameState.todayIdolNews;
+            gameState._isDeliveryBubble = false;
             _eagleClearBubble();
             if (gameState._eagleDiv) exitGuest(gameState._eagleDiv);
             gameState._eagleDiv = null;
@@ -6332,6 +6533,7 @@ function spawnEagle_followup(guest) {
             _eagleHideLeftIcons();
             const div = _spawnGuestDiv('eagle.jpg');
             gameState._eagleDiv = div;
+            gameState._isEagleBubble = true;
             setTimeout(() => {
                 _eagleBubble('"날 왜 불렀지..?"', [
                     { label: '강도좀 잡아주세요..', onclick: 'eagleRobberHire()' }
@@ -6371,6 +6573,7 @@ function spawnEagle_followup(guest) {
             if (withRobber) {
                 const wolfDiv = _spawnGuestDiv('wolf.jpg', { left: '-9cqw', z: 1 });
                 const eagDiv  = _spawnGuestDiv('eagle.jpg', { left: '9cqw', z: 2 });
+                gameState._isEagleBubble = false;
                 gameState._eagleDiv = eagDiv;
                 gameState._eagleDiv2 = wolfDiv;
                 setTimeout(() => {
@@ -6391,6 +6594,7 @@ function spawnEagle_followup(guest) {
             } else {
                 const eagDiv = _spawnGuestDiv('eagle.jpg');
                 gameState._eagleDiv = eagDiv;
+                gameState._isEagleBubble = true;
                 setTimeout(() => {
                     gameState.money += 50000000;
                     updateMoneyCounter('독수리가 의뢰비 반환');
@@ -6412,7 +6616,7 @@ function spawnEagle_followup(guest) {
             const queue = gameState.dailyGuestsQueue || [];
             queue.forEach(guest => {
                 if (!guest || guest._assignedItem) return;
-                if (['eagle','wolf','crow','cat','mouse','delivery'].includes(guest.id)) return;
+                if (['eagle','wolf','crow','cat','mouse','delivery','joker'].includes(guest.id)) return;
                 if (guest._eagleAsk || guest._eagleFollowup || guest._robber || guest._robberAsk || guest._robberReturn || guest._delivery || guest._cultPigeon) return;
 
                 let itemData, validItems = [];
@@ -6536,10 +6740,9 @@ function generateGuest() {
             //    (독수리 등장 전까지 유지되도록, _spawnEagleAfter 손님일 때만 set)
             if (guest._spawnEagleAfter) gameState._eagleAskAfterThisGuest = true;
 
-            // ── 예약 손님(돌발/특수 제외) 처리 수 카운트 → 독수리 후속 방문 타이밍 ──
-            const _isBookedGuest = !guest._eagleAsk && !guest._eagleFollowup && !guest._fromStreamer
-                && !guest._bibleVisit && !guest._robber && !guest._robberAsk && !guest._robberReturn
-                && guest.id !== 'lizard' && guest.id !== 'crow' && guest.id !== 'wolf' && guest.id !== 'delivery' && !guest._delivery;
+            // ── 예약 손님만 카운트 (돌발/특수 출현 손님은 제외) → 손님 n/5 표시 & 독수리 후속 타이밍 ──
+            //    _visitKind가 '예약'이 아니면(돌발/배달부 등) 모두 카운트에서 제외
+            const _isBookedGuest = (_visitKind === '예약') && !guest._cultPigeon;
             if (_isBookedGuest) {
                 gameState._bookedServedToday = (gameState._bookedServedToday || 0) + 1;
             }
@@ -6582,15 +6785,13 @@ function generateGuest() {
                 return;
             }
 
-            // 몇 번째 손님인지 알림 (불청객/특수 손님 제외)
-            if (!guest._fromStreamer && !guest._bibleVisit &&
-                guest.id !== 'lizard' && guest.id !== 'crow' && guest.id !== 'streamer') {
-                const orderIdx = gameState.originalDailyQueue.findIndex(g => g.id === guest.id);
-                if (orderIdx >= 0) {
-                    const orderKr = ['첫','두','세','네','다섯','여섯','일곱','여덟','아홉','열'];
-                    const label = (orderKr[orderIdx] || (orderIdx+1)) + ' 번째 손님';
-                    showFloatingText(label, '#fcd53f');
-                }
+            // 몇 번째 손님인지 알림 → 좌상단 '손님 n/5'와 동일하게 _bookedServedToday 기준
+            //  (예약 손님만 번호를 매기고, 돌발/특수 출현 손님은 번호를 붙이지 않음)
+            if (_isBookedGuest) {
+                const orderKr = ['첫','두','세','네','다섯','여섯','일곱','여덟','아홉','열'];
+                const n = gameState._bookedServedToday;   // 방금 +1 된 현재 손님 번호
+                const label = (orderKr[n - 1] || n) + ' 번째 손님';
+                showFloatingText(label, '#fcd53f');
             }
             let itemData;
             let validItems = [];
@@ -6613,7 +6814,25 @@ function generateGuest() {
                     name: `[훔쳐온] ${variant.name}`,
                     desc: `(누군가의 주머니나 보물창고에서 훔쳐온 흔적이 뚜렷한 장물입니다.) ${variant.desc}`
                 };
-            } else if (guest.id === 'streamer' || guest.id === 'lizard' || guest.id === 'pigeon' || guest.id === 'miners' || guest.id === 'pig' || guest.id === 'artist' || guest.id === 'idol') {
+                // 원숭이가 진품 친필 사인을 훔쳐온 경우: 아이돌 신문 배달 트리거
+                if (variant.owner === 'idol' && variant.authentic) {
+                    gameState._idolVisitedToday = true;
+                }
+            } else if (guest.id === 'joker') {
+                // 조커: 카드(1억) 또는 황금공(5천만) 50%
+                const useCard = Math.random() < 0.5;
+                itemData = items.find(i => i.id === (useCard ? 'joker_card' : 'joker_ball'));
+                gameState._jokerGameType = useCard ? 'card' : 'ball';
+            } else if (guest.id === 'streamer') {
+                // 스트리머 버튼: 가중치 확률 (실버40 / 골드30 / 다이아20 / 루비10)
+                const _r = Math.random() * 100;
+                let _btnId;
+                if (_r < 40) _btnId = 'str1';        // 실버
+                else if (_r < 70) _btnId = 'str2';   // 골드
+                else if (_r < 90) _btnId = 'str3';   // 다이아
+                else _btnId = 'str4';                // 루비
+                itemData = items.find(i => i.id === _btnId);
+            } else if (guest.id === 'lizard' || guest.id === 'pigeon' || guest.id === 'miners' || guest.id === 'pig' || guest.id === 'artist' || guest.id === 'idol') {
                 // 고유 아이템만 사용 (공용 물건 제외)
                 validItems = items.filter(item => item.owner === guest.id);
                 // 예약 시 '진품 보장' 지정된 손님이면 진품만 후보로
@@ -6714,6 +6933,7 @@ function generateGuest() {
             else if (guest.id === 'crocodile') gameState.itemPrice = 40000000; // 악어 4천만 고정
             else if (guest.id === 'artist') gameState.itemPrice = (gameState.todayNewspaper === 'newspaper2') ? 100000000 : 50000000; // 예술품: 신문2면 1억, 평소 5천만
             else if (guest.id === 'idol') gameState.itemPrice = 50000000; // 아이돌 친필사인 매입가 5천만
+            else if (guest.id === 'joker') gameState.itemPrice = (itemData.id === 'joker_card') ? 100000000 : 50000000; // 조커 배팅금: 카드 1억, 황금공 5천만
             else if (guest.id === 'pigeon') gameState.itemPrice = 0; // 비둘기 성경 0원
             else if (itemData.owner === 'common') gameState.itemPrice = 10000000;
             else gameState.itemPrice = 20000000;
@@ -6735,6 +6955,7 @@ function generateGuest() {
             if (guest.streamer) guestDiv.classList.add('guest-streamer');
             if (guest.id === 'crocodile') guestDiv.classList.add('guest-crocodile');
             if (guest.id === 'artist') guestDiv.classList.add('guest-artist');
+            if (guest.idol) guestDiv.classList.add('guest-idol');
             guestDiv.style.backgroundImage = `url('${guest.frames[0]}')`;
             container.appendChild(guestDiv);
 
@@ -6758,14 +6979,14 @@ function generateGuest() {
             const deskItem = document.getElementById('desk-item');
             
             // ★ [수정 핵심] 거래 테이블 위에 새로운 규격 이미지 매칭 탑재
-            const displayImg = (itemData.owner === 'pigeon' || itemData.owner === 'streamer' || itemData.owner === 'idol')
+            const displayImg = (itemData.owner === 'pigeon' || itemData.owner === 'streamer' || itemData.owner === 'idol' || itemData.owner === 'joker')
                 ? `${itemData.baseImg}.jpg`
                 : itemData.authentic
                     ? `${itemData.baseImg}_real.jpg`
                     : `${itemData.baseImg}_fake.jpg`;
             deskItem.style.backgroundImage = `url('${displayImg}')`;
             // 비둘기 성경은 흑백 제외
-            deskItem.style.filter = (itemData.owner === 'pigeon' || itemData.owner === 'streamer' || itemData.owner === 'idol') ? 'none' : '';
+            deskItem.style.filter = (itemData.owner === 'pigeon' || itemData.owner === 'streamer' || itemData.owner === 'idol' || itemData.owner === 'joker') ? 'none' : '';
 
             document.querySelector('.doc-header').innerText = "물품 매입 계약서";
 
@@ -6852,6 +7073,8 @@ function generateGuest() {
                 }
                 gameState.money += donate;
                 updateMoneyCounter('비둘기 기부');
+                if (!gameState.pigeonDonations) gameState.pigeonDonations = [];
+                gameState.pigeonDonations.push({ day: gameState.day, amount: donate, label: '비둘기의 기부' });
                 showFloatingText('비둘기는 신자인 당신을 위해 매일 기부를 하러 찾아 올 것입니다.', '#a0d8ff');
                 // 50% 확률로 다음 손님 도망 → 다음 턴에 알림
                 if (Math.random() < 0.5 && gameState.dailyGuestsQueue.length > 0) {
@@ -6935,6 +7158,335 @@ function generateGuest() {
             sb.style.pointerEvents = 'auto';
             sb.classList.add('visible');
         }
+        // ════════════════════ 조커 미니게임 ════════════════════
+        const JOKER_SUITS = [
+            { key: 'spade',   sym: '♠', color: '#1a1a1a' },
+            { key: 'heart',   sym: '♥', color: '#c0202a' },
+            { key: 'club',    sym: '♣', color: '#1a1a1a' },
+            { key: 'diamond', sym: '♦', color: '#c0202a' },
+            { key: 'ace',     sym: 'A', color: '#c8a020' },
+            { key: 'joker',   sym: '🃏', color: '#5a2a8a' }
+        ];
+        const jokerState = {};
+
+        function startJokerGame() {
+            // 배팅금을 미리 차감 (게임 결과에 따라 돌려받거나 잃음)
+            gameState.money -= gameState.itemPrice;
+            updateMoneyCounter('조커 배팅금');
+            jokerState.bet = gameState.itemPrice;
+            // 계약서/물건 숨김
+            const doc = document.getElementById('game-document');
+            if (doc) doc.style.display = 'none';
+            const deskItem = document.getElementById('desk-item');
+            if (deskItem) deskItem.classList.remove('show');
+            hideLighter();
+
+            const modal = document.getElementById('joker-modal');
+            if (modal) modal.classList.add('show');
+
+            if (gameState._jokerGameType === 'card') startJokerCardGame();
+            else startJokerCupGame();
+        }
+
+        function _jokerEnd(playerGain, leaveMsg, runAway) {
+            // playerGain: 플레이어가 최종적으로 받는 금액(0이면 배팅금 잃음)
+            const msg = document.getElementById('joker-msg');
+            if (playerGain > 0) {
+                gameState.money += playerGain;
+                updateMoneyCounter('조커 게임 보상');
+            }
+            // 결산 기록: 순변동 = 받은 금액 − 배팅금
+            if (!gameState.jokerResults) gameState.jokerResults = [];
+            const net = playerGain - (jokerState.bet || 0);
+            gameState.jokerResults.push({
+                day: gameState.day,
+                amount: net,
+                label: runAway ? '조커의 게임 (패배)' : '조커의 게임'
+            });
+            if (msg) msg.innerText = leaveMsg;
+            setTimeout(() => {
+                const modal = document.getElementById('joker-modal');
+                if (modal) modal.classList.remove('show');
+                // 조커 퇴장
+                const guest = document.querySelector('.game-guest');
+                showGuestDialogue(runAway ? 'reject' : 'accept', () => {
+                    setTimeout(() => {
+                        hideSpeechBubble();
+                        if (guest) exitGuest(guest);
+                        setTimeout(() => {
+                            if (gameState.dailyGuestsQueue.length === 0) finishAllDeals();
+                            else resetGameTurn();
+                        }, 800);
+                    }, 1000);
+                });
+            }, 1800);
+        }
+
+        // ── 카드 매칭 게임 ──
+        function startJokerCardGame() {
+            document.getElementById('joker-title').innerText = '카드 짝 맞추기';
+            const board = document.getElementById('joker-board');
+            board.className = 'card-mode';
+            board.style.gridTemplateColumns = '';
+
+            // 6종 x 2장 = 12장 덱 구성 후 섞기
+            let deck = [];
+            JOKER_SUITS.forEach(s => { deck.push(s.key); deck.push(s.key); });
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+            jokerState.deck = deck;
+            jokerState.turn = 0;
+            jokerState.maxTurns = 3;
+            jokerState.matchCount = 0;
+            jokerState.streak = 0;
+            jokerState.bonus = 0;
+            jokerState.firstPick = null;
+            jokerState.busy = true;
+            jokerState.cardEls = [];
+
+            // 4열 3행 슬롯 좌표 (cqw / cqh)
+            const cols = 4, rows = 3;
+            const cardW = 7, cardH = 9.5, gapX = 1, gapY = 1.2;
+            const slotPos = [];
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    slotPos.push({ x: c * (cardW + gapX), y: r * (cardH + gapY) });
+                }
+            }
+            jokerState.cardSlotPos = slotPos;
+
+            board.innerHTML = '';
+            deck.forEach((suitKey, idx) => {
+                const s = JOKER_SUITS.find(x => x.key === suitKey);
+                const card = document.createElement('div');
+                card.className = 'jk-card flipped locked';   // 처음엔 앞면 공개
+                card.dataset.suit = suitKey;
+                card.dataset.slot = idx;   // 현재 슬롯 위치
+                card.style.left = slotPos[idx].x + 'cqw';
+                card.style.top = slotPos[idx].y + 'cqh';
+                card.innerHTML =
+                    `<span class="jk-face jk-face-front" style="color:${s.color}">${s.sym}</span>` +
+                    `<span class="jk-face jk-face-back">?</span>`;
+                card.onclick = () => jokerCardPick(card);
+                board.appendChild(card);
+                jokerState.cardEls.push(card);
+            });
+
+            _jokerUpdateCardInfo();
+            document.getElementById('joker-msg').innerText = '카드 배치를 잘 기억하세요... (잠시 후 섞습니다)';
+
+            // 3.5초간 배치를 보여준 뒤 뒷면으로 덮고 → 카드들이 자리를 바꾸며 섞임
+            setTimeout(() => {
+                jokerState.cardEls.forEach(el => el.classList.remove('flipped'));
+                document.getElementById('joker-msg').innerText = '카드를 섞습니다...';
+                setTimeout(() => _jokerShuffleCards(0), 500);
+            }, 3500);
+        }
+
+        function _jokerUpdateCardInfo() {
+            const reward = jokerState.bet + jokerState.matchCount * 20000000 + jokerState.bonus;
+            document.getElementById('joker-info').innerHTML =
+                `남은 턴: <b>${jokerState.maxTurns - jokerState.turn}</b> / ${jokerState.maxTurns}　|　` +
+                `맞춘 횟수: <b>${jokerState.matchCount}</b>　|　` +
+                `현재 보상금: <b>₩${reward.toLocaleString()}</b><br>` +
+                `<span style="font-size:0.85cqw;color:#ffd0d0">카드 2장을 골라 같은 카드를 찾으세요. A 짝을 맞추면 즉시 +2억! 조커 짝을 맞추면 배팅금을 잃습니다.</span>`;
+        }
+
+        function _jokerShuffleCards(count) {
+            // 좌우반전 또는 상하반전으로 모든 카드를 한 번에 통째로 이동
+            const cols = 4, rows = 3;
+            const flipType = Math.random() < 0.5 ? 'h' : 'v';
+            document.getElementById('joker-msg').innerText =
+                (flipType === 'h') ? '카드를 좌우로 섞습니다...' : '카드를 상하로 섞습니다...';
+
+            jokerState.cardEls.forEach(card => {
+                if (card.classList.contains('matched')) return;
+                const slot = +card.dataset.slot;
+                const r = Math.floor(slot / cols), c = slot % cols;
+                const newSlot = (flipType === 'h')
+                    ? r * cols + (cols - 1 - c)      // 좌우반전
+                    : (rows - 1 - r) * cols + c;     // 상하반전
+                card.dataset.slot = newSlot;
+                const pos = jokerState.cardSlotPos[newSlot];
+                card.style.left = pos.x + 'cqw';
+                card.style.top = pos.y + 'cqh';
+            });
+
+            setTimeout(() => {
+                document.getElementById('joker-msg').innerText = '자, 이제 같은 카드를 찾아보세요!';
+                jokerState.busy = false;
+                jokerState.cardEls.forEach(cc => { if (!cc.classList.contains('matched')) cc.classList.remove('locked'); });
+            }, 650);
+        }
+
+        function jokerCardPick(card) {
+            if (jokerState.busy) return;
+            if (!card || card.classList.contains('matched') || card.classList.contains('flipped') || card.classList.contains('locked')) return;
+
+            card.classList.add('flipped');
+            const suit = card.dataset.suit;
+
+            if (jokerState.firstPick === null) {
+                jokerState.firstPick = card;
+                return;
+            }
+            // 두 번째 카드 → 짝 판정
+            const firstCard = jokerState.firstPick;
+            if (firstCard === card) return; // 같은 카드 중복 클릭 방지
+            jokerState.firstPick = null;
+            jokerState.busy = true;
+            jokerState.turn++;
+
+            const matched = (firstCard.dataset.suit === suit);
+
+            if (matched && suit === 'joker') {
+                // 조커 짝 → 배팅금 들고 도망
+                firstCard.classList.add('matched'); card.classList.add('matched');
+                document.getElementById('joker-msg').innerText = '조커 짝! 그가 배팅금을 들고 사라집니다...';
+                setTimeout(() => _jokerEnd(0, '"하하, 운이 없으셨네요. 배팅금은 제가 가져가죠!"', true), 1000);
+                return;
+            }
+            if (matched && suit === 'ace') {
+                // A 짝 → 즉시 배팅금 + 2억
+                firstCard.classList.add('matched'); card.classList.add('matched');
+                document.getElementById('joker-msg').innerText = 'A 짝! 잭팟! 배팅금 + 2억!';
+                setTimeout(() => _jokerEnd(jokerState.bet + 200000000, '"이런 행운이! 약속대로 드리죠. 또 봅시다."', false), 1100);
+                return;
+            }
+
+            if (matched) {
+                // 일반 무늬 매칭 성공
+                jokerState.matchCount++;
+                jokerState.streak++;
+                if (jokerState.streak >= 2) jokerState.bonus += 20000000; // 연속 성공 시 +2천만
+                firstCard.classList.add('matched');
+                card.classList.add('matched');
+                document.getElementById('joker-msg').innerText = '짝이 맞았습니다!' + (jokerState.streak >= 2 ? ' (연속 보너스 +2천만!)' : '');
+            } else {
+                jokerState.streak = 0;
+                document.getElementById('joker-msg').innerText = '아쉽네요, 다른 카드입니다.';
+            }
+
+            setTimeout(() => {
+                if (!firstCard.classList.contains('matched')) firstCard.classList.remove('flipped');
+                if (!card.classList.contains('matched')) card.classList.remove('flipped');
+                _jokerUpdateCardInfo();
+                jokerState.busy = false;
+
+                if (jokerState.turn >= jokerState.maxTurns) {
+                    if (jokerState.matchCount === 0) {
+                        // 하나도 못 맞춤 → 조커가 배팅금을 들고 도망
+                        setTimeout(() => _jokerEnd(0, '"쯧쯧, 하나도 못 맞히시다니. 배팅금은 제가 가져갑니다!"', true), 600);
+                    } else {
+                        const reward = jokerState.bet + jokerState.matchCount * 20000000 + jokerState.bonus;
+                        setTimeout(() => _jokerEnd(reward,
+                            `"수고하셨습니다. ${jokerState.matchCount}번 맞히셨군요. 약속한 ₩${reward.toLocaleString()}, 받으시죠."`, false), 600);
+                    }
+                }
+            }, 1000);
+        }
+
+        // ── 컵 속 황금공 찾기 게임 ──
+        function startJokerCupGame() {
+            document.getElementById('joker-title').innerText = '황금 공 찾기';
+            document.getElementById('joker-info').innerHTML =
+                '다섯 개의 컵 중 하나에 황금 공이 들어갑니다.<br>' +
+                '<span style="font-size:0.85cqw;color:#ffd0d0">컵이 섞이는 걸 잘 보고, 공이 든 컵을 단 한 번에 맞히세요! 맞히면 1억, 틀리면 배팅금을 잃습니다.</span>';
+            const board = document.getElementById('joker-board');
+            board.className = 'cup-mode';
+            board.style.gridTemplateColumns = '';
+            board.innerHTML = '';
+
+            const cupCount = 5;
+            // 슬롯 x좌표(cqw): 보드 폭 34cqw, 컵 폭 6cqw → 5개를 균등 배치
+            const slotX = [];
+            const gap = (34 - cupCount * 6) / (cupCount - 1); // 컵 사이 간격
+            for (let i = 0; i < cupCount; i++) slotX.push(i * (6 + gap));
+            jokerState.slotX = slotX;
+
+            jokerState.ballSlot = Math.floor(Math.random() * cupCount); // 공이 있는 슬롯(위치)
+            jokerState.busy = true;
+            jokerState.cupEls = [];
+
+            for (let i = 0; i < cupCount; i++) {
+                const cup = document.createElement('div');
+                cup.className = 'jk-cup locked';
+                cup.dataset.slot = i;   // 현재 슬롯 위치
+                cup.style.left = slotX[i] + 'cqw';
+                // 공이 든 컵에는 공을 자식으로 추가 (컵과 함께 이동, 컵 본체가 가림)
+                if (i === jokerState.ballSlot) {
+                    cup.innerHTML = `<div class="jk-ball-vis"></div><div class="cup-body"></div>`;
+                } else {
+                    cup.innerHTML = `<div class="cup-body"></div>`;
+                }
+                cup.onclick = () => jokerCupPick(cup);
+                board.appendChild(cup);
+                jokerState.cupEls.push(cup);
+            }
+
+            // 공이 든 컵을 들어 보여줌
+            document.getElementById('joker-msg').innerText = '공이 어느 컵에 들어가는지 잘 보세요...';
+            const ballCup = jokerState.cupEls.find(c => +c.dataset.slot === jokerState.ballSlot);
+            jokerState._ballCup = ballCup;   // 공은 이 컵을 따라다님
+            if (ballCup) ballCup.classList.add('lifted');
+
+            // 2.5초 후 컵을 덮고 섞기 시작
+            setTimeout(() => {
+                if (ballCup) ballCup.classList.remove('lifted');
+                setTimeout(() => _jokerShuffleCups(0), 600);
+            }, 2500);
+        }
+
+        function _jokerShuffleCups(count) {
+            const TOTAL = 8;  // 섞는 횟수
+            if (count >= TOTAL) {
+                document.getElementById('joker-msg').innerText = '자, 공은 어디에 있을까요? 컵을 골라보세요!';
+                jokerState.busy = false;
+                jokerState.cupEls.forEach(c => c.classList.remove('locked'));
+                return;
+            }
+            const els = jokerState.cupEls;
+            // 인접하거나 임의의 두 컵을 골라 슬롯 위치를 교환
+            let a = Math.floor(Math.random() * els.length);
+            let b = Math.floor(Math.random() * els.length);
+            while (b === a) b = Math.floor(Math.random() * els.length);
+            const cupA = els[a], cupB = els[b];
+            const slotA = +cupA.dataset.slot, slotB = +cupB.dataset.slot;
+
+            // 슬롯 위치 교환 → left 좌표 실제 이동(야바위). 공은 컵의 자식이라 함께 이동됨.
+            cupA.dataset.slot = slotB;
+            cupB.dataset.slot = slotA;
+            cupA.style.left = jokerState.slotX[slotB] + 'cqw';
+            cupB.style.left = jokerState.slotX[slotA] + 'cqw';
+
+            // 속도: 후반부로 갈수록 약간 빠르게
+            const dur = Math.max(260, 420 - count * 18);
+            setTimeout(() => _jokerShuffleCups(count + 1), dur);
+        }
+
+        function jokerCupPick(cup) {
+            if (jokerState.busy) return;
+            jokerState.busy = true;
+            jokerState.cupEls.forEach(c => c.classList.add('locked'));
+
+            // 공은 'ballCup'(처음 공이 들어간 컵)을 따라다님 → 그 컵을 들어 결과 표시
+            const ballCup = jokerState._ballCup;
+            const correct = (cup === ballCup);
+
+            // 정답 컵을 들어 올리면 그 안의 공이 드러남 (공은 컵의 자식)
+            if (ballCup) ballCup.classList.add('lifted');
+
+            if (correct) {
+                document.getElementById('joker-msg').innerText = '정답! 황금 공을 찾았습니다!';
+                setTimeout(() => _jokerEnd(100000000, '"훌륭한 눈썰미네요! 약속대로 1억, 받으시죠."', false), 1100);
+            } else {
+                document.getElementById('joker-msg').innerText = '틀렸습니다... 공은 다른 컵에 있었네요.';
+                setTimeout(() => _jokerEnd(0, '"아쉽네요. 배팅금은 제가 가져가겠습니다. 하하!"', true), 1100);
+            }
+        }
+
         // ── 아이돌 응답 처리: idol2로 전환 후 계약서 표시 ──
         function idolAnswer() {
             const sb = document.getElementById('speech-bubble');
@@ -7068,15 +7620,22 @@ function showCrowBuyUI() {
 
     // (이하 원래 사장님이 짜두신 까마귀 구매 로직 유지)
 
-            // 서류 문서는 숨기고, 안내 말풍선 표시
+            // 서류 문서는 숨기고, 안내 말풍선 표시 (가격 포함 말풍선은 아래에서 설정)
             if (doc) doc.style.display = 'none';
-            sb.innerHTML = `<div style="font-size:1.2cqw;font-weight:bold;text-align:center;line-height:1.6">"오늘 들인 물건 중 하나를 되사주지.<br>어느 걸 팔 텐가?"</div>`;
             sb.style.pointerEvents = 'none';
             sb.classList.add('visible');
 
             // 되살 가격을 랜덤으로 1개 책정해 모든 물건에 동일하게 적용 (1천만~2억)
-            const crowPrice = roundToLeadingDigit(Math.floor((Math.random() * 19 + 1) * 10000000));
+            // 한 번 정한 가격은 저장 → 이어하기 후에도 동일하게 유지
+            if (gameState._crowPriceToday === undefined || gameState._crowPriceToday === null) {
+                gameState._crowPriceToday = roundToLeadingDigit(Math.floor((Math.random() * 19 + 1) * 10000000));
+            }
+            const crowPrice = gameState._crowPriceToday;
             gameState._crowOffers = eligible.map(entry => ({ entry, price: crowPrice }));
+
+            // 말풍선에 제시가 표시
+            sb.innerHTML = `<div style="font-size:1.2cqw;font-weight:bold;text-align:center;line-height:1.6">"오늘 들인 물건 중 하나를 되사주지.<br>한 점에 <span style="color:#c0303a">₩${crowPrice.toLocaleString()}</span>, 어느 걸 팔 텐가?"</div>`;
+
             _renderCrowDocs();
         }
 
@@ -8410,12 +8969,22 @@ function renderBookReaderContent() {
                         // 비둘기 성경: 감정가 0 고정
                         if (entry.item.owner === 'pigeon') {
                             itemProfit = 0;
+                        } else if (entry.item.owner === 'joker') {
+                            // 조커 물건(카드/황금공): 감정가 100원 고정
+                            itemProfit = 100;
                         } else if (entry.item.owner === 'artist') {
                             // 예술가 미술품: 신문2(폭동2)의 날 매입품이면 진품 2억, 평소 1억
                             itemProfit = entry.item._artistSpecial ? 200000000 : 100000000;
                         } else if (entry.item.owner === 'idol') {
                             // 아이돌 친필사인: idolnews1이면 2억, idolnews2면 1만원 (매입 시점 신문에 따라 고정)
                             itemProfit = (entry.item._idolSignValue === 'low') ? 10000 : 200000000;
+                        } else if (entry.item.owner === 'streamer') {
+                            // 스트리머 버튼: 종류별 감정가 고정 (실버5천/골드6천/다이아8천/루비1억)
+                            if (entry.item.id === 'str1') itemProfit = 50000000;
+                            else if (entry.item.id === 'str2') itemProfit = 60000000;
+                            else if (entry.item.id === 'str3') itemProfit = 80000000;
+                            else if (entry.item.id === 'str4') itemProfit = 100000000;
+                            else itemProfit = 50000000;
                         } else {
                             // 진품 정답: 5천만~1억, 맨 앞자리만
                             const raw = Math.floor(Math.random() * 50000000) + 50000000;
@@ -8564,12 +9133,51 @@ function renderBookReaderContent() {
                     </div>`;
             });
 
-            // ★ 순이익 계산 (감정 수입 − 매입 지출 − 강탈 피해 + 독수리/늑대 이벤트 순액)
-            const netProfit = gain - todayExpense - todayStolen + todayEagleNet;
+            // ── 비둘기 기부 내역 ──
+            const todayPigeonDon = (gameState.pigeonDonations || []).filter(e => (e.day || 1) === gameState.day);
+            let todayPigeonNet = 0;
+            todayPigeonDon.forEach((pd) => {
+                todayPigeonNet += pd.amount;
+                itemRows += `
+                    <div style="padding:0.5cqh 0;border-bottom:0.08cqw dashed rgba(90,58,26,0.25);font-size:0.85cqw;background:rgba(43,122,26,0.06);">
+                        <div style="display:flex;align-items:center;gap:0.4cqw;margin-bottom:0.2cqh">
+                            <span style="color:#888;min-width:1.4cqw">+</span>
+                            <span style="flex:1;color:#2b7a1a;font-weight:bold">${pd.label}</span>
+                            <span style="color:#2b7a1a;font-size:0.78cqw;background:rgba(43,122,26,0.1);padding:0.1cqh 0.5cqw;border-radius:0.3cqw">기부</span>
+                        </div>
+                        <div style="text-align:right;font-size:0.78cqw;color:#2b7a1a;padding-left:1.8cqw;font-weight:bold">
+                            +${(pd.amount/10000).toLocaleString()}만
+                        </div>
+                    </div>`;
+            });
+
+            // ── 조커 게임 결과 내역 ──
+            const todayJoker = (gameState.jokerResults || []).filter(e => (e.day || 1) === gameState.day);
+            let todayJokerNet = 0;
+            todayJoker.forEach((jr) => {
+                todayJokerNet += jr.amount;
+                const isGain = jr.amount >= 0;
+                const col = isGain ? '#2b7a1a' : '#a32020';
+                const sign = isGain ? '+' : '−';
+                itemRows += `
+                    <div style="padding:0.5cqh 0;border-bottom:0.08cqw dashed rgba(90,58,26,0.25);font-size:0.85cqw;background:${isGain?'rgba(43,122,26,0.06)':'rgba(163,32,32,0.06)'};">
+                        <div style="display:flex;align-items:center;gap:0.4cqw;margin-bottom:0.2cqh">
+                            <span style="color:#888;min-width:1.4cqw">${isGain?'+':'!'}</span>
+                            <span style="flex:1;color:${col};font-weight:bold">${jr.label}</span>
+                            <span style="color:${col};font-size:0.78cqw;background:${isGain?'rgba(43,122,26,0.1)':'rgba(163,32,32,0.1)'};padding:0.1cqh 0.5cqw;border-radius:0.3cqw">조커</span>
+                        </div>
+                        <div style="text-align:right;font-size:0.78cqw;color:${col};padding-left:1.8cqw;font-weight:bold">
+                            ${sign}${(Math.abs(jr.amount)/10000).toLocaleString()}만
+                        </div>
+                    </div>`;
+            });
+
+            // ★ 순이익 계산 (감정 수입 − 매입 지출 − 강탈 피해 + 독수리/늑대 + 비둘기 기부 + 조커)
+            const netProfit = gain - todayExpense - todayStolen + todayEagleNet + todayPigeonNet + todayJokerNet;
             const isProfit = netProfit >= 0;
             const pColor = isProfit ? '#2b7a1a' : '#a32020';
             // 오늘 시작 시점의 기존 소지금 역산 (현재 잔액에서 오늘 변동분을 되돌림)
-            const startMoney = gameState.money - gain + todayExpense + todayStolen - todayEagleNet;
+            const startMoney = gameState.money - gain + todayExpense + todayStolen - todayEagleNet - todayPigeonNet - todayJokerNet;
 
 // 책 속 결산 보고서와 동일한 서류 카드 스타일 (세로 축소 및 스크롤 최적화)
             let summaryHtml = '';
@@ -9362,6 +9970,16 @@ function goToLobby() {
 
        function finishAllDeals() {
             if (enteringGame) return;
+            // ── 사이비 신문(newspaper3): 모든 손님 응대 후 비둘기가 특수 등장해 1억 기부 (카운트 제외) ──
+            if (gameState._cultPigeonPending && !gameState._cultPigeonDone) {
+                gameState._cultPigeonDone = true;
+                const pigeonGuest = guests.find(g => g.id === 'pigeon');
+                if (pigeonGuest) {
+                    gameState.dailyGuestsQueue.unshift({ ...pigeonGuest, _cultPigeon: true, visited: false });
+                    resetGameTurn();
+                    return;
+                }
+            }
             // ── 아이돌이 다녀간 날: 감정소로 가기 전, 배달원이 아이돌 신문을 전하러 출몰 ──
             if (gameState._idolVisitedToday && !gameState._idolNewsDone) {
                 gameState._idolNewsDone = true;
@@ -9603,7 +10221,7 @@ function showLighter() {
     const ft = document.getElementById('folder-trigger');
     if (ft) ft.classList.add('visible');
     const fl = document.getElementById('folder-label');
-    if (fl) fl.classList.add('visible');
+    if (fl) { fl.classList.add('visible'); fl.style.opacity = '1'; }
 
     // 명단 버튼 내부적으로 visible 추가 (폴더에 담긴 상태)
     const lb = document.getElementById('ledger-btn');
@@ -9632,7 +10250,7 @@ function hideLighter() {
     const ft = document.getElementById('folder-trigger');
     if (ft) ft.classList.remove('visible', 'expanded');
     const fl = document.getElementById('folder-label');
-    if (fl) fl.classList.remove('visible');
+    if (fl) { fl.classList.remove('visible'); fl.style.opacity = '0'; }
 
     const anim = document.getElementById('lighter-animation');
     if (anim) {
@@ -10082,6 +10700,12 @@ function keepFolderExpanded() {
             // ★ 돈 부족 검사: 매입가보다 보유 금액이 적으면 거래 불가
             if (gameState.money < gameState.itemPrice) {
                 handleInsufficientFunds();
+                return;
+            }
+            // ── 조커: 서명(=수락)하면 배팅금을 걸고 미니게임 시작 ──
+            if (gameState.currentGuestData && gameState.currentGuestData.id === 'joker') {
+                stopTimeAttack();
+                startJokerGame();
                 return;
             }
             stopTimeAttack(); // ★ 시각적 타이머 해제
