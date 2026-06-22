@@ -10,6 +10,59 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
     <style>
+        /* 🃏 조커 미니게임: 실시간 전광판 */
+#joker-scoreboard {
+    position: absolute;
+    top: 2cqh; right: 2cqw;
+    background: linear-gradient(135deg, #2a2a2a 0%, #111 100%);
+    border: 0.2cqw solid #cba328;
+    border-radius: 0.8cqw;
+    padding: 1cqw 1.5cqw;
+    color: #fcd53f;
+    font-family: 'Georgia', serif;
+    text-align: right;
+    box-shadow: 0 0.5cqw 1.5cqw rgba(0,0,0,0.8), inset 0 0.1cqw 0.3cqw rgba(255,255,255,0.2);
+    z-index: 100;
+    user-select: none;
+    opacity: 0;
+    transform: translateY(-2cqh);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+#joker-scoreboard.show { opacity: 1; transform: translateY(0); }
+.jk-sb-label { font-size: 1.1cqw; color: #aaa; margin-bottom: 0.3cqh; letter-spacing: 0.05cqw; }
+.jk-sb-value { font-size: 2.2cqw; font-weight: bold; color: #fff; text-shadow: 0 0 0.8cqw #fcd53f; }
+
+/* 기존 카드 CSS에 이동 애니메이션 덮어씌우기 */
+.jk-card {
+    transition: left 0.4s cubic-bezier(0.34, 1.5, 0.64, 1), top 0.4s cubic-bezier(0.34, 1.5, 0.64, 1), transform 0.45s cubic-bezier(0.4,0,0.2,1), box-shadow 0.2s !important;
+}
+        /* 🃏 조커 미니게임: 짝 맞추기 대형 보상 텍스트 연출 */
+@keyframes popJokerReward {
+    0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+    20% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+    40% { transform: translate(-50%, -50%) scale(1); opacity: 1; text-shadow: 0 0 3cqw rgba(255,215,0,1), 0 0.5cqw 1cqw #000; }
+    80% { transform: translate(-50%, -70%) scale(1); opacity: 1; }
+    100% { transform: translate(-50%, -80%) scale(0.8); opacity: 0; }
+}
+.joker-big-reward-popup {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 6cqw;
+    font-weight: bold;
+    color: #fff;
+    font-family: 'Georgia', serif;
+    text-shadow: 0 0 1.5cqw #fcd53f, 0 0.5cqw 1cqw #000;
+    z-index: 9999;
+    pointer-events: none;
+    white-space: nowrap;
+    animation: popJokerReward 1.2s ease-out forwards;
+}
+        /* 렉 최적화용: 불타는 중인 서류의 복잡한 그림자 연산 일시 해제 */
+#game-document.is-burning {
+    box-shadow: none !important;
+    filter: sepia(0.18) !important;
+}
         /* ── 타임어택 UI (도마뱀 전용) ── */
         #time-attack-ui {
             position: absolute;
@@ -1050,17 +1103,19 @@
             font-weight: bold; text-shadow: 0 0.15cqw 0.4cqw #000;
             margin-top: auto;
         }
-        /* 카드 */
+/* 카드 */
         .jk-card {
             width: 7cqw; height: 9.5cqh; border-radius: 0.6cqw;
-            background: #f5f0e6; border: 0.2cqw solid #1a1a1a;
+            /* 덮여있을 때(뒷면)를 빨간색으로 변경 */
+            background: #b01f2a; border: 0.2cqw solid #1a1a1a;
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; position: relative;
             transition: transform 0.45s cubic-bezier(0.4,0,0.2,1), box-shadow 0.2s;
             box-shadow: 0 0.3cqw 0.7cqw rgba(0,0,0,0.5);
         }
         .jk-card:hover { box-shadow: 0 0.4cqw 1.2cqw rgba(255,200,80,0.6); }
-        .jk-card.flipped { background: #b01f2a; }
+        /* 카드가 뒤집혔을 때(앞면)를 하얀색(크림색)으로 변경 */
+        .jk-card.flipped { background: #f5f0e6; }
         .jk-card .jk-face {
             font-size: 2.6cqw; font-weight: bold; color: #1a1a1a;
             backface-visibility: hidden;
@@ -1070,8 +1125,6 @@
         .jk-card .jk-face-back {
             font-size: 2cqw; color: #f0c0c0; font-family: 'Georgia', serif;
         }
-        .jk-card.matched { opacity: 0.35; pointer-events: none; }
-        .jk-card.locked { pointer-events: none; }
         /* 카드 야바위 그리드 (absolute 위치 이동) */
         #joker-board.card-mode {
             display: block; position: relative;
@@ -3459,6 +3512,29 @@ body.modal-open #skip-confirm-modal { pointer-events: auto !important; }
     </div>
 
     <script>
+        // ── 탁자 위 물건을 부드럽게 페이드아웃하며 숨기는 함수 ──
+function hideDeskItemSmoothly() {
+    const deskItem = document.getElementById('desk-item');
+    if (deskItem && deskItem.classList.contains('show')) {
+        // 기존 등장 애니메이션 강제 해제 후 리플로우
+        deskItem.style.animation = 'none';
+        void deskItem.offsetWidth; 
+        
+        // 아래로 스르륵 내려가며 투명해지는 전환 효과 적용
+        deskItem.style.transition = 'transform 0.5s cubic-bezier(0.5,0,0.75,0), opacity 0.4s ease';
+        deskItem.style.transform = 'translateY(15cqh) scale(0.9)';
+        deskItem.style.opacity = '0';
+        
+        // 애니메이션이 끝나면 스타일 초기화
+        setTimeout(() => {
+            deskItem.classList.remove('show');
+            deskItem.style.animation = '';
+            deskItem.style.transition = '';
+            deskItem.style.transform = '';
+            deskItem.style.opacity = '';
+        }, 500);
+    }
+}
        // ── 모바일 16:9 레터박스: 모든 게임 요소를 #stage 래퍼로 감싸 컨테이너 단위(cqw/cqh) 기준을 만든다 ──
        function wrapGameInStage() {
            if (document.getElementById('stage')) { sizeStage(); return; }
@@ -6211,7 +6287,6 @@ function spawnEagle(guest) {
         const lines = [
             '"방금 꼬리가 긴 녀석이 이 안으로 숨는 걸 봤다."',
             '"내 눈은 못 속이지. 그 도마뱀 녀석 어딨나?"',
-            '"녀석에게 큰 현상금이 걸려있다. 순순히 불면 나눠주지."'
         ];
         const randomLine = lines[Math.floor(Math.random() * lines.length)];
         
@@ -7158,334 +7233,456 @@ function generateGuest() {
             sb.style.pointerEvents = 'auto';
             sb.classList.add('visible');
         }
-        // ════════════════════ 조커 미니게임 ════════════════════
-        const JOKER_SUITS = [
-            { key: 'spade',   sym: '♠', color: '#1a1a1a' },
-            { key: 'heart',   sym: '♥', color: '#c0202a' },
-            { key: 'club',    sym: '♣', color: '#1a1a1a' },
-            { key: 'diamond', sym: '♦', color: '#c0202a' },
-            { key: 'ace',     sym: 'A', color: '#c8a020' },
-            { key: 'joker',   sym: '🃏', color: '#5a2a8a' }
-        ];
+// ════════════════════ 조커 미니게임 ════════════════════
+    const JOKER_SUITS = [
+    { key: 'spade', sym: '♠', color: '#1a1a1a' },
+    { key: 'heart', sym: '♥', color: '#c0202a' },
+    { key: 'club', sym: '♣', color: '#1a1a1a' },
+    { key: 'diamond', sym: '♦', color: '#c0202a' },
+    { key: 'ace', sym: 'A', color: '#1a1a1a' }, 
+    { key: 'joker', sym: 'J', color: '#1a1a1a' }  
+    ];
         const jokerState = {};
 
-        function startJokerGame() {
-            // 배팅금을 미리 차감 (게임 결과에 따라 돌려받거나 잃음)
-            gameState.money -= gameState.itemPrice;
-            updateMoneyCounter('조커 배팅금');
-            jokerState.bet = gameState.itemPrice;
-            // 계약서/물건 숨김
-            const doc = document.getElementById('game-document');
-            if (doc) doc.style.display = 'none';
-            const deskItem = document.getElementById('desk-item');
-            if (deskItem) deskItem.classList.remove('show');
-            hideLighter();
+        // ── 1. 화면 중앙에 대형 금액 띄우기 함수 ──
+function showJokerBigReward(text) {
+    const container = document.getElementById('stage') || document.body;
+    const popup = document.createElement('div');
+    popup.className = 'joker-big-reward-popup';
+    popup.innerHTML = text; 
+    container.appendChild(popup);
+    
+    // 애니메이션(1.2초)이 끝나면 찌꺼기가 남지 않게 자동 삭제
+    setTimeout(() => {
+        if (popup.parentNode) popup.remove();
+    }, 1200);
+}
 
-            const modal = document.getElementById('joker-modal');
-            if (modal) modal.classList.add('show');
-
-            if (gameState._jokerGameType === 'card') startJokerCardGame();
-            else startJokerCupGame();
+// ── 2. 하단 텍스트 대신 말풍선을 사용하는 함수 ──
+function updateJokerBubble(text) {
+    const sb = document.getElementById('speech-bubble');
+    if (!sb) return;
+    
+    // 기존 말풍선 내용 초기화 및 활성화
+    sb.innerHTML = '';
+    sb.classList.add('visible');
+    
+    const textContainer = document.createElement('div');
+    textContainer.style.cssText = "font-size:1.3cqw; font-weight:bold; text-align:center; line-height:1.6;";
+    sb.appendChild(textContainer);
+    
+    // 대사가 타자 치듯 쫄깃하게 나오도록 처리
+    let typeIndex = 0;
+    if (window.jokerTypingInterval) clearInterval(window.jokerTypingInterval);
+    
+    window.jokerTypingInterval = setInterval(() => {
+        if (typeIndex < text.length) {
+            textContainer.innerHTML += text[typeIndex];
+            typeIndex++;
+        } else {
+            clearInterval(window.jokerTypingInterval);
         }
+    }, 40);
+}
 
-        function _jokerEnd(playerGain, leaveMsg, runAway) {
-            // playerGain: 플레이어가 최종적으로 받는 금액(0이면 배팅금 잃음)
-            const msg = document.getElementById('joker-msg');
-            if (playerGain > 0) {
-                gameState.money += playerGain;
-                updateMoneyCounter('조커 게임 보상');
-            }
-            // 결산 기록: 순변동 = 받은 금액 − 배팅금
-            if (!gameState.jokerResults) gameState.jokerResults = [];
-            const net = playerGain - (jokerState.bet || 0);
-            gameState.jokerResults.push({
-                day: gameState.day,
-                amount: net,
-                label: runAway ? '조커의 게임 (패배)' : '조커의 게임'
-            });
-            if (msg) msg.innerText = leaveMsg;
+// ── 조커 미니게임 통합 로직 (전광판 제거 및 실시간 돈 증가) ──
+
+function startJokerGame() {
+    if (gameState.money < gameState.itemPrice) {
+        updateJokerBubble('"뭐야, 판돈도 없는 빈털터리잖아? 돈부터 벌어오라고!"');
+        setTimeout(() => {
+            hideSpeechBubble();
+            const guest = document.querySelector('.game-guest');
+            if (guest) exitGuest(guest);
             setTimeout(() => {
-                const modal = document.getElementById('joker-modal');
-                if (modal) modal.classList.remove('show');
-                // 조커 퇴장
-                const guest = document.querySelector('.game-guest');
-                showGuestDialogue(runAway ? 'reject' : 'accept', () => {
-                    setTimeout(() => {
-                        hideSpeechBubble();
-                        if (guest) exitGuest(guest);
-                        setTimeout(() => {
-                            if (gameState.dailyGuestsQueue.length === 0) finishAllDeals();
-                            else resetGameTurn();
-                        }, 800);
-                    }, 1000);
-                });
+                if (gameState.dailyGuestsQueue.length === 0) finishAllDeals();
+                else resetGameTurn();
+            }, 800);
+        }, 2000);
+        return;
+    }
+
+    // 게임 시작 시 배팅금 차감
+    gameState.money -= gameState.itemPrice;
+    updateMoneyCounter('조커 배팅금');
+    jokerState.bet = gameState.itemPrice;
+    jokerState.currentReward = 0; 
+    
+    const doc = document.getElementById('game-document');
+    if (doc) doc.style.display = 'none';
+    const deskItem = document.getElementById('desk-item');
+    if (deskItem) deskItem.classList.remove('show');
+    hideLighter();
+
+    const modal = document.getElementById('joker-modal');
+    if (modal) modal.classList.add('show');
+    
+    if (gameState._jokerGameType === 'card') startJokerCardGame();
+    else startJokerCupGame();
+}
+
+function _jokerEnd(playerGain, leaveMsg, runAway) {
+    if (!gameState.jokerResults) gameState.jokerResults = [];
+    const net = playerGain - (jokerState.bet || 0);
+    gameState.jokerResults.push({ day: gameState.day, amount: net, label: runAway ? '조커의 게임 (패배)' : '조커의 게임' });
+
+    const msg = document.getElementById('joker-msg');
+    if (msg) msg.innerText = ''; 
+    
+    if (leaveMsg) updateJokerBubble(leaveMsg);
+    
+    setTimeout(() => {
+        const modal = document.getElementById('joker-modal');
+        if (modal) {
+            // ★ 미니게임 창 자연스러운 페이드아웃 효과 적용
+            modal.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+            modal.style.opacity = '0';
+            modal.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                modal.classList.remove('show');
+                modal.style.transition = '';
+                modal.style.opacity = '';
+                modal.style.transform = '';
+            }, 400);
+        }
+        
+        const guest = document.querySelector('.game-guest');
+        setTimeout(() => {
+            hideSpeechBubble();
+            // ★ 조커 캐릭터 자연스럽게 아래로 퇴장
+            if (guest) exitGuest(guest);
+            
+            setTimeout(() => {
+                if (gameState.dailyGuestsQueue.length === 0) finishAllDeals();
+                else resetGameTurn();
+            }, 800);
+        }, 700); // 대사를 읽을 여유를 조금 주고 퇴장 진행
+    }, 1800);
+}
+
+// ── 조커 미니게임: 카드 정보(시도 횟수) 업데이트 ──
+function _jokerUpdateCardInfo() {
+    const info = document.getElementById('joker-info');
+    if (info) {
+        info.innerHTML = `남은 시도 횟수: ${jokerState.maxTurns - jokerState.turn} / ${jokerState.maxTurns} <br>` +
+            `<span style="font-size:0.85cqw;color:#ffd0d0">같은 무늬의 카드를 찾으세요! (조커를 뽑으면 즉시 실패)</span>`;
+    }
+}
+
+// ── 카드 짝 맞추기 ──
+function startJokerCardGame() {
+    document.getElementById('joker-title').innerText = '카드 짝 맞추기';
+    const board = document.getElementById('joker-board');
+    board.className = 'card-mode';
+    board.style.gridTemplateColumns = '';
+
+    let deck = [];
+    JOKER_SUITS.forEach(s => { deck.push(s.key); deck.push(s.key); });
+    for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+    jokerState.deck = deck;
+    jokerState.turn = 0; jokerState.maxTurns = 3;
+    jokerState.matchCount = 0; jokerState.streak = 0;
+    jokerState.firstPick = null; jokerState.busy = true;
+    jokerState.cardEls = [];
+
+    const cols = 4, rows = 3;
+    const cardW = 7, cardH = 9.5, gapX = 1, gapY = 1.2;
+    const slotPos = [];
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            slotPos.push({ x: c * (cardW + gapX), y: r * (cardH + gapY) });
+        }
+    }
+    jokerState.cardSlotPos = slotPos;
+    board.innerHTML = '';
+    
+    deck.forEach((suitKey, idx) => {
+        const s = JOKER_SUITS.find(x => x.key === suitKey);
+        const card = document.createElement('div');
+        card.className = 'jk-card flipped locked'; 
+        card.dataset.suit = suitKey;
+        card.dataset.slot = idx; 
+        
+        card.style.left = '13.5cqw';
+        card.style.top = '30cqh';
+        card.style.transform = 'scale(0.3) rotate(180deg)';
+        
+        card.innerHTML = `<span class="jk-face jk-face-front" style="color:${s.color}">${s.sym}</span>` +
+                         `<span class="jk-face jk-face-back">?</span>`;
+        card.onclick = () => jokerCardPick(card);
+        board.appendChild(card);
+        jokerState.cardEls.push(card);
+    });
+    
+    _jokerUpdateCardInfo();
+    const msgEl = document.getElementById('joker-msg');
+    if(msgEl) msgEl.innerText = '카드를 섞어 분배합니다...';
+    updateJokerBubble('"내 손은 눈보다 빠르지!"');
+
+    jokerState.cardEls.forEach((card, idx) => {
+        setTimeout(() => {
+            const pos = jokerState.cardSlotPos[idx];
+            card.style.left = pos.x + 'cqw';
+            card.style.top = pos.y + 'cqh';
+            card.style.transform = 'scale(1) rotate(0deg)';
+        }, 100 + (idx * 90)); 
+    });
+
+    setTimeout(() => {
+        if(msgEl) msgEl.innerText = '카드 배치를 잘 기억하세요...';
+        
+        setTimeout(() => {
+            jokerState.cardEls.forEach(el => el.classList.remove('flipped'));
+            if(msgEl) msgEl.innerText = '카드를 섞습니다...';
+            setTimeout(() => _jokerShuffleCards(0), 500);
+        }, 2800);
+    }, 100 + (12 * 90) + 400);
+}
+
+function _jokerShuffleCards(count) {
+    const cols = 4, rows = 3;
+    const flipType = Math.random() < 0.5 ? 'h' : 'v';
+    
+    const msgEl = document.getElementById('joker-msg');
+    if(msgEl) msgEl.innerText = (flipType === 'h') ? '카드를 좌우로 섞습니다...' : '카드를 상하로 섞습니다...';
+
+    jokerState.cardEls.forEach(card => {
+        if (card.classList.contains('matched')) return;
+        const slot = +card.dataset.slot;
+        const r = Math.floor(slot / cols), c = slot % cols;
+        const newSlot = (flipType === 'h') 
+                        ? r * cols + (cols - 1 - c) 
+                        : (rows - 1 - r) * cols + c; 
+        card.dataset.slot = newSlot;
+        const pos = jokerState.cardSlotPos[newSlot];
+        card.style.left = pos.x + 'cqw';
+        card.style.top = pos.y + 'cqh';
+    });
+
+    setTimeout(() => {
+        if(msgEl) msgEl.innerText = '자, 이제 같은 카드를 찾아보세요!';
+        updateJokerBubble('"어디 한번 잘 찾아보라고!"');
+        jokerState.busy = false;
+        jokerState.cardEls.forEach(cc => {
+            if (!cc.classList.contains('matched')) cc.classList.remove('locked');
+        });
+    }, 650);
+}
+
+function jokerCardPick(card) {
+    if (jokerState.busy) return;
+    if (!card || card.classList.contains('matched') || card.classList.contains('flipped') || card.classList.contains('locked')) return;
+
+    card.classList.add('flipped');
+    const suit = card.dataset.suit;
+
+    if (jokerState.firstPick === null) {
+        jokerState.firstPick = card;
+        return;
+    }
+
+    const firstCard = jokerState.firstPick;
+    if (firstCard === card) return;
+    jokerState.firstPick = null;
+    jokerState.busy = true;
+    jokerState.turn++;
+
+    const matched = (firstCard.dataset.suit === suit);
+
+    // [꽝] 조커를 뽑았을 때
+    if (matched && suit === 'joker') {
+        firstCard.classList.add('matched');
+        card.classList.add('matched');
+        
+        if (jokerState.currentReward > 0) {
+            gameState.money -= jokerState.currentReward;
+            updateMoneyCounter('상금 증발');
+        }
+        jokerState.currentReward = 0; 
+        
+        updateJokerBubble('"조커 짝! 상금은 내 차지다! 운이 없으셨네요!"');
+        setTimeout(() => _jokerEnd(0, null, true), 3000);
+        return;
+    }
+
+    // [잭팟] 에이스를 뽑았을 때
+    if (matched && suit === 'ace') {
+        firstCard.classList.add('matched');
+        card.classList.add('matched');
+        
+        jokerState.currentReward += 200000000;
+        
+        // ★ 실시간 본래 돈창(왼쪽 상단) 증가 (배팅금도 함께 환급)
+        gameState.money += (200000000 + jokerState.bet);
+        updateMoneyCounter('조커 보너스');
+        
+        showJokerBigReward('+ ₩200,000,000'); 
+        updateJokerBubble('"A 짝! 잭팟이 터졌군! 이런 행운이!"'); 
+        
+        setTimeout(() => _jokerEnd(jokerState.bet + jokerState.currentReward, null, false), 3000);
+        return;
+    }
+
+    if (matched) {
+        jokerState.matchCount++;
+        jokerState.streak++;
+        
+        let earn = 20000000;
+        if (jokerState.streak >= 2) {
+            earn = 40000000;
+            showJokerBigReward('+ ₩40,000,000'); 
+            updateJokerBubble('"연속이라니! 돈이 복사되고 있다고!"'); 
+        } else {
+            showJokerBigReward('+ ₩20,000,000'); 
+            updateJokerBubble('"오, 눈썰미가 제법인데?"'); 
+        }
+        
+        jokerState.currentReward += earn;
+        
+        // ★ 여기서 왼쪽 위에 있는 본래 보유 금액 창이 실시간으로 타다닥 오릅니다!
+        gameState.money += earn;
+        updateMoneyCounter('조커 게임 수익'); 
+
+        firstCard.classList.add('matched');
+        card.classList.add('matched');
+    } else {
+        jokerState.streak = 0;
+        updateJokerBubble('"아쉽네요, 다른 카드입니다."'); 
+    }
+
+    setTimeout(() => {
+        if (!firstCard.classList.contains('matched')) firstCard.classList.remove('flipped');
+        if (!card.classList.contains('matched')) card.classList.remove('flipped');
+        
+        _jokerUpdateCardInfo();
+        jokerState.busy = false;
+
+        // 게임 종료 처리 (대사 겹침 방지를 위해 1.8초 뒤에 최종 대사 출력)
+        if (jokerState.turn >= jokerState.maxTurns) {
+            const finalReward = (jokerState.matchCount === 0) ? 0 : jokerState.bet + jokerState.currentReward;
+            
+            setTimeout(() => {
+                if (jokerState.matchCount === 0) {
+                    updateJokerBubble('"쯧쯧, 하나도 못 맞히시다니. 배팅금은 제가 가져갑니다!"');
+                    setTimeout(() => _jokerEnd(0, null, true), 3000);
+                } else {
+                    updateJokerBubble(`"수고하셨습니다. ${jokerState.matchCount}번 맞히셨군요. 자, 상금입니다."`);
+                    gameState.money += jokerState.bet; // 배팅금 환급
+                    updateMoneyCounter('배팅금 환급');
+                    setTimeout(() => _jokerEnd(finalReward, null, false), 3000);
+                }
             }, 1800);
         }
+    }, 1000);
+}
 
-        // ── 카드 매칭 게임 ──
-        function startJokerCardGame() {
-            document.getElementById('joker-title').innerText = '카드 짝 맞추기';
-            const board = document.getElementById('joker-board');
-            board.className = 'card-mode';
-            board.style.gridTemplateColumns = '';
+// ── 컵 속 황금공 찾기 게임 ──
+function startJokerCupGame() {
+    document.getElementById('joker-title').innerText = '황금 공 찾기';
+    document.getElementById('joker-info').innerHTML = '다섯 개의 컵 중 하나에 황금 공이 들어갑니다.<br>' +
+        '<span style="font-size:0.85cqw;color:#ffd0d0">컵이 섞이는 걸 잘 보고, 공이 든 컵을 단 한 번에 맞히세요! 맞히면 1억, 틀리면 배팅금을 잃습니다.</span>';
+    
+    const board = document.getElementById('joker-board');
+    board.className = 'cup-mode';
+    board.style.gridTemplateColumns = '';
+    board.innerHTML = '';
 
-            // 6종 x 2장 = 12장 덱 구성 후 섞기
-            let deck = [];
-            JOKER_SUITS.forEach(s => { deck.push(s.key); deck.push(s.key); });
-            for (let i = deck.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [deck[i], deck[j]] = [deck[j], deck[i]];
-            }
-            jokerState.deck = deck;
-            jokerState.turn = 0;
-            jokerState.maxTurns = 3;
-            jokerState.matchCount = 0;
-            jokerState.streak = 0;
-            jokerState.bonus = 0;
-            jokerState.firstPick = null;
-            jokerState.busy = true;
-            jokerState.cardEls = [];
+    const cupCount = 5;
+    const slotX = [];
+    const gap = (34 - cupCount * 6) / (cupCount - 1);
+    for (let i = 0; i < cupCount; i++) slotX.push(i * (6 + gap));
+    jokerState.slotX = slotX;
+    
+    jokerState.ballSlot = Math.floor(Math.random() * cupCount); 
+    jokerState.busy = true;
+    jokerState.cupEls = [];
 
-            // 4열 3행 슬롯 좌표 (cqw / cqh)
-            const cols = 4, rows = 3;
-            const cardW = 7, cardH = 9.5, gapX = 1, gapY = 1.2;
-            const slotPos = [];
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    slotPos.push({ x: c * (cardW + gapX), y: r * (cardH + gapY) });
-                }
-            }
-            jokerState.cardSlotPos = slotPos;
-
-            board.innerHTML = '';
-            deck.forEach((suitKey, idx) => {
-                const s = JOKER_SUITS.find(x => x.key === suitKey);
-                const card = document.createElement('div');
-                card.className = 'jk-card flipped locked';   // 처음엔 앞면 공개
-                card.dataset.suit = suitKey;
-                card.dataset.slot = idx;   // 현재 슬롯 위치
-                card.style.left = slotPos[idx].x + 'cqw';
-                card.style.top = slotPos[idx].y + 'cqh';
-                card.innerHTML =
-                    `<span class="jk-face jk-face-front" style="color:${s.color}">${s.sym}</span>` +
-                    `<span class="jk-face jk-face-back">?</span>`;
-                card.onclick = () => jokerCardPick(card);
-                board.appendChild(card);
-                jokerState.cardEls.push(card);
-            });
-
-            _jokerUpdateCardInfo();
-            document.getElementById('joker-msg').innerText = '카드 배치를 잘 기억하세요... (잠시 후 섞습니다)';
-
-            // 3.5초간 배치를 보여준 뒤 뒷면으로 덮고 → 카드들이 자리를 바꾸며 섞임
-            setTimeout(() => {
-                jokerState.cardEls.forEach(el => el.classList.remove('flipped'));
-                document.getElementById('joker-msg').innerText = '카드를 섞습니다...';
-                setTimeout(() => _jokerShuffleCards(0), 500);
-            }, 3500);
+    for (let i = 0; i < cupCount; i++) {
+        const cup = document.createElement('div');
+        cup.className = 'jk-cup locked';
+        cup.dataset.slot = i;
+        cup.style.left = slotX[i] + 'cqw';
+        
+        if (i === jokerState.ballSlot) {
+            cup.innerHTML = `<div class="jk-ball-vis"></div><div class="cup-body"></div>`;
+        } else {
+            cup.innerHTML = `<div class="cup-body"></div>`;
         }
+        cup.onclick = () => jokerCupPick(cup);
+        board.appendChild(cup);
+        jokerState.cupEls.push(cup);
+    }
 
-        function _jokerUpdateCardInfo() {
-            const reward = jokerState.bet + jokerState.matchCount * 20000000 + jokerState.bonus;
-            document.getElementById('joker-info').innerHTML =
-                `남은 턴: <b>${jokerState.maxTurns - jokerState.turn}</b> / ${jokerState.maxTurns}　|　` +
-                `맞춘 횟수: <b>${jokerState.matchCount}</b>　|　` +
-                `현재 보상금: <b>₩${reward.toLocaleString()}</b><br>` +
-                `<span style="font-size:0.85cqw;color:#ffd0d0">카드 2장을 골라 같은 카드를 찾으세요. A 짝을 맞추면 즉시 +2억! 조커 짝을 맞추면 배팅금을 잃습니다.</span>`;
-        }
+    const msgEl = document.getElementById('joker-msg');
+    if(msgEl) msgEl.innerText = '공이 어느 컵에 들어가는지 잘 보세요...';
+    updateJokerBubble('"내 손은 눈보다 빠르지!"');
 
-        function _jokerShuffleCards(count) {
-            // 좌우반전 또는 상하반전으로 모든 카드를 한 번에 통째로 이동
-            const cols = 4, rows = 3;
-            const flipType = Math.random() < 0.5 ? 'h' : 'v';
-            document.getElementById('joker-msg').innerText =
-                (flipType === 'h') ? '카드를 좌우로 섞습니다...' : '카드를 상하로 섞습니다...';
+    const ballCup = jokerState.cupEls.find(c => +c.dataset.slot === jokerState.ballSlot);
+    jokerState._ballCup = ballCup;
+    if (ballCup) ballCup.classList.add('lifted');
 
-            jokerState.cardEls.forEach(card => {
-                if (card.classList.contains('matched')) return;
-                const slot = +card.dataset.slot;
-                const r = Math.floor(slot / cols), c = slot % cols;
-                const newSlot = (flipType === 'h')
-                    ? r * cols + (cols - 1 - c)      // 좌우반전
-                    : (rows - 1 - r) * cols + c;     // 상하반전
-                card.dataset.slot = newSlot;
-                const pos = jokerState.cardSlotPos[newSlot];
-                card.style.left = pos.x + 'cqw';
-                card.style.top = pos.y + 'cqh';
-            });
+    setTimeout(() => {
+        if (ballCup) ballCup.classList.remove('lifted');
+        setTimeout(() => _jokerShuffleCups(0), 600);
+    }, 2500);
+}
 
-            setTimeout(() => {
-                document.getElementById('joker-msg').innerText = '자, 이제 같은 카드를 찾아보세요!';
-                jokerState.busy = false;
-                jokerState.cardEls.forEach(cc => { if (!cc.classList.contains('matched')) cc.classList.remove('locked'); });
-            }, 650);
-        }
+function _jokerShuffleCups(count) {
+    const TOTAL = 8;
+    if (count >= TOTAL) {
+        const msgEl = document.getElementById('joker-msg');
+        if(msgEl) msgEl.innerText = '자, 공은 어디에 있을까요? 컵을 골라보세요!';
+        updateJokerBubble('"자, 어디에 숨었는지 맞춰보실까?"'); 
+        
+        jokerState.busy = false;
+        jokerState.cupEls.forEach(c => c.classList.remove('locked'));
+        return;
+    }
 
-        function jokerCardPick(card) {
-            if (jokerState.busy) return;
-            if (!card || card.classList.contains('matched') || card.classList.contains('flipped') || card.classList.contains('locked')) return;
+    const els = jokerState.cupEls;
+    let a = Math.floor(Math.random() * els.length);
+    let b = Math.floor(Math.random() * els.length);
+    while (b === a) b = Math.floor(Math.random() * els.length);
 
-            card.classList.add('flipped');
-            const suit = card.dataset.suit;
+    const cupA = els[a], cupB = els[b];
+    const slotA = +cupA.dataset.slot, slotB = +cupB.dataset.slot;
 
-            if (jokerState.firstPick === null) {
-                jokerState.firstPick = card;
-                return;
-            }
-            // 두 번째 카드 → 짝 판정
-            const firstCard = jokerState.firstPick;
-            if (firstCard === card) return; // 같은 카드 중복 클릭 방지
-            jokerState.firstPick = null;
-            jokerState.busy = true;
-            jokerState.turn++;
+    cupA.dataset.slot = slotB;
+    cupB.dataset.slot = slotA;
+    cupA.style.left = jokerState.slotX[slotB] + 'cqw';
+    cupB.style.left = jokerState.slotX[slotA] + 'cqw';
 
-            const matched = (firstCard.dataset.suit === suit);
+    const dur = Math.max(260, 420 - count * 18);
+    setTimeout(() => _jokerShuffleCups(count + 1), dur);
+}
 
-            if (matched && suit === 'joker') {
-                // 조커 짝 → 배팅금 들고 도망
-                firstCard.classList.add('matched'); card.classList.add('matched');
-                document.getElementById('joker-msg').innerText = '조커 짝! 그가 배팅금을 들고 사라집니다...';
-                setTimeout(() => _jokerEnd(0, '"하하, 운이 없으셨네요. 배팅금은 제가 가져가죠!"', true), 1000);
-                return;
-            }
-            if (matched && suit === 'ace') {
-                // A 짝 → 즉시 배팅금 + 2억
-                firstCard.classList.add('matched'); card.classList.add('matched');
-                document.getElementById('joker-msg').innerText = 'A 짝! 잭팟! 배팅금 + 2억!';
-                setTimeout(() => _jokerEnd(jokerState.bet + 200000000, '"이런 행운이! 약속대로 드리죠. 또 봅시다."', false), 1100);
-                return;
-            }
+function jokerCupPick(cup) {
+    if (jokerState.busy) return;
+    jokerState.busy = true;
+    jokerState.cupEls.forEach(c => c.classList.add('locked'));
 
-            if (matched) {
-                // 일반 무늬 매칭 성공
-                jokerState.matchCount++;
-                jokerState.streak++;
-                if (jokerState.streak >= 2) jokerState.bonus += 20000000; // 연속 성공 시 +2천만
-                firstCard.classList.add('matched');
-                card.classList.add('matched');
-                document.getElementById('joker-msg').innerText = '짝이 맞았습니다!' + (jokerState.streak >= 2 ? ' (연속 보너스 +2천만!)' : '');
-            } else {
-                jokerState.streak = 0;
-                document.getElementById('joker-msg').innerText = '아쉽네요, 다른 카드입니다.';
-            }
+    const ballCup = jokerState._ballCup;
+    const correct = (cup === ballCup);
 
-            setTimeout(() => {
-                if (!firstCard.classList.contains('matched')) firstCard.classList.remove('flipped');
-                if (!card.classList.contains('matched')) card.classList.remove('flipped');
-                _jokerUpdateCardInfo();
-                jokerState.busy = false;
+    if (ballCup) ballCup.classList.add('lifted');
 
-                if (jokerState.turn >= jokerState.maxTurns) {
-                    if (jokerState.matchCount === 0) {
-                        // 하나도 못 맞춤 → 조커가 배팅금을 들고 도망
-                        setTimeout(() => _jokerEnd(0, '"쯧쯧, 하나도 못 맞히시다니. 배팅금은 제가 가져갑니다!"', true), 600);
-                    } else {
-                        const reward = jokerState.bet + jokerState.matchCount * 20000000 + jokerState.bonus;
-                        setTimeout(() => _jokerEnd(reward,
-                            `"수고하셨습니다. ${jokerState.matchCount}번 맞히셨군요. 약속한 ₩${reward.toLocaleString()}, 받으시죠."`, false), 600);
-                    }
-                }
-            }, 1000);
-        }
-
-        // ── 컵 속 황금공 찾기 게임 ──
-        function startJokerCupGame() {
-            document.getElementById('joker-title').innerText = '황금 공 찾기';
-            document.getElementById('joker-info').innerHTML =
-                '다섯 개의 컵 중 하나에 황금 공이 들어갑니다.<br>' +
-                '<span style="font-size:0.85cqw;color:#ffd0d0">컵이 섞이는 걸 잘 보고, 공이 든 컵을 단 한 번에 맞히세요! 맞히면 1억, 틀리면 배팅금을 잃습니다.</span>';
-            const board = document.getElementById('joker-board');
-            board.className = 'cup-mode';
-            board.style.gridTemplateColumns = '';
-            board.innerHTML = '';
-
-            const cupCount = 5;
-            // 슬롯 x좌표(cqw): 보드 폭 34cqw, 컵 폭 6cqw → 5개를 균등 배치
-            const slotX = [];
-            const gap = (34 - cupCount * 6) / (cupCount - 1); // 컵 사이 간격
-            for (let i = 0; i < cupCount; i++) slotX.push(i * (6 + gap));
-            jokerState.slotX = slotX;
-
-            jokerState.ballSlot = Math.floor(Math.random() * cupCount); // 공이 있는 슬롯(위치)
-            jokerState.busy = true;
-            jokerState.cupEls = [];
-
-            for (let i = 0; i < cupCount; i++) {
-                const cup = document.createElement('div');
-                cup.className = 'jk-cup locked';
-                cup.dataset.slot = i;   // 현재 슬롯 위치
-                cup.style.left = slotX[i] + 'cqw';
-                // 공이 든 컵에는 공을 자식으로 추가 (컵과 함께 이동, 컵 본체가 가림)
-                if (i === jokerState.ballSlot) {
-                    cup.innerHTML = `<div class="jk-ball-vis"></div><div class="cup-body"></div>`;
-                } else {
-                    cup.innerHTML = `<div class="cup-body"></div>`;
-                }
-                cup.onclick = () => jokerCupPick(cup);
-                board.appendChild(cup);
-                jokerState.cupEls.push(cup);
-            }
-
-            // 공이 든 컵을 들어 보여줌
-            document.getElementById('joker-msg').innerText = '공이 어느 컵에 들어가는지 잘 보세요...';
-            const ballCup = jokerState.cupEls.find(c => +c.dataset.slot === jokerState.ballSlot);
-            jokerState._ballCup = ballCup;   // 공은 이 컵을 따라다님
-            if (ballCup) ballCup.classList.add('lifted');
-
-            // 2.5초 후 컵을 덮고 섞기 시작
-            setTimeout(() => {
-                if (ballCup) ballCup.classList.remove('lifted');
-                setTimeout(() => _jokerShuffleCups(0), 600);
-            }, 2500);
-        }
-
-        function _jokerShuffleCups(count) {
-            const TOTAL = 8;  // 섞는 횟수
-            if (count >= TOTAL) {
-                document.getElementById('joker-msg').innerText = '자, 공은 어디에 있을까요? 컵을 골라보세요!';
-                jokerState.busy = false;
-                jokerState.cupEls.forEach(c => c.classList.remove('locked'));
-                return;
-            }
-            const els = jokerState.cupEls;
-            // 인접하거나 임의의 두 컵을 골라 슬롯 위치를 교환
-            let a = Math.floor(Math.random() * els.length);
-            let b = Math.floor(Math.random() * els.length);
-            while (b === a) b = Math.floor(Math.random() * els.length);
-            const cupA = els[a], cupB = els[b];
-            const slotA = +cupA.dataset.slot, slotB = +cupB.dataset.slot;
-
-            // 슬롯 위치 교환 → left 좌표 실제 이동(야바위). 공은 컵의 자식이라 함께 이동됨.
-            cupA.dataset.slot = slotB;
-            cupB.dataset.slot = slotA;
-            cupA.style.left = jokerState.slotX[slotB] + 'cqw';
-            cupB.style.left = jokerState.slotX[slotA] + 'cqw';
-
-            // 속도: 후반부로 갈수록 약간 빠르게
-            const dur = Math.max(260, 420 - count * 18);
-            setTimeout(() => _jokerShuffleCups(count + 1), dur);
-        }
-
-        function jokerCupPick(cup) {
-            if (jokerState.busy) return;
-            jokerState.busy = true;
-            jokerState.cupEls.forEach(c => c.classList.add('locked'));
-
-            // 공은 'ballCup'(처음 공이 들어간 컵)을 따라다님 → 그 컵을 들어 결과 표시
-            const ballCup = jokerState._ballCup;
-            const correct = (cup === ballCup);
-
-            // 정답 컵을 들어 올리면 그 안의 공이 드러남 (공은 컵의 자식)
-            if (ballCup) ballCup.classList.add('lifted');
-
-            if (correct) {
-                document.getElementById('joker-msg').innerText = '정답! 황금 공을 찾았습니다!';
-                setTimeout(() => _jokerEnd(100000000, '"훌륭한 눈썰미네요! 약속대로 1억, 받으시죠."', false), 1100);
-            } else {
-                document.getElementById('joker-msg').innerText = '틀렸습니다... 공은 다른 컵에 있었네요.';
-                setTimeout(() => _jokerEnd(0, '"아쉽네요. 배팅금은 제가 가져가겠습니다. 하하!"', true), 1100);
-            }
-        }
+    // ★ 대사 통합으로 겹침 방지 + 실시간 본래 돈창(좌상단) 굴러가기
+    if (correct) {
+        showJokerBigReward('+ ₩100,000,000'); 
+        updateJokerBubble('"정답! 황금 공을 찾았습니다! 약속대로 1억, 받으시죠."'); 
+        
+        gameState.money += 100000000;
+        updateMoneyCounter('조커 게임 보상');
+        
+        setTimeout(() => _jokerEnd(100000000, null, false), 3000);
+    } else {
+        updateJokerBubble('"틀렸습니다... 아쉽네요. 배팅금은 제가 챙기겠습니다!"'); 
+        setTimeout(() => _jokerEnd(0, null, true), 3000);
+    }
+}
 
         // ── 아이돌 응답 처리: idol2로 전환 후 계약서 표시 ──
         function idolAnswer() {
@@ -8719,14 +8916,16 @@ function renderBookReaderContent() {
             return w * (1 + WORLD_GAP_VW / 100);
         }
 
-        function applyWorldTransform(px) {
-            const lobby = document.getElementById('canvas');
-            const room = document.getElementById('appraiser-room');
-            const gap = document.getElementById('world-gap');
-            if (lobby) lobby.style.transform = `translateX(${px}px)`;
-            if (room) room.style.transform = `translateX(${px}px)`;
-            if (gap) gap.style.transform = `translateX(${px}px)`;
-        }
+function applyWorldTransform(px) {
+    const lobby = document.getElementById('canvas');
+    const room = document.getElementById('appraiser-room');
+    const gap = document.getElementById('world-gap');
+    
+    // ★ translateX 대신 translate3d를 사용하여 하드웨어(GPU) 가속 강제 활성화!
+    if (lobby) lobby.style.transform = `translate3d(${px}px, 0, 0)`;
+    if (room) room.style.transform = `translate3d(${px}px, 0, 0)`;
+    if (gap) gap.style.transform = `translate3d(${px}px, 0, 0)`;
+}
 
         function setWorldTransition(on) {
             const lobby = document.getElementById('canvas');
@@ -10502,7 +10701,7 @@ function keepFolderExpanded() {
             doc.style.top = (currentTop - ((document.getElementById('stage')||{clientHeight:window.innerHeight}).clientHeight) * 0.35) + 'px';
         }
 
-       function burnDocOnCanvas(doc) {
+function burnDocOnCanvas(doc) {
     const canvas = document.getElementById('fire-canvas');
     const ctx = canvas.getContext('2d');
     
@@ -10517,17 +10716,19 @@ function keepFolderExpanded() {
         right: docRect.right - stageRect.left,
         bottom: docRect.bottom - stageRect.top
     };
-
-    doc.style.visibility = 'visible'; 
+doc.style.visibility = 'visible'; 
+    doc.classList.add('is-burning'); // ★ 렉 방지용 클래스 추가
+    
     let burnProgress = 0;
     const burnSpeed = 1 / 110; 
     let frameCount = 0;
     const totalFrames = 115; 
-    startFireSound(6); 
+    startFireSound(6);
     
-    let particles = [];
+let particles = [];
     function spawnFlameParticles(lineY, lineLeft, lineRight) {
-        const count = 8 + Math.floor(Math.random() * 6);
+        // ★ 파티클 생성 갯수 약간 축소 (성능 최적화)
+        const count = 4 + Math.floor(Math.random() * 4);
         for (let i = 0; i < count; i++) {
             particles.push({ 
                 x: lineLeft + Math.random() * (lineRight - lineLeft), 
@@ -10535,16 +10736,18 @@ function keepFolderExpanded() {
                 vx: (Math.random() - 0.5) * 3, 
                 vy: -(1.5 + Math.random() * 3.5), 
                 life: 1, 
-                decay: 0.025 + Math.random() * 0.025, 
-                size: 6 + Math.random() * 14, 
+                decay: 0.03 + Math.random() * 0.03, 
+                size: 8 + Math.random() * 12, 
                 hue: 15 + Math.random() * 25 
             });
         }
     }
 
-    function burnFrame() {
+function burnFrame() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const segments = 30;
+        
+        // ★ 다각형 분할 수 대폭 감소 (30 -> 12) (리플로우 부하 최적화)
+        const segments = 12;
         const points = [];
         points.push(`0% 0%`, `100% 0%`); 
         
@@ -10577,22 +10780,23 @@ function keepFolderExpanded() {
         
         spawnFlameParticles(edgeY, rect.left, rect.right);
         particles = particles.filter(p => p.life > 0);
+        
+        // ★ 블렌드 모드로 불꽃 효과 극대화 및 그라데이션 연산 생략 (성능 대폭 향상)
+        ctx.globalCompositeOperation = 'lighter';
         particles.forEach(p => {
             p.x += p.vx + Math.sin(frameCount * 0.3 + p.x) * 0.4;
             p.y += p.vy;
             p.vy -= 0.06;
             p.life -= p.decay;
             const a = p.life;
-            const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
-            g.addColorStop(0, `hsla(${p.hue+30},100%,95%,${a})`);
-            g.addColorStop(0.25,`hsla(${p.hue+10},100%,70%,${a*0.9})`);
-            g.addColorStop(0.6, `hsla(${p.hue},90%,45%,${a*0.6})`);
-            g.addColorStop(1, `hsla(${p.hue-10},80%,20%,0)`);
+            
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
-            ctx.fillStyle = g;
+            // 매 프레임 그라데이션 생성 대신 단순 투명도 단색 채우기로 변경
+            ctx.fillStyle = `hsla(${p.hue}, 100%, 55%, ${a * 0.6})`;
             ctx.fill();
         });
+        ctx.globalCompositeOperation = 'source-over';
         
         burnProgress = Math.min(1, burnProgress + burnSpeed);
         frameCount++;
@@ -10602,7 +10806,7 @@ function keepFolderExpanded() {
         } else {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             doc.style.display = 'none';
-            doc.classList.remove('burning-doc');
+            doc.classList.remove('burning-doc', 'is-burning'); // 클래스 복구
             doc.style.visibility = 'visible';
             doc.style.clipPath = 'none';
             doc.style.top = '10cqh';
@@ -10610,12 +10814,7 @@ function keepFolderExpanded() {
             stopFireParticles();
             stopFireSound();
             finishLighterAnimation();
-            if (gameState._autoBurnNoReject) {
-                gameState._autoBurnNoReject = false;
-                _afterInsufficientBurn();   // 돈 부족 소각 — 거절 판정/대사 없이 진행
-            } else {
-                rejectItem();
-            }
+            rejectItem();
         }
     }
     fireAnimId = requestAnimationFrame(burnFrame);
@@ -10697,6 +10896,7 @@ function keepFolderExpanded() {
         }
 
        function purchaseItem() {
+        hideDeskItemSmoothly();
             // ★ 돈 부족 검사: 매입가보다 보유 금액이 적으면 거래 불가
             if (gameState.money < gameState.itemPrice) {
                 handleInsufficientFunds();
@@ -10831,6 +11031,7 @@ function keepFolderExpanded() {
 
         // 중복된 찌꺼기 없이 하나의 완벽한 함수로 통합
         function rejectItem() {
+            hideDeskItemSmoothly();
             stopTimeAttack(); // ★ 시각적 타이머 해제
             clearTimeout(gameState.lizardTimer); // ★ 거래 거절 시 도마뱀 타이머 해제
             
